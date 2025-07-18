@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String phone;
-  OtpVerificationScreen({required this.phone});
+  const OtpVerificationScreen({super.key, required this.phone});
 
   @override
   _OtpVerificationScreenState createState() => _OtpVerificationScreenState();

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'otpverification.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool isPhoneLogin = false;
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final phoneController = TextEditingController();
   String error = '';
   bool isLoading = false;
 
@@ -34,25 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = false);
   }
 
-  void loginWithPhone() async {
-    setState(() => isLoading = true);
-    try {
-      await Supabase.instance.client.auth.signInWithOtp(
-        phone: phoneController.text.trim(),
-      );
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              OtpVerificationScreen(phone: phoneController.text.trim()),
-        ),
-      );
-    } catch (e) {
-      setState(() => error = e.toString());
-    }
-    setState(() => isLoading = false);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,17 +41,10 @@ class _LoginScreenState extends State<LoginScreen> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            ToggleButtons(
-              isSelected: [!isPhoneLogin, isPhoneLogin],
-              onPressed: (i) => setState(() {
-                isPhoneLogin = i == 1;
-                error = '';
-              }),
-              children: [Text('Email Login'), Text('Phone Login')],
-            ),
-            SizedBox(height: 20),
-
-            if (!isPhoneLogin) ...[
+              Text(
+                'Login to your account',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
               TextField(
                 controller: emailController,
                 decoration: InputDecoration(labelText: 'Email'),
@@ -88,30 +61,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ? CircularProgressIndicator(color: Colors.white)
                     : Text('Login'),
               ),
-            ],
-
-            if (isPhoneLogin) ...[
-              TextField(
-                controller: phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Phone Number (+251...)',
-                ),
-              ),
               SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: isLoading ? null : loginWithPhone,
-                child: isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text('Send OTP'),
-              ),
-            ],
-
             if (error.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.only(top: 8.0),
                 child: Text(error, style: TextStyle(color: Colors.red)),
               ),
-
             TextButton(
               onPressed: () => Navigator.pushNamed(context, '/signup'),
               child: Text("Don't have an account? Sign Up"),
