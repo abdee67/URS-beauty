@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:urs_beauty/screens/category_detail.dart';
 
 void main() {
   runApp(const MyApp());
@@ -156,9 +157,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return SearchBar(
       hintText: 'Search for services...',
       leading: const Icon(Icons.search),
-      elevation: MaterialStateProperty.all(0),
-      backgroundColor: MaterialStateProperty.all(Colors.grey[100]),
-      shape: MaterialStateProperty.all(
+      elevation: WidgetStateProperty.all(0),
+      backgroundColor: WidgetStateProperty.all(Colors.grey[100]),
+      shape: WidgetStateProperty.all(
         RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -314,6 +315,17 @@ class _HomeScreenState extends State<HomeScreen> {
               return GestureDetector(
                 onTap: () {
                   // Navigate to category details
+                      Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CategoryDetailsScreen(
+                      categoryName: category['name'],
+                      categoryColor: category['color'],
+                      categoryIcon: category['icon'],
+                    ),
+                  ),
+                );
+              
                 },
                 child: Container(
                   width: 80,
@@ -321,8 +333,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     children: [
                       Container(
-                        width: 60,
-                        height: 60,
+                        width: 80,
+                        height: 80,
                         decoration: BoxDecoration(
                           color: category['color'].withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
