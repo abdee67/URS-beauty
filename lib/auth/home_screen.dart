@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:urs_beauty/auth/category_detail.dart';
 
 void main() {
   runApp(const MyApp());
