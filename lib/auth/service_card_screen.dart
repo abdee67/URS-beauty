@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:urs_beauty/models/service.dart';
+import 'package:urs_beauty/features/service-listing/domain/models/service_model.dart';
 
 class ServiceCard extends StatelessWidget {
-  final Service service;
+  final ServiceModel service;
   
   const ServiceCard({super.key, required this.service});
 

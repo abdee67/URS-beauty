@@ -44,6 +44,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.3
   iconsax: ^0.0.8
+  emit: ^0.0.1
+  flutter_bloc: ^9.1.1
+  get_it: ^8.0.3
 
 dev_dependencies:
   flutter_test:

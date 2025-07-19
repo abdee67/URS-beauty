@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:urs_beauty/screens/category_detail.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:urs_beauty/auth/category_detail.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,7 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Beauty App',
+      title: 'URS BEAUTY',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
         useMaterial3: true,
@@ -31,68 +32,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final String username = "Sarah";
-  final String deliveryAddress = "Bole, Addis Ababa";
+ final _supabase = Supabase.instance.client;
   int _currentIndex = 0;
-
-  final List<Map<String, dynamic>> deals = [
-    {
-      'title': 'Eid Offer: Hair+Makeup',
-      'price': '1,299 ETB',
-      'originalPrice': '1,899 ETB',
-      'image': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKPRlsy29SgD4B_dSkZ_iuS5Qi78a4LF-yKg&s',
-    },
-    {
-      'title': 'Summer Glow Package',
-      'price': '999 ETB',
-      'originalPrice': '1,499 ETB',
-      'image': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT28mrLSWwlRcDBl2Zxdvqg61VtDoYi_anrgA&s',
-    },
-    {
-      'title': 'Bridal Package',
-      'price': '3,999 ETB',
-      'originalPrice': '5,999 ETB',
-      'image': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2oVm0GeQ7YwpaQ2qV-NwFc1SxMNB6d0GLKA&s',
-    },
-  ];
-
-  final List<Map<String, dynamic>> categories = [
-    {'name': 'Makeup', 'icon': Iconsax.brush, 'color': Colors.pink},
-    {'name': 'Hair', 'icon': Iconsax.scissor, 'color': Colors.blue},
-    {'name': 'Nails', 'icon': Iconsax.finger_cricle, 'color': Colors.purple},
-    {'name': 'Spa', 'icon': Iconsax.health, 'color': Colors.green},
-    {'name': 'Massage', 'icon': Icons.spa,'color': Colors.orange},
-  ];
-
-  final List<Map<String, dynamic>> professionals = [
-    {
-      'name': 'Aisha',
-      'rating': 4.9,
-      'services': 'Makeup Artist',
-      'location': 'Bole',
-      'price': 'From 299 ETB',
-      'image': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS3O97cxUhO2MZ5MrmEFxwvc_3ux2GA2oCXyQ&s',
-    },
-    {
-      'name': 'Marta',
-      'rating': 4.7,
-      'services': 'Hair Stylist',
-      'location': 'Kazanches',
-      'price': 'From 399 ETB',
-      'image': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkDTRFdtelcDdZL-L3C2oANDInCo-UV_tQRQ&s',
-    },
-    {
-      'name': 'Selam',
-      'rating': 4.8,
-      'services': 'Nail Technician',
-      'location': 'Megenagna',
-      'price': 'From 199 ETB',
-      'image': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT8_57blfO6i2xgwPsWPKR-oNzLfHXhZ01thA&s',
-    },
-  ];
+  final _pageController = PageController();
 
   @override
   Widget build(BuildContext context) {
+    final user = _supabase.auth.currentUser;
+    final userId = user?.id ?? '';
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -100,22 +47,30 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Hi, $username👋',
+              'Hi, ${user?.email?.split('@').first ?? 'Guest'}👋',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  'Delivering to: $deliveryAddress 📍',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ],
+             const SizedBox(height: 4),
+            FutureBuilder(
+              future: _getDefaultAddress(userId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Text('Loading address...');
+                }
+                return Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Delivering to: ${snapshot.data ?? 'Select location'} 📍',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -156,16 +111,28 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchBar() {
     return SearchBar(
       hintText: 'Search for services...',
+
       leading: const Icon(Icons.search),
       elevation: WidgetStateProperty.all(0),
+      onTap: () {
+        // Navigate to search screen
+        Navigator.pushNamed(context, '/search');
+      },
+      onChanged: (String value) {
+        // Handle search input
+        print('Search input: $value');
+      },
       backgroundColor: WidgetStateProperty.all(Colors.grey[100]),
       shape: WidgetStateProperty.all(
         RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
       ),
+      
     );
+    
   }
+  
 
   Widget _buildDealsCarousel() {
     return Column(
@@ -193,8 +160,16 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 12),
         SizedBox(
           height: 180,
-          child: ListView.builder(
+          child: FutureBuilder(
+            future: _getPromotions(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final deals = snapshot.data ?? [];
+          return ListView.builder(
             scrollDirection: Axis.horizontal,
+             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: deals.length,
             itemBuilder: (context, index) {
               final deal = deals[index];
@@ -204,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   image: DecorationImage(
-                    image: CachedNetworkImageProvider(deal['image']),
+                    image: CachedNetworkImageProvider(deal['image_url']),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -259,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
-                          onPressed: () {},
+                          onPressed: () => _navigateToService(deal['service_Id']),
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.pink,
                             foregroundColor: Colors.white,
@@ -275,8 +250,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               );
             },
-          ),
+          );
+            },
         ),
+      ),
       ],
     );
   }
@@ -307,26 +284,20 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 12),
         SizedBox(
           height: 100,
-          child: ListView.builder(
+           child: FutureBuilder(
+            future: _getCategories(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final categories = snapshot.data ?? [];
+          return ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: categories.length,
             itemBuilder: (context, index) {
               final category = categories[index];
               return GestureDetector(
-                onTap: () {
-                  // Navigate to category details
-                      Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CategoryDetailsScreen(
-                      categoryName: category['name'],
-                      categoryColor: category['color'],
-                      categoryIcon: category['icon'],
-                    ),
-                  ),
-                );
-              
-                },
+              onTap: () => _navigateToCategory(category['id']),
                 child: Container(
                   width: 80,
                   margin: EdgeInsets.only(right: index == categories.length - 1 ? 0 : 12),
@@ -336,15 +307,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: category['color'].withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          category['icon'],
-                          size: 28,
-                          color: category['color'],
-                        ),
-                      ),
+                              color: _getCategoryColor(index).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              _getCategoryIcon(index),
+                              size: 28,
+                              color: _getCategoryColor(index),
+                            ),
+                          ),
                       const SizedBox(height: 8),
                       Text(
                         category['name'],
@@ -355,6 +326,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               );
+            },
+          );
             },
           ),
         ),
@@ -386,7 +359,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        ListView.builder(
+         FutureBuilder(
+          future: _getFeaturedProfessionals(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final professionals = snapshot.data ?? [];
+       return ListView.builder(
           physics: const NeverScrollableScrollPhysics(),
           shrinkWrap: true,
           itemCount: professionals.length,
@@ -410,10 +391,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: CachedNetworkImage(
-                      imageUrl: professional['image'],
+                      imageUrl: professional['avatar_url'] ?? '',
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,
+                       placeholder: (context, url) => Container(
+                            color: Colors.grey[200],
+                          ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -424,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            professional['name'],
+                          professional['business_name'] ?? 'Professional',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -436,14 +420,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               const Icon(Icons.star, size: 16, color: Colors.amber),
                               const SizedBox(width: 4),
                               Text(
-                                professional['rating'].toString(),
+                                (professional['avg_rating'] ?? 0.0).toStringAsFixed(1),
                                 style: const TextStyle(fontSize: 12),
                               ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            professional['services'],
+                            professional['description'] ?? 'No description available',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontSize: 12),
                           ),
                           const SizedBox(height: 4),
@@ -452,14 +438,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               const Icon(Icons.location_on_outlined, size: 14),
                               const SizedBox(width: 4),
                               Text(
-                                professional['location'],
+                                professional['service_radius'] ?? '',
                                 style: const TextStyle(fontSize: 12),
                               ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            professional['price'],
+                          'From ${professional['min_price'] ?? 0} ETB',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -472,7 +458,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: FilledButton(
-                      onPressed: () {},
+                       onPressed: () => _bookProfessional(professional['id']),
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.pink,
                         foregroundColor: Colors.white,
@@ -487,6 +473,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             );
+          },
+        );
           },
         ),
       ],
@@ -507,6 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return;
         }
         setState(() => _currentIndex = index);
+        _pageController.jumpToPage(index);
       },
       destinations: const [
         NavigationDestination(
@@ -517,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
         NavigationDestination(
           icon: Icon(Icons.location_on_outlined),
           selectedIcon: Icon(Icons.location_on),
-          label: 'Location',
+          label: 'Services',
         ),
         NavigationDestination(
           icon: Icon(Icons.calendar_today_outlined),
@@ -527,6 +516,7 @@ class _HomeScreenState extends State<HomeScreen> {
         NavigationDestination(
           icon: Icon(Icons.chat_bubble_outline),
           selectedIcon: Icon(Icons.chat_bubble),
+          
           label: 'Chat',
         ),
         NavigationDestination(
@@ -536,5 +526,93 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
+  }
+ // Helper methods
+  Color _getCategoryColor(int index) {
+    final colors = [
+      Colors.pink,
+      Colors.blue,
+      Colors.purple,
+      Colors.green,
+      Colors.orange,
+    ];
+    return colors[index % colors.length];
+  }
+
+  IconData _getCategoryIcon(int index) {
+    final icons = [
+      Iconsax.brush,
+      Iconsax.scissor,
+      Iconsax.finger_cricle,
+      Iconsax.health,
+      Icons.spa,
+    ];
+    return icons[index % icons.length];
+  }
+
+  // Supabase queries
+  Future<List<Map<String, dynamic>>> _getPromotions() async {
+    final response = await _supabase
+        .from('promotions')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', ascending: false)
+        .limit(3);
+    return response;
+  }
+
+  Future<List<Map<String, dynamic>>> _getCategories() async {
+    final response = await _supabase
+        .from('service_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+    return response;
+  }
+
+  Future<List<Map<String, dynamic>>> _getFeaturedProfessionals() async {
+    final response = await _supabase
+        .from('service_providers')
+        .select('''
+          id,
+          business_name,
+          avg_rating,
+          service_radius_km,
+          avatar_url,
+          provider_services!inner(min_price: price)
+        ''')
+        .eq('is_verified', true)
+        .order('avg_rating', ascending: false)
+        .limit(5);
+    return response;
+  }
+
+  Future<String?> _getDefaultAddress(String userId) async {
+    final response = await _supabase
+        .from('customer_addresses')
+        .select('address_line1, city')
+        .eq('user_id', userId)
+        .eq('is_default', true)
+        .maybeSingle();
+    return response != null ? '${response['address_line1']}, ${response['city']}' : null;
+  }
+
+  // Navigation methods
+  void _navigateToService(String serviceId) {
+    // Implement navigation to service details
+  }
+
+  void _navigateToCategory(String categoryId) {
+    // Implement navigation to category details
+  }
+
+  void _bookProfessional(String professionalId) {
+    // Implement booking flow
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 }
