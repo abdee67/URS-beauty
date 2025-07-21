@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:urs_beauty/dependency_injection.dart';
+import 'package:urs_beauty/injection_container.dart';
 import 'package:urs_beauty/features/auth/data/auth_repo.dart';
 import 'package:urs_beauty/features/auth/data/auth_repo_impl.dart';
 import 'package:urs_beauty/features/auth/domain/use_cases/sign_out.dart';

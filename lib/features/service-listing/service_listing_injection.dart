@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:urs_beauty/dependency_injection.dart';
+import 'package:urs_beauty/injection_container.dart';
 import 'package:urs_beauty/features/service-listing/domain/use_cases/get_categories.dart';
 import 'package:urs_beauty/features/service-listing/domain/use_cases/get_services.dart';
 import 'package:urs_beauty/features/service-listing/domain/use_cases/toggle_favorite.dart';
