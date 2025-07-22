@@ -7,13 +7,17 @@ import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_state.dart';
 
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+  @override
+  State <LoginScreen> createState() => _LoginScreenState();
+}
+class _LoginScreenState extends State <LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
 
     return BlocProvider(
       create: (_) => AuthBloc(authRepo: AuthRepositoryImpl()),
@@ -22,7 +26,7 @@ class LoginScreen extends StatelessWidget {
         body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthSuccess) {
-              context.go('/home');
+             context.go('/home');
             } else if (state is AuthFailure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message)),
@@ -33,16 +37,20 @@ class LoginScreen extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email')),
-                  TextField(controller: passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+                  TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
+                  TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
                   const SizedBox(height: 16),
                   state is AuthLoading
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
                           onPressed: () {
                             context.read<AuthBloc>().add(
-                                  SignInRequested(emailController.text, passwordController.text),
+                                  SignInRequested(
+                                    _emailController.text,
+                                    _passwordController.text,
+                                  ),
                                 );
                           },
                           child: const Text('Login'),

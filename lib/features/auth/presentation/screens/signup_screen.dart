@@ -23,8 +23,11 @@ class SignupScreen extends StatelessWidget {
         appBar: AppBar(title: const Text('Create Account')),
         body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
-            if (state is AuthSuccess) {
-              context.go('/home');
+            if (state is EmailVerificationSent) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Verification email sent! Please check your email inbox.')),
+              );
+              context.go('/login');
             } else if (state is AuthFailure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message)),
