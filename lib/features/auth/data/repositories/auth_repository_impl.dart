@@ -29,10 +29,10 @@ Future<Either<Failures, void>> signUp(
         password: password,
         data: {
           'first_name': firstName,
-          'last_name': lastName,
+          'last_name': lastName,  
           'phone': phone,
         },
-        emailRedirectTo: 'ursbeauty://verify/', // for deep linking
+        emailRedirectTo: 'ursbeauty://login/', // for deep linking
       );
       return const Right(null);
     } catch (e) {

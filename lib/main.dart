@@ -1,11 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:app_links/app_links.dart';
 import 'config/supabase_config.dart';
 import 'routes/app_router.dart';
-import 'package:app_links/app_links.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,59 +13,83 @@ void main() async {
 
 class URSBEAUTY extends StatefulWidget {
   const URSBEAUTY({super.key});
-@override
+
+  @override
   State<URSBEAUTY> createState() => _URSBEAUTYState();
 }
+
 class _URSBEAUTYState extends State<URSBEAUTY> {
-  late final AppLinks _appLinks;
+  late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
+
   @override
   void initState() {
     super.initState();
-    _appLinks = AppLinks();
-    initDeepLinks(); 
-    // Handle any initial deep link
-    // Additional initialization if needed
+    _initDeepLinks();
   }
 
-  Future<void> initDeepLinks() async {
-    try {
-      final initialUri = await _appLinks.getInitialLink();
-      debugPrint('Initial deep link: $initialUri');
-      if (initialUri != null) {
-        handleDeepLink(initialUri);
-      }
-    } catch (e) {
-      debugPrint('Error getting initial deep link: $e');
+  Future<void> _initDeepLinks() async {
+    _appLinks = AppLinks();
+
+    final initialUri = await _appLinks.getInitialLink();
+    if (initialUri != null) {
+      _handleDeepLink(initialUri);
     }
 
-    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
-      handleDeepLink(uri);
-    }, onError: (err) {
-      debugPrint('Error listening to deep links: $err');
-    });
+    _linkSubscription = _appLinks.uriLinkStream.listen(_handleDeepLink);
   }
-  void handleDeepLink(Uri uri) {
+
+  void _handleDeepLink(Uri uri) {
     debugPrint('Received deep link: $uri');
-    if (uri.pathSegments.contains('verify')) {
+     if (uri.scheme == 'ursbeauty') {
+     if (uri.host == 'login') {
       final code = uri.queryParameters['code'];
       if (code != null) {
-        context.push('/verify?code=$code');
-      } else {
-        debugPrint('No verification code found in deep link');
+        debugPrint('Login code detected: $code');
+        AppRouter.router.go('/login?code=$code');
+        return;
+      }
+    }
+   
+      if (  uri.fragment.isNotEmpty){
+      final params = Uri.splitQueryString(uri.fragment);
+      final refreshToken = params['refresh_token'];
+
+      if ( refreshToken != null) {
+        debugPrint('Email verification link detected');
+        _handleEmailVerification( refreshToken);
+        return;
       }
     }
   }
+  debugPrint('Unhandled deep link: $uri');
+  }
+
+  Future<void> _handleEmailVerification( String refreshToken) async {
+    try {
+      await SupabaseConfig.client.auth.setSession(refreshToken);
+      debugPrint('Email verification successful');
+      AppRouter.router.go('/home');
+    } catch (e) {
+      debugPrint('Email verification failed: $e');
+      AppRouter.router.go('/login?error=verification_failed');
+    }
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'URS BEAUTY',
       theme: ThemeData.light(),
-      routerConfig: AppRouter.router,
       darkTheme: ThemeData.dark(),
+      routerConfig: AppRouter.router,
     );
-    
   }
-  
 }

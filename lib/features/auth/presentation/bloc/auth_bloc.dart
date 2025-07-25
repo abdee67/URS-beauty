@@ -15,7 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         (failure) => emit(AuthFailure(failure.message)),
         (session ){
           if(session.user.emailConfirmedAt != null) {
-            emit(AuthSuccess());
+            emit(AuthSuccess('Email confirmed successfully!'));
           } else {
             SupabaseConfig.client.auth.signOut();
             emit(AuthFailure('Email not confirmed. Please verify your email.'));
