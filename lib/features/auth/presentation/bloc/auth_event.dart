@@ -14,7 +14,24 @@ class SignUpRequested extends AuthEvent {
   final String email;
   final String password;
 
-  SignUpRequested(this.email, this.password,
-      this.firstName, this.lastName, this.phone);
+  SignUpRequested(
+    this.email,
+    this.password,
+    this.firstName,
+    this.lastName,
+    this.phone,
+  );
 }
 
+class SendOtpRequested extends AuthEvent {
+  final String email;
+
+  SendOtpRequested(this.email);
+}
+
+class VerifyOtpRequested extends AuthEvent {
+  final String email;
+  final String otp;
+
+  VerifyOtpRequested(this.email, this.otp);
+}

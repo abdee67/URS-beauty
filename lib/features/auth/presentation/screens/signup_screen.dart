@@ -5,6 +5,7 @@ import 'package:urs_beauty/features/auth/data/repositories/auth_repository_impl.
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_state.dart';
+import 'package:urs_beauty/features/auth/presentation/screens/email_verification_screen.dart';
 
 class SignupScreen extends StatelessWidget {
   const SignupScreen({super.key});
@@ -23,11 +24,21 @@ class SignupScreen extends StatelessWidget {
         appBar: AppBar(title: const Text('Create Account')),
         body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
-            if (state is EmailVerificationSent) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Verification email sent! Please check your email inbox.')),
+            if (state is AuthSuccess) {
+              showDialog(
+              context:context,
+              barrierDismissible:false,
+              builder: (context) => EmailVerificationScreen(
+                email: emailController.text.trim(),
+                onVerified: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Account created successfully!')),
+                  );
+                  context.go('/home');
+                },
+              ),
+
               );
-              context.go('/login');
             } else if (state is AuthFailure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message)),
@@ -41,8 +52,8 @@ class SignupScreen extends StatelessWidget {
                 children: [
                   TextField(controller: firstNameController, decoration: const InputDecoration(labelText: 'First Name')),
                   TextField(controller: lastNameController, decoration: const InputDecoration(labelText: 'Last Name')),
-                  TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone')),
-                  TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email')),
+                  TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone'),keyboardType: TextInputType.phone,),
+                  TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email'),keyboardType:TextInputType.emailAddress,),
                   TextField(controller: passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
 
                   const SizedBox(height: 16),

@@ -15,7 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         (failure) => emit(AuthFailure(failure.message)),
         (session ){
           if(session.user.emailConfirmedAt != null) {
-            emit(AuthSuccess('Email confirmed successfully!'));
+            emit(AuthSuccess());
           } else {
             SupabaseConfig.client.auth.signOut();
             emit(AuthFailure('Email not confirmed. Please verify your email.'));
@@ -35,9 +35,26 @@ on<SignUpRequested>((event, emit) async {
   );
   result.fold(
     (failure) => emit(AuthFailure(failure.message)),
-    (_) => emit(EmailVerificationSent()), // 👈 custom state
+    (_) => emit(AuthSuccess()), // 👈 custom state
   );
 });
+on<SendOtpRequested>((event, emit) async {
+      emit(AuthLoading());
+      final result = await authRepo.sendOtp(event.email);
+      result.fold(
+        (failure) => emit(AuthFailure(failure.message)),
+        (_) => emit(AuthSuccess()), // 👈 custom state
+      );
+    });
+
+    on<VerifyOtpRequested>((event, emit) async {
+      emit(AuthLoading());
+      final result = await authRepo.verifyOTP(event.email, event.otp);
+      result.fold(
+        (failure) => emit(AuthFailure(failure.message)),
+        (_) => emit(AuthSuccess()),
+      );
+    });
 
   }
 }

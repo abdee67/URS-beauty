@@ -2,94 +2,51 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:app_links/app_links.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:urs_beauty/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'config/supabase_config.dart';
 import 'routes/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseConfig.init();
-  runApp(const URSBEAUTY());
+  final supabase = SupabaseConfig.client;
+  final prefs = await SharedPreferences.getInstance();
+  final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? true;
+  runApp(URSBEAUTY(
+    showOnboarding : !hasSeenOnboarding,
+  ));
 }
+class URSBEAUTY extends StatelessWidget {
+  final bool showOnboarding;
 
-class URSBEAUTY extends StatefulWidget {
-  const URSBEAUTY({super.key});
-
-  @override
-  State<URSBEAUTY> createState() => _URSBEAUTYState();
-}
-
-class _URSBEAUTYState extends State<URSBEAUTY> {
-  late AppLinks _appLinks;
-  StreamSubscription<Uri>? _linkSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-    _initDeepLinks();
-  }
-
-  Future<void> _initDeepLinks() async {
-    _appLinks = AppLinks();
-
-    final initialUri = await _appLinks.getInitialLink();
-    if (initialUri != null) {
-      _handleDeepLink(initialUri);
-    }
-
-    _linkSubscription = _appLinks.uriLinkStream.listen(_handleDeepLink);
-  }
-
-  void _handleDeepLink(Uri uri) {
-    debugPrint('Received deep link: $uri');
-     if (uri.scheme == 'ursbeauty') {
-     if (uri.host == 'login') {
-      final code = uri.queryParameters['code'];
-      if (code != null) {
-        debugPrint('Login code detected: $code');
-        AppRouter.router.go('/login?code=$code');
-        return;
-      }
-    }
-   
-      if (  uri.fragment.isNotEmpty){
-      final params = Uri.splitQueryString(uri.fragment);
-      final refreshToken = params['refresh_token'];
-
-      if ( refreshToken != null) {
-        debugPrint('Email verification link detected');
-        _handleEmailVerification( refreshToken);
-        return;
-      }
-    }
-  }
-  debugPrint('Unhandled deep link: $uri');
-  }
-
-  Future<void> _handleEmailVerification( String refreshToken) async {
-    try {
-      await SupabaseConfig.client.auth.setSession(refreshToken);
-      debugPrint('Email verification successful');
-      AppRouter.router.go('/home');
-    } catch (e) {
-      debugPrint('Email verification failed: $e');
-      AppRouter.router.go('/login?error=verification_failed');
-    }
-  }
-
-  @override
-  void dispose() {
-    _linkSubscription?.cancel();
-    super.dispose();
-  }
-
+  const URSBEAUTY({super.key, required this.showOnboarding })
+;
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'URS BEAUTY',
-      theme: ThemeData.light(),
-      darkTheme: ThemeData.dark(),
-      routerConfig: AppRouter.router,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => AuthBloc(
+            authRepo: AuthRepositoryImpl(),
+            ),
+            ),
+      ],
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        title: 'URS BEAUTY',
+        darkTheme: ThemeData.dark(),
+        routerConfig: AppRouter(showOnboarding: showOnboarding).router,
+        theme: ThemeData(
+          primarySwatch: Colors.pink,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.pink,
+            foregroundColor: Colors.white,
+          ),
+    ),
+      ),
     );
   }
 }

@@ -39,4 +39,27 @@ Future<Either<Failures, void>> signUp(
       return Left(Failures(message: e.toString()));
     }
   }
+  Future<Either<Failures, void>> sendOtp(String email) async {
+    try {
+      await SupabaseConfig.client.auth.signInWithOtp(
+        email: email,
+        shouldCreateUser: true,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(Failures(message: e.toString()));
+    }
+  }
+  Future<Either<Failures, void>> verifyOTP(String email, String otp) async {
+    try {
+      await SupabaseConfig.client.auth.verifyOTP(
+        email: email,
+        token: otp,
+        type: OtpType.email,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(Failures(message: e.toString()));
+    }
+  }
 }
