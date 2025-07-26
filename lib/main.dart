@@ -1,7 +1,5 @@
-import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:app_links/app_links.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:urs_beauty/features/auth/data/repositories/auth_repository_impl.dart';
@@ -12,7 +10,6 @@ import 'routes/app_router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseConfig.init();
-  final supabase = SupabaseConfig.client;
   final prefs = await SharedPreferences.getInstance();
   final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? true;
   runApp(URSBEAUTY(
