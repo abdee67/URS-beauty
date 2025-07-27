@@ -1,10 +1,15 @@
 abstract class AuthState {}
+class EmailVerificationSent extends AuthState {}
+class OtpSent extends AuthState {}
+
 
 class AuthInitial extends AuthState {}
 
 class AuthLoading extends AuthState {}
 
-class AuthSuccess extends AuthState {}
+class AuthSuccess extends AuthState {
+  AuthSuccess();
+}
 
 class AuthFailure extends AuthState {
   final String message;

@@ -6,15 +6,21 @@ import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_state.dart';
 
+class LoginScreen extends StatefulWidget {
+  final String? verificationCode; // Renamed from 'code' for clarity
+  const LoginScreen({super.key, this.verificationCode});
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
 
   @override
   Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-
     return BlocProvider(
       create: (_) => AuthBloc(authRepo: AuthRepositoryImpl()),
       child: Scaffold(
@@ -24,29 +30,38 @@ class LoginScreen extends StatelessWidget {
             if (state is AuthSuccess) {
               context.go('/home');
             } else if (state is AuthFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
-            }
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
+            } 
           },
           builder: (context, state) {
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email')),
-                  TextField(controller: passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+                  TextField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                    TextField(
+                      controller: _passwordController,
+                      decoration: const InputDecoration(labelText: 'Password'),
+                      obscureText: true,
+                    ),
                   const SizedBox(height: 16),
-                  state is AuthLoading
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
-                          onPressed: () {
-                            context.read<AuthBloc>().add(
-                                  SignInRequested(emailController.text, passwordController.text),
-                                );
-                          },
-                          child: const Text('Login'),
-                        ),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<AuthBloc>().add(
+                          SignInRequested(
+                            _emailController.text.trim(),
+                            _passwordController.text.trim(),
+                          ),
+                        );
+                      },
+                      child: const Text('Login'),
+                    ),
                   TextButton(
                     onPressed: () => context.go('/signup'),
                     child: const Text('Don\'t have an account? Sign up'),
