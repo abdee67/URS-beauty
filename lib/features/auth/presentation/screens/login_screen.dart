@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         );
                       },
-                      child: const Text('Login'),
+                      child: state is AuthLoading ? const Text('Login in...') : const Text('Login'),
                     ),
                   TextButton(
                     onPressed: () => context.go('/signup'),
