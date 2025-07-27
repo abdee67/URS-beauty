@@ -24,25 +24,26 @@ class SignupScreen extends StatelessWidget {
         appBar: AppBar(title: const Text('Create Account')),
         body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
-            if (state is AuthSuccess) {
+            if (state is EmailVerificationSent) {
               showDialog(
-              context:context,
-              barrierDismissible:false,
-              builder: (context) => EmailVerificationScreen(
-                email: emailController.text.trim(),
-                onVerified: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Account created successfully!')),
-                  );
-                  context.go('/home');
-                },
-              ),
-
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => EmailVerificationScreen(
+                  email: emailController.text.trim(),
+                  onVerified: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Account created successfully!'),
+                      ),
+                    );
+                    context.go('/home');
+                  },
+                ),
               );
             } else if (state is AuthFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
             }
           },
           builder: (context, state) {
@@ -50,25 +51,43 @@ class SignupScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  TextField(controller: firstNameController, decoration: const InputDecoration(labelText: 'First Name')),
-                  TextField(controller: lastNameController, decoration: const InputDecoration(labelText: 'Last Name')),
-                  TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone'),keyboardType: TextInputType.phone,),
-                  TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email'),keyboardType:TextInputType.emailAddress,),
-                  TextField(controller: passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+                  TextField(
+                    controller: firstNameController,
+                    decoration: const InputDecoration(labelText: 'First Name'),
+                  ),
+                  TextField(
+                    controller: lastNameController,
+                    decoration: const InputDecoration(labelText: 'Last Name'),
+                  ),
+                  TextField(
+                    controller: phoneController,
+                    decoration: const InputDecoration(labelText: 'Phone'),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  TextField(
+                    controller: passwordController,
+                    decoration: const InputDecoration(labelText: 'Password'),
+                    obscureText: true,
+                  ),
 
                   const SizedBox(height: 16),
                   state is AuthLoading
-                      ? const CircularProgressIndicator()
+                      ? const Text('Wait a sec...')
                       : ElevatedButton(
                           onPressed: () {
                             context.read<AuthBloc>().add(
-                                  SignUpRequested(
-                                  emailController.text.trim(),
-                                  passwordController.text.trim(),
-                                    phoneController.text.trim(),
-                                  firstNameController.text.trim(),
-                                   lastNameController.text.trim(),
-                                ),
+                              SignUpRequested(
+                                emailController.text.trim(),
+                                passwordController.text.trim(),
+                                phoneController.text.trim(),
+                                firstNameController.text.trim(),
+                                lastNameController.text.trim(),
+                              ),
                             );
                           },
                           child: const Text('Sign Up'),
