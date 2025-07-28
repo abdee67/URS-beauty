@@ -53,5 +53,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         (_) => emit(OtpVerified()),
       );
     });
+    on<ForgotPasswordRequested>((event, emit) async {
+      emit(AuthLoading());
+      final result = await authRepo.forgotPassword(event.email);
+      result.fold(
+        (failure) => emit(AuthFailure(failure.message)),
+        (_) => emit(ForgotPasswordSent()),
+      );
+    });
+    on<ResetPasswordRequested>((event, emit) async {
+      emit(AuthLoading());
+      final result = await authRepo.resetPassword(event.email, event.password);
+      result.fold(
+        (failure) => emit(AuthFailure(failure.message)),
+        (_) => emit(ResetPasswordSent()),
+      );
+    });
   }
 }

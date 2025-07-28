@@ -571,7 +571,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<Map<String, dynamic>>> _getFeaturedProfessionals() async {
     final response = await _supabase
-        .from('service_providers')
+        .from('professionals')
         .select('''
           id,
           business_name,
