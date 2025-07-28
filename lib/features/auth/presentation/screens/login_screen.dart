@@ -62,6 +62,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                       child: state is AuthLoading ? const Text('Login in...') : const Text('Login'),
                     ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => context.go('/forgot-password'),
+                    child: const Text('Forgot password?'),
+                  ),
                   TextButton(
                     onPressed: () => context.go('/signup'),
                     child: const Text('Don\'t have an account? Sign up'),

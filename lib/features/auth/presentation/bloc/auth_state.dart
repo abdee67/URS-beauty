@@ -12,6 +12,10 @@ class OtpSent extends AuthState {}
 
 class OtpVerified extends AuthState {}
 
+class ForgotPasswordSent extends AuthState {}
+
+class ResetPasswordSent extends AuthState {}
+
 class AuthFailure extends AuthState {
   final String message;
   AuthFailure(this.message);

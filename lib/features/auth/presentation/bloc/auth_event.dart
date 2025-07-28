@@ -35,3 +35,16 @@ class VerifyOtpRequested extends AuthEvent {
 
   VerifyOtpRequested(this.email, this.otp);
 }
+class ForgotPasswordRequested extends AuthEvent {
+  final String email;
+
+  ForgotPasswordRequested(this.email);
+}
+class ResetPasswordRequested extends AuthEvent {
+  final String email;
+  final String password;
+
+  ResetPasswordRequested(this.email, this.password);
+}
+
+
