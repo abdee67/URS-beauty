@@ -18,7 +18,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -33,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text(state.message)));
-            } 
+            }
           },
           builder: (context, state) {
             return Padding(
@@ -45,27 +44,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: const InputDecoration(labelText: 'Email'),
                     keyboardType: TextInputType.emailAddress,
                   ),
-                    TextField(
-                      controller: _passwordController,
-                      decoration: const InputDecoration(labelText: 'Password'),
-                      obscureText: true,
-                    ),
+                  TextField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(labelText: 'Password'),
+                    obscureText: true,
+                  ),
                   const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<AuthBloc>().add(
-                          SignInRequested(
-                            _emailController.text.trim(),
-                            _passwordController.text.trim(),
-                          ),
-                        );
-                      },
-                      child: state is AuthLoading ? const Text('Login in...') : const Text('Login'),
-                    ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () => context.go('/forgot-password'),
-                    child: const Text('Forgot password?'),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<AuthBloc>().add(
+                        SignInRequested(
+                          _emailController.text.trim(),
+                          _passwordController.text.trim(),
+                        ),
+                      );
+                    },
+                    child: state is AuthLoading
+                        ? const Text('Login in...')
+                        : const Text('Login'),
                   ),
                   TextButton(
                     onPressed: () => context.go('/signup'),
