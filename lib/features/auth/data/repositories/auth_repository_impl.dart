@@ -93,7 +93,7 @@ class AuthRepositoryImpl {
       return Left(Failures(message: e.toString()));
     }
   }
-  Future<Either<Failures, void>> updateClientProfile(Client client) async {
+  Future<Either<Failures, Client>> updateClientProfile(Client client) async {
     try {
       await SupabaseConfig.client.auth.updateUser(
         UserAttributes(
@@ -105,14 +105,14 @@ class AuthRepositoryImpl {
           },
         ),
       );
-      return const Right(null);
+      return Right(Client(id: client.id, email: client.email, firstName: client.firstName, lastName: client.lastName, phone: client.phone));
     } catch (e) {
       return Left(Failures(message: e.toString()));
     }
   }
   Future<Either<Failures, void>> forgotPassword(String email) async {
     try {
-      await SupabaseConfig.client.auth.resetPasswordForEmail(email, redirectTo: 'ursbeauty://login/');
+      await SupabaseConfig.client.auth.resetPasswordForEmail(email, redirectTo: 'ursbeauty://reset-password/');
       return const Right(null);
     } catch (e) {
       return Left(Failures(message: e.toString()));

@@ -2,18 +2,12 @@ import '../../domain/entities/client.dart';
 
 class ClientModel extends Client {
   ClientModel({
-    required String id,
-    required String email,
-    required String firstName,
-    required String lastName,
-    required int phone,
-  }) : super(
-          id: id,
-          email: email,
-          firstName: firstName,
-          lastName: lastName,
-          phone: phone,
-        );
+    required super.id,
+    required super.email,
+    required super.firstName,
+    required super.lastName,
+    required super.phone,
+  });
 
   factory ClientModel.fromMap(Map<String, dynamic> map) {
     return ClientModel(
