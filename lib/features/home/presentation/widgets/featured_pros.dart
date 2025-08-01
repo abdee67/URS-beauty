@@ -2,10 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:urs_beauty/features/home/domain/entities/services.dart';
 
-class FeaturedServicesCarousel extends StatelessWidget {
+class ServicesCarousel extends StatelessWidget {
   final List<Services> services;
   
-  const FeaturedServicesCarousel({super.key, required this.services});
+  const ServicesCarousel({super.key, required this.services});
 
   @override
   Widget build(BuildContext context) {
