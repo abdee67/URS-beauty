@@ -6,7 +6,7 @@ import 'package:urs_beauty/features/home/domain/repositories/home_repository.dar
 class GetProfessionals {
   final HomeRepository repository;
 
-  GetProfessionals(this.repository);
+  GetProfessionals(this.repository,);
 
   Future<Either<Failures, List<Professionals>>> call() async {
     return await repository.getProfessionals();

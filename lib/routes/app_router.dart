@@ -9,9 +9,6 @@ import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/signup_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 
-final _sl = GetIt.instance;
-final _authBloc = _sl<AuthBloc>();
-
 class AppRouter {
   final bool showOnboarding;
   AppRouter({required this.showOnboarding});
