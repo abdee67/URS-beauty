@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
-import 'package:urs_beauty/features/home/presentation/widgets/greeting_header.dart';
-import 'package:urs_beauty/features/home/presentation/widgets/search_bar.dart';
-import 'package:urs_beauty/features/home/presentation/widgets/category_grid.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/featured_pros.dart';
+import 'package:urs_beauty/features/home/presentation/widgets/greeting_header.dart';
+import 'package:urs_beauty/features/home/presentation/widgets/professionals_widget.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/special_offers.dart';
+import 'package:urs_beauty/features/home/presentation/widgets/search_bar.dart';
+// Removed import for professionals_widget.dart as the file does not exist.
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -14,7 +15,8 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => HomeBloc(
-        getFeaturedPros: context.read(),
+        getProfessionals: context.read(),
+        getServices: context.read(),
         getDeals: context.read(),
       )..add(LoadHomeData()),
       child: Scaffold(
@@ -26,18 +28,24 @@ class HomeScreen extends StatelessWidget {
               children: [
                 const GreetingHeader(),
                 const SizedBox(height: 20),
-                const CustomSearchBar(),
+                const SearchBarWidget(),
                 const SizedBox(height: 20),
-                const CategoryGrid(),
-                const SizedBox(height: 20),
+
+                // The following widgets depend on state and should not be const or used here.
+                // They are handled below in the BlocBuilder.
                 BlocBuilder<HomeBloc, HomeState>(
                   builder: (context, state) {
                     if (state is HomeLoadSuccess) {
                       return Column(
                         children: [
-                          FeaturedProsList(featuredPros: state.featuredPros),
+                          PromotionsBanner(deals: state.deals),
                           const SizedBox(height: 20),
-                          SpecialOffers(deals: state.deals),
+                          ServicesCarousel(services: state.services),
+                          const SizedBox(height: 20),
+                          ProfessionalsWidget(
+                            professionals: state.professionals,
+                          ),
+                          const SizedBox(height: 20),
                         ],
                       );
                     } else if (state is HomeLoadFailure) {

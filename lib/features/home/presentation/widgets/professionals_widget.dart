@@ -1,9 +1,11 @@
-// beauticians_grid.dart
-class BeauticiansGrid extends StatelessWidget {
-  final List<Beautician> beauticians;
-  
-  const BeauticiansGrid({super.key, required this.beauticians});
+  // professional_widget.dart
 
+import 'package:flutter/material.dart';
+import 'package:urs_beauty/features/home/domain/entities/professioanls.dart';
+class ProfessionalsWidget extends StatelessWidget {
+  final List<Professionals> professionals;
+  
+  const ProfessionalsWidget({super.key, required this.professionals});
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -12,7 +14,7 @@ class BeauticiansGrid extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Text(
-            'Top Beauticians',
+            'Top Professionals',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
         ),
@@ -26,9 +28,9 @@ class BeauticiansGrid extends StatelessWidget {
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
-          itemCount: beauticians.length,
+          itemCount: professionals.length,
           itemBuilder: (context, index) {
-            final beautician = beauticians[index];
+            final professional = professionals[index];
             return Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15),
@@ -40,7 +42,7 @@ class BeauticiansGrid extends StatelessWidget {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(15)),
                       child: Image.network(
-                        beautician.avatarUrl,
+                        professional.imageUrl,
                         fit: BoxFit.cover,
                         width: double.infinity,
                       ),
@@ -52,13 +54,13 @@ class BeauticiansGrid extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          beautician.name,
+                          professional.buisnessName,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          beautician.specialty,
+                          professional.description,
                           style: TextStyle(color: Colors.grey.shade600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -68,7 +70,12 @@ class BeauticiansGrid extends StatelessWidget {
                           children: [
                             const Icon(Icons.star, color: Colors.amber, size: 16),
                             Text(
-                              beautician.rating.toStringAsFixed(1),
+                              professional.rating.toStringAsFixed(1),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                              const Icon(Icons.location_on, color: Colors.amber, size: 16),
+                            Text(
+                              professional.serviceRadiusKm.toStringAsFixed(1),
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ],
