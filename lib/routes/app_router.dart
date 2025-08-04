@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
-import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/forgotPassword.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/resetPassword.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/welcome_screen.dart';
-import '../features/auth/presentation/screens/login_screen.dart';
-import '../features/auth/presentation/screens/signup_screen.dart';
-import '../features/home/presentation/screens/home_screen.dart';
+import 'package:urs_beauty/features/auth/presentation/screens/login_screen.dart';
+import 'package:urs_beauty/features/auth/presentation/screens/signup_screen.dart';
+import 'package:urs_beauty/features/home/presentation/screens/home_screen.dart';
 
 class AppRouter {
   final bool showOnboarding;
@@ -18,16 +16,12 @@ class AppRouter {
     routes: [
       GoRoute(
         path: '/welcome',
-        pageBuilder: (context, state) =>
-            MaterialPage(child: OnboardingScreen()),
+        builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: '/login',
         name: 'login',
-        pageBuilder: (context, state) {
-          final code = state.uri.queryParameters['code'];
-          return MaterialPage(child: LoginScreen(verificationCode: code));
-        },
+        builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
       GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),

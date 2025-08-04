@@ -56,9 +56,10 @@ class HomeRemoteDataSource {
       final response = await SupabaseConfig.client
           .from('deals')
           .select(
-            'id, title, description, original_price, discounted_price, service_name,service_category(name)',
+            'id, title, description, original_price, discounted_price, service_name,service_category(name),image_url',
           )
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .limit(5);
 
       return response.map(DealModel.fromJson).toList();
     } on PostgrestException catch (e) {

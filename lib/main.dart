@@ -9,7 +9,6 @@ import 'package:urs_beauty/features/home/data/repositories/home_repository_impl.
 import 'package:urs_beauty/features/home/domain/usecases/get_professionals.dart';
 import 'package:urs_beauty/features/home/domain/usecases/get_services.dart';
 import 'package:urs_beauty/features/home/domain/usecases/get_deals.dart';
-import 'package:urs_beauty/injection_container.dart';
 import 'config/supabase_config.dart';
 import 'routes/app_router.dart';
 
