@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
-import 'package:urs_beauty/features/home/presentation/widgets/featured_pros.dart';
+import 'package:urs_beauty/features/home/presentation/widgets/service_carousel.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/greeting_header.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/professionals_widget.dart';
-import 'package:urs_beauty/features/home/presentation/widgets/special_offers.dart';
+import 'package:urs_beauty/features/home/presentation/widgets/delas_banner.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/search_bar.dart';
 // Removed import for professionals_widget.dart as the file does not exist.
 
@@ -39,8 +39,10 @@ class HomeScreen extends StatelessWidget {
                       return Column(
                         children: [
                           PromotionsBanner(deals: state.deals),
+
                           const SizedBox(height: 20),
                           ServicesCarousel(services: state.services),
+
                           const SizedBox(height: 20),
                           ProfessionalsWidget(
                             professionals: state.professionals,

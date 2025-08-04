@@ -7,8 +7,7 @@ import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_state.dart';
 
 class LoginScreen extends StatefulWidget {
-  final String? verificationCode;
-  const LoginScreen({super.key, this.verificationCode});
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
