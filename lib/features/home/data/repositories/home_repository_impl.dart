@@ -30,8 +30,9 @@ class HomeRepositoryImpl implements HomeRepository {
       return Left(e);
     }
   }
+
   @override
-  Future<Either<Failures, List<Services>>> getServices() async {
+  Future<Either<Failures, List<ServiceCategories>>> getServices() async {
     try {
       final services = await remoteDataSource.getServices();
       return Right(services.map((e) => e.toEntity()).toList());

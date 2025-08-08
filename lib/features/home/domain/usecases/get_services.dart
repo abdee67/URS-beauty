@@ -8,7 +8,7 @@ class GetServices {
 
   GetServices(this.repository);
 
-  Future<Either<Failures, List<Services>>> call() async {
+  Future<Either<Failures, List<ServiceCategories>>> call() async {
     return await repository.getServices();
   }
 }

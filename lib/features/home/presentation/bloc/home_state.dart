@@ -14,7 +14,7 @@ class HomeLoading extends HomeState {}
 class HomeLoadSuccess extends HomeState {
   final List<Professionals> professionals;
   final List<Deal> deals;
-  final List<Services> services;
+  final List<ServiceCategories> services;
 
   const HomeLoadSuccess({
     required this.professionals,

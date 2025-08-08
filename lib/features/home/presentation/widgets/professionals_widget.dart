@@ -1,10 +1,11 @@
-  // professional_widget.dart
+// professional_widget.dart
 
 import 'package:flutter/material.dart';
 import 'package:urs_beauty/features/home/domain/entities/professioanls.dart';
+
 class ProfessionalsWidget extends StatelessWidget {
   final List<Professionals> professionals;
-  
+
   const ProfessionalsWidget({super.key, required this.professionals});
   @override
   Widget build(BuildContext context) {
@@ -40,7 +41,8 @@ class ProfessionalsWidget extends StatelessWidget {
                   Expanded(
                     child: ClipRRect(
                       borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(15)),
+                        top: Radius.circular(15),
+                      ),
                       child: Image.network(
                         professional.imageUrl,
                         fit: BoxFit.cover,
@@ -54,7 +56,7 @@ class ProfessionalsWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          professional.buisnessName,
+                          professional.businessName,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -68,15 +70,27 @@ class ProfessionalsWidget extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 16,
+                            ),
                             Text(
                               professional.rating.toStringAsFixed(1),
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                              const Icon(Icons.location_on, color: Colors.amber, size: 16),
+                            const Icon(
+                              Icons.location_on,
+                              color: Colors.amber,
+                              size: 16,
+                            ),
                             Text(
                               professional.serviceRadiusKm.toStringAsFixed(1),
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),

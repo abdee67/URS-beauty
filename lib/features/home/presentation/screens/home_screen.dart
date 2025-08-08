@@ -6,19 +6,42 @@ import 'package:urs_beauty/features/home/presentation/widgets/greeting_header.da
 import 'package:urs_beauty/features/home/presentation/widgets/professionals_widget.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/delas_banner.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/search_bar.dart';
-// Removed import for professionals_widget.dart as the file does not exist.
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => HomeBloc(
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late HomeBloc _homeBloc;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _homeBloc = HomeBloc(
         getProfessionals: context.read(),
         getServices: context.read(),
         getDeals: context.read(),
-      )..add(LoadHomeData()),
+      )..add(LoadHomeData());
+      _isInitialized = true;
+    }
+  }
+
+  bool _isInitialized = false;
+
+  @override
+  void dispose() {
+    _homeBloc.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: _homeBloc,
       child: Scaffold(
         body: SafeArea(
           child: SingleChildScrollView(
@@ -30,19 +53,14 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 const SearchBarWidget(),
                 const SizedBox(height: 20),
-
-                // The following widgets depend on state and should not be const or used here.
-                // They are handled below in the BlocBuilder.
                 BlocBuilder<HomeBloc, HomeState>(
                   builder: (context, state) {
                     if (state is HomeLoadSuccess) {
                       return Column(
                         children: [
                           PromotionsBanner(deals: state.deals),
-
                           const SizedBox(height: 20),
                           ServicesCarousel(services: state.services),
-
                           const SizedBox(height: 20),
                           ProfessionalsWidget(
                             professionals: state.professionals,

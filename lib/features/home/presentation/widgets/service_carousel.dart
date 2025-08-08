@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:urs_beauty/features/home/domain/entities/services.dart';
 
 class ServicesCarousel extends StatelessWidget {
-  final List<Services> services;
-  
+  final List<ServiceCategories> services;
+
   const ServicesCarousel({super.key, required this.services});
 
   @override
@@ -39,7 +39,8 @@ class ServicesCarousel extends StatelessWidget {
                       Expanded(
                         child: ClipRRect(
                           borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(15)),
+                            top: Radius.circular(15),
+                          ),
                           child: Image.network(
                             service.iconUrl,
                             fit: BoxFit.cover,
@@ -54,15 +55,11 @@ class ServicesCarousel extends StatelessWidget {
                           children: [
                             Text(
                               service.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              '\$${service.basePrice}',
-                              style: TextStyle(
-                                color: Colors.pink.shade700,
-                                fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),

@@ -1,8 +1,8 @@
-  import 'package:urs_beauty/features/home/domain/entities/professioanls.dart';
+import 'package:urs_beauty/features/home/domain/entities/professioanls.dart';
 
 class ProfessionalModel {
   final String id;
-  final String buisnessName;
+  final String businessName;
   final String description;
   final double serviceRadiusKm;
   final double rating;
@@ -12,10 +12,9 @@ class ProfessionalModel {
   final int longitude;
   final int latitude;
 
-
   ProfessionalModel({
     required this.id,
-    required this.buisnessName,
+    required this.businessName,
     required this.description,
     required this.serviceRadiusKm,
     required this.rating,
@@ -28,22 +27,22 @@ class ProfessionalModel {
 
   factory ProfessionalModel.fromJson(Map<String, dynamic> json) {
     return ProfessionalModel(
-      id: json['id'],
-      buisnessName: json['buisness_name'],
-      description: json['description'],
+      id: json['id'] ?? '',
+      businessName: json['business_name'] ?? '',
+      description: json['description'] ?? '',
       serviceRadiusKm: json['service_radius_km']?.toDouble() ?? 0.0,
       rating: json['avg_rating']?.toDouble() ?? 0.0,
-      imageUrl: json['image_url'],
-      isVerified: json['is_verified'],
-      reviews: json['reviews'],
-      longitude: json['longitude'],
-      latitude: json['latitude'],
+      imageUrl: json['image_url'] ?? '',
+      isVerified: json['is_verified'] ?? false,
+      reviews: json['reviews'] ?? '',
+      longitude: json['longitude'] ?? 0,
+      latitude: json['latitude'] ?? 0,
     );
   }
   Professionals toEntity() {
     return Professionals(
       id: id,
-      buisnessName: buisnessName,
+      businessName: businessName,
       description: description,
       serviceRadiusKm: serviceRadiusKm,
       rating: rating,

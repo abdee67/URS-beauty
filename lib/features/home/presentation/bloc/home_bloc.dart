@@ -30,9 +30,26 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   ) async {
     emit(HomeLoading());
 
-    final Either<Failures, List<Professionals>> professionalsResult =await getProfessionals();
-    final Either<Failures, List<Services>> servicesResult = await getServices();
-      final Either<Failures, List<Deal>> dealsResult = await getDeals();
+    final Either<Failures, List<Professionals>> professionalsResult =
+        await getProfessionals.call();
+    final Either<Failures, List<ServiceCategories>> servicesResult =
+        await getServices.call();
+    final Either<Failures, List<Deal>> dealsResult = await getDeals.call();
+
+    // Debug: Print results
+    print('HomeBloc: Loading data...');
+    professionalsResult.fold(
+      (failure) => print('Professionals error: ${failure.message}'),
+      (professionals) => print('Professionals loaded: ${professionals.length}'),
+    );
+    servicesResult.fold(
+      (failure) => print('Services error: ${failure.message}'),
+      (services) => print('Services loaded: ${services.length}'),
+    );
+    dealsResult.fold(
+      (failure) => print('Deals error: ${failure.message}'),
+      (deals) => print('Deals loaded: ${deals.length}'),
+    );
     professionalsResult.fold(
       (failure) => emit(HomeLoadFailure(failure.message)),
       (professionals) {
