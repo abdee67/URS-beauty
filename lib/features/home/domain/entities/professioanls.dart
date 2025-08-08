@@ -1,6 +1,6 @@
 class Professionals {
   final String id;
-  final String buisnessName;
+  final String businessName;
   final String description;
   final double serviceRadiusKm;
   final double rating;
@@ -12,7 +12,7 @@ class Professionals {
 
   Professionals({
     required this.id,
-    required this.buisnessName,
+    required this.businessName,
     required this.description,
     required this.serviceRadiusKm,
     required this.rating,

@@ -22,14 +22,24 @@ class DealModel {
   });
 
   factory DealModel.fromJson(Map<String, dynamic> json) {
+    // Handle service_category relationship
+    String serviceCategory = '';
+    if (json['service_category'] != null) {
+      if (json['service_category'] is Map) {
+        serviceCategory = json['service_category']['name'] ?? '';
+      } else if (json['service_category'] is String) {
+        serviceCategory = json['service_category'];
+      }
+    }
+    
     return DealModel(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
       originalPrice: json['original_price']?.toDouble() ?? 0.0,
       discountedPrice: json['discounted_price']?.toDouble() ?? 0.0,
-      serviceName: json['service']['name'] ?? '',
-      serviceCategory: json['service']['category'] ?? '',
+      serviceName: json['service_name'] ?? '',
+      serviceCategory: serviceCategory,
       imageUrl: json['image_url'] ?? '',
     );
   }
