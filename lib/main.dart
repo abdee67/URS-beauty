@@ -12,9 +12,11 @@ import 'package:urs_beauty/features/home/domain/usecases/get_services.dart';
 import 'package:urs_beauty/features/home/domain/usecases/get_deals.dart';
 import 'config/supabase_config.dart';
 import 'routes/app_router.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await SupabaseConfig.init();
   runApp(const URSBEAUTY());
 }
