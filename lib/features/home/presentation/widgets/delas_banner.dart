@@ -19,7 +19,7 @@ class PromotionsBanner extends StatelessWidget {
               children: [
                 const Text(
                   'Special Offers',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(height: 10),
                 Container(

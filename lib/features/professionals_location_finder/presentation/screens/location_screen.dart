@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class ProfessionalDetailScreen extends StatefulWidget {
-  const ProfessionalDetailScreen({super.key});
+class LocationScreen extends StatefulWidget {
+  const LocationScreen({super.key});
 
   @override
-  State<ProfessionalDetailScreen> createState() => _ProfessionalDetailScreenState();
+  State<LocationScreen> createState() => _LocationScreenState();
 }
 
-class _ProfessionalDetailScreenState extends State<ProfessionalDetailScreen> {
+class _LocationScreenState extends State<LocationScreen> {
   @override
   Widget build(BuildContext context) {
     return  Container(
@@ -22,7 +22,7 @@ class _ProfessionalDetailScreenState extends State<ProfessionalDetailScreen> {
         ),
       ),
       child: Center(
-        child: Text('Professional Detail Screen'),
+        child: Text('Location Screen'),
       ),
     );
   }

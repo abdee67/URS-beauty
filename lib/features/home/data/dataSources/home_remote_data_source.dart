@@ -2,8 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/home/data/models/deal_model.dart';
-import 'package:urs_beauty/features/home/data/models/professionals_model.dart';
-import 'package:urs_beauty/features/home/data/models/service_categories_model.dart';
+import 'package:urs_beauty/features/professionals/data/models/professionals_model.dart';
+import 'package:urs_beauty/features/beauty_services/domain/entities/service_categories_model.dart';
 
 class HomeRemoteDataSource {
   Future<List<ServiceCategoriesModel>> getServices() async {
@@ -58,8 +58,16 @@ class HomeRemoteDataSource {
 
       final response = await SupabaseConfig.client
           .from('deals')
-          .select('*')
-          .limit(10);
+          .select(
+            '''id,title,description,original_price,discounted_price,image_url, service_categories(
+          id,
+          name,
+          description
+        )
+        ''',
+          )
+          
+          .limit(5);
 
       print('Deals query response: $response'); // Debug log
       print('Deals response length: ${response.length}'); // Debug log
