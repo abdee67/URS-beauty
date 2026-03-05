@@ -43,12 +43,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return BlocProvider.value(
       value: _homeBloc,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.grey,
         body: SafeArea(
-               bottom: false, // Allow content to flow behind the bottom nav bar  
+               //bottom: false, // Allow content to flow behind the bottom nav bar  
+               top:false,
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-                 padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100), 
+                 //padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100), 
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

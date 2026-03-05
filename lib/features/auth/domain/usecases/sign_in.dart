@@ -10,6 +10,7 @@ class SignIn {
   final AuthRepositoryImpl repo;
   SignIn(this.repo);
 
+
   Future<Either<Failures, Session>> call(String email, String password) {
     return repo.signIn(email, password);
   }
