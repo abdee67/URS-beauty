@@ -1,19 +1,19 @@
-class Client {
+class ClientEntity {
   final String id;
   final String email;
   final String firstName;
   final String lastName;
   final int phone;
 
-  Client({
+  ClientEntity({
     required this.id,
     required this.email,
     required this.firstName,
     required this.lastName,
     required this.phone,
   });
-  factory Client.fromJson(Map<String, dynamic> json) {
-    return Client(
+  factory ClientEntity.fromJson(Map<String, dynamic> json) {
+    return ClientEntity(
       id: json['id'],
       email: json['email'],
       firstName: json['first_name'],

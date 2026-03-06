@@ -1,6 +1,6 @@
 import '../../domain/entities/client.dart';
 
-class ClientModel extends Client {
+class ClientModel extends ClientEntity {
   ClientModel({
     required super.id,
     required super.email,

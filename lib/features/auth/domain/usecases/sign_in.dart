@@ -3,11 +3,11 @@ import 'package:dartz/dartz.dart';
 import 'package:gotrue/src/types/session.dart';
 
 import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/features/auth/domain/repositories/auth_repository.dart';
 
-import '../../data/repositories/auth_repository_impl.dart';
 
 class SignIn {
-  final AuthRepositoryImpl repo;
+  final AuthRepository repo;
   SignIn(this.repo);
 
 
