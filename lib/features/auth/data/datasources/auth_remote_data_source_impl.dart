@@ -3,7 +3,7 @@ import 'package:urs_beauty/config/supabase_config.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:urs_beauty/features/auth/data/models/client_model.dart';
 
-abstract class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
     Future<Session> signIn(
     String email,
@@ -30,7 +30,7 @@ abstract class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String password,
     String firstName,
     String lastName,
-    int phone,
+    String phone,
   ) async {
     try {
       final result =  await SupabaseConfig.client.auth.signUp(

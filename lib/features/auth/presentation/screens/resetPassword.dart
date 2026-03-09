@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:otp_text_field/otp_text_field.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
-import 'package:urs_beauty/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_state.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -19,9 +18,7 @@ class ResetPasswordScreen extends StatefulWidget {
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => AuthBloc(authRepo: AuthRepositoryImpl()),
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(title: const Text('Reset Password')),
         body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
@@ -80,7 +77,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             );
           },
         ),
-      ),
-    );
+      );
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
-import 'package:urs_beauty/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_state.dart';
@@ -56,9 +55,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => AuthBloc(authRepo: AuthRepositoryImpl()),
-      child: Scaffold(
+    return  Scaffold(
         backgroundColor: Colors.pink[50],
         body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
@@ -266,7 +263,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
             );
           },
         ),
-      ),
-    );
+      );
   }
 }

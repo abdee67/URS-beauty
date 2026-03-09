@@ -3,13 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:urs_beauty/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:urs_beauty/features/home/data/dataSources/home_remote_data_source.dart';
-import 'package:urs_beauty/features/home/data/repositories/home_repository_impl.dart';
-import 'package:urs_beauty/features/home/domain/usecases/get_professionals.dart';
-import 'package:urs_beauty/features/home/domain/usecases/get_services.dart';
-import 'package:urs_beauty/features/home/domain/usecases/get_deals.dart';
+import 'package:urs_beauty/injection_container.dart';
 import 'config/supabase_config.dart';
 import 'routes/app_router.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -18,6 +13,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await SupabaseConfig.init();
+  initDependency(); //initializing getit for dependency injection
   runApp(const URSBEAUTY());
 }
 
@@ -32,28 +28,10 @@ class _URSBEAUTYState extends State<URSBEAUTY> {
   bool isLoading = true;
   late GoRouter _router;
 
-  // Create singletons for dependency injection
-  late final HomeRemoteDataSource _homeRemoteDataSource;
-  late final HomeRepositoryImpl _homeRepository;
-  late final GetProfessionals _getProfessionals;
-  late final GetServices _getServices;
-  late final GetDeals _getDeals;
-
   @override
   void initState() {
     super.initState();
-    _initializeDependencies();
-    _checkOnboardingStatus();
-  }
-
-  void _initializeDependencies() {
-    _homeRemoteDataSource = HomeRemoteDataSource();
-    _homeRepository = HomeRepositoryImpl(
-      remoteDataSource: _homeRemoteDataSource,
-    );
-    _getProfessionals = GetProfessionals(_homeRepository);
-    _getServices = GetServices(_homeRepository);
-    _getDeals = GetDeals(_homeRepository);
+    _checkOnboardingStatus();///this suppose to be in splash screen but for now i will put it here to avoid creating another screen just for this purpose
   }
 
   Future<void> _checkOnboardingStatus() async {
@@ -86,14 +64,9 @@ class _URSBEAUTYState extends State<URSBEAUTY> {
       providers: [
         // Bloc providers
         BlocProvider(
-          create: (context) => AuthBloc(authRepo: AuthRepositoryImpl()),
+          create: (context) => getit<AuthBloc>(),
         ),
-        // Use case providers - using singleton instances
-        Provider.value(value: _getProfessionals),
-        Provider.value(value: _getServices),
-        Provider.value(value: _getDeals),
-        Provider.value(value: _homeRepository),
-        Provider.value(value: _homeRemoteDataSource),
+  
       ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
