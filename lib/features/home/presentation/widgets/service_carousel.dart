@@ -1,6 +1,6 @@
 // featured_services_carousel.dart
 import 'package:flutter/material.dart';
-import 'package:urs_beauty/features/home/domain/entities/services.dart';
+import 'package:urs_beauty/features/beauty_services/domain/entities/service_category_entity.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
 class ServicesCarousel extends StatelessWidget {

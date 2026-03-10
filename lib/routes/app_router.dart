@@ -10,7 +10,7 @@ import 'package:urs_beauty/features/chat/presentation/screens/chat_screen.dart';
 import 'package:urs_beauty/features/dashboard/dashboard_wrapper.dart';
 import 'package:urs_beauty/features/home/presentation/screens/home_screen.dart';
 import 'package:urs_beauty/features/payments/presentation/screens/payment_methods_screen.dart';
-import 'package:urs_beauty/features/professionals/presentation/screens/professional_detail_screen.dart';
+import 'package:urs_beauty/features/professionals/presentation/pages/professional_detail_screen.dart';
 import 'package:urs_beauty/features/professionals_location_finder/presentation/screens/location_screen.dart';
 
 class AppRouter {

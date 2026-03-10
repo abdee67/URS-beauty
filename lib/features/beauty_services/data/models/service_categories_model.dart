@@ -1,4 +1,4 @@
-import 'package:urs_beauty/features/home/domain/entities/services.dart';
+import 'package:urs_beauty/features/beauty_services/domain/entities/service_category_entity.dart';
 
 class ServiceCategoriesModel {
   final String id;

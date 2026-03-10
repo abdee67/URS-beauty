@@ -16,8 +16,8 @@ import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/home/data/dataSources/home_remote_data_source.dart';
 import 'package:urs_beauty/features/home/data/repositories/home_repository_impl.dart';
 import 'package:urs_beauty/features/home/domain/repositories/home_repository.dart';
-import 'package:urs_beauty/features/home/domain/usecases/get_deals.dart';
-import 'package:urs_beauty/features/home/domain/usecases/get_professionals.dart';
+import 'package:urs_beauty/features/deals/domain/usescases/get_deals.dart';
+import 'package:urs_beauty/features/professionals/domain/usecases/get_professionals.dart';
 import 'package:urs_beauty/features/home/domain/usecases/get_services.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
 

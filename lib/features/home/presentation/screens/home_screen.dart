@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:urs_beauty/features/deals/domain/usescases/get_deals.dart';
+import 'package:urs_beauty/features/professionals/domain/usecases/get_professionals.dart';
+import 'package:urs_beauty/features/home/domain/usecases/get_services.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/service_carousel.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/greeting_header.dart';
-import 'package:urs_beauty/features/home/presentation/widgets/professionals_widget.dart';
-import 'package:urs_beauty/features/home/presentation/widgets/delas_banner.dart';
+import 'package:urs_beauty/features/professionals/presentation/widgets/professionals_widget.dart';
+import 'package:urs_beauty/features/deals/presentation/widgets/delas_banner.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/search_bar.dart';
+import 'package:urs_beauty/injection_container.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,9 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.didChangeDependencies();
     if (!_isInitialized) {
       _homeBloc = HomeBloc(
-        getProfessionals: context.read(),
-        getServices: context.read(),
-        getDeals: context.read(),
+        getProfessionals: getit<GetProfessionals>(),
+        getServices: getit<GetServices>(),
+        getDeals: getit<GetDeals>(),
       )..add(LoadHomeData());
       _isInitialized = true;
     }
@@ -32,6 +36,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isInitialized = false;
 
+@override
+void initState(){
+   context.read<HomeBloc>().add(LoadHomeData());
+   super.initState();
+
+}
+ 
   @override
   void dispose() {
     _homeBloc.close();
@@ -40,9 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _homeBloc,
-      child: Scaffold(
+     //context.read<HomeBloc>().add(LoadHomeData());
+    return  Scaffold(
         backgroundColor: Colors.grey,
         body: SafeArea(
                //bottom: false, // Allow content to flow behind the bottom nav bar  
@@ -82,7 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

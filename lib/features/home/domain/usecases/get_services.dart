@@ -1,10 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
-import 'package:urs_beauty/features/home/domain/entities/services.dart';
-import 'package:urs_beauty/features/home/domain/repositories/home_repository.dart';
+import 'package:urs_beauty/features/beauty_services/domain/entities/service_category_entity.dart';
+import 'package:urs_beauty/features/beauty_services/domain/repositories/service_repository.dart';
 
 class GetServices {
-  final HomeRepository repository;
+  final ServiceRepository repository;
 
   GetServices(this.repository);
 

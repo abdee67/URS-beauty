@@ -1,4 +1,4 @@
-import 'package:urs_beauty/features/home/domain/entities/deal.dart';
+import 'package:urs_beauty/features/deals/domain/entities/deal.dart';
 
 class DealModel {
   final String id;

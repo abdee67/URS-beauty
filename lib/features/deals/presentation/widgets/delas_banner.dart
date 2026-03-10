@@ -1,6 +1,6 @@
 // promotions_banner.dart
 import 'package:flutter/material.dart';
-import 'package:urs_beauty/features/home/domain/entities/deal.dart';
+import 'package:urs_beauty/features/deals/domain/entities/deal.dart';
 
 class PromotionsBanner extends StatelessWidget {
   final List<Deal> deals;
@@ -12,40 +12,8 @@ class PromotionsBanner extends StatelessWidget {
     // Debug: Print deals count
     print('PromotionsBanner: deals count = ${deals.length}');
 
-    return deals.isEmpty
-        ? Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                const Text(
-                  'Special Offers',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.local_offer, size: 40, color: Colors.grey),
-                        SizedBox(height: 8),
-                        Text(
-                          'No special offers available',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )
+    return deals.isEmpty ////if empty just ignore it
+        ? SizedBox.shrink()
         : Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -1,4 +1,4 @@
-import 'package:urs_beauty/features/home/domain/entities/professioanls.dart';
+import 'package:urs_beauty/features/professionals/domain/entities/professioanls.dart';
 
 class ProfessionalModel {
   final String id;

@@ -1,7 +1,7 @@
 // professional_widget.dart
 
 import 'package:flutter/material.dart';
-import 'package:urs_beauty/features/home/domain/entities/professioanls.dart';
+import 'package:urs_beauty/features/professionals/domain/entities/professioanls.dart';
 
 class ProfessionalsWidget extends StatelessWidget {
   final List<Professionals> professionals;
