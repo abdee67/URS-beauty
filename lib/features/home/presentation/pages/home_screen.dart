@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:urs_beauty/features/beauty_services/domain/usecases/get_service_categories.dart';
 import 'package:urs_beauty/features/deals/domain/usescases/get_deals.dart';
 import 'package:urs_beauty/features/professionals/domain/usecases/get_professionals.dart';
-import 'package:urs_beauty/features/home/domain/usecases/get_services.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/service_carousel.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/greeting_header.dart';
@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!_isInitialized) {
       _homeBloc = HomeBloc(
         getProfessionals: getit<GetProfessionals>(),
-        getServices: getit<GetServices>(),
+        getServices: getit<GetServiceCategories>(),
         getDeals: getit<GetDeals>(),
       )..add(LoadHomeData());
       _isInitialized = true;

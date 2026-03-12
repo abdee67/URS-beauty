@@ -13,17 +13,40 @@ import 'package:urs_beauty/features/auth/domain/usecases/sign_up.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/update_client_profile.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/verify_otp.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:urs_beauty/features/home/data/dataSources/home_remote_data_source.dart';
-import 'package:urs_beauty/features/home/data/repositories/home_repository_impl.dart';
-import 'package:urs_beauty/features/home/domain/repositories/home_repository.dart';
+import 'package:urs_beauty/features/beauty_services/data/datasources/service_categories_remote_data_source.dart';
+import 'package:urs_beauty/features/beauty_services/data/datasources/service_categories_remote_data_source_impl.dart';
+import 'package:urs_beauty/features/beauty_services/data/repositories/services_repository_impl.dart';
+import 'package:urs_beauty/features/beauty_services/domain/repositories/service_categories_repository.dart';
+import 'package:urs_beauty/features/beauty_services/domain/usecases/get_service_categories.dart';
+import 'package:urs_beauty/features/deals/data/datasource/deals_remote_data_source.dart';
+import 'package:urs_beauty/features/deals/data/datasource/deals_remote_data_source_impl.dart';
+import 'package:urs_beauty/features/deals/data/repository/deals_repository_impl.dart';
+import 'package:urs_beauty/features/deals/domain/repository/deals_repository.dart';
 import 'package:urs_beauty/features/deals/domain/usescases/get_deals.dart';
+import 'package:urs_beauty/features/professionals/data/datasources/professionals_remote_data_source.dart';
+import 'package:urs_beauty/features/professionals/data/datasources/professionals_remote_datasource_impl.dart';
+import 'package:urs_beauty/features/professionals/data/repository/professionals_repository_impl.dart';
+import 'package:urs_beauty/features/professionals/domain/repository/professionals_repository.dart';
 import 'package:urs_beauty/features/professionals/domain/usecases/get_professionals.dart';
-import 'package:urs_beauty/features/home/domain/usecases/get_services.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
 
 final getit = GetIt.instance;
 void initDependency(){
-  // ===============injectin auth use case=================
+
+  //==================injecting auth data source===================
+   getit.registerLazySingleton<AuthRemoteDataSource>(() => AuthRemoteDataSourceImpl());
+   getit.registerLazySingleton<ServiceCategoriesRemoteDataSource>(() => ServiceCategoriesRemoteDataSourceImpl());
+    getit.registerLazySingleton<ProfessionalsRemoteDataSource>(() => ProfessionalsRemoteDataSourceImpl());
+    getit.registerLazySingleton<DealsRemoteDataSource>(() => DealsRemoteDataSourceImpl());
+     //================== injecting  repository===================
+   getit.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(getit()));
+   getit.registerLazySingleton <ServiceCategoriesRepository>(() => ServiceCategoriesRepositoryImpl(remoteDataSource: getit()));
+   getit.registerLazySingleton<ProfessionalsRepository>(() => ProfessionalsRepositoryImpl(remoteDataSource: getit()));
+   getit.registerLazySingleton<DealsRepository>(() => DealsRepositoryImpl(remoteDataSource: getit()));
+
+
+  // ===============injectin use case=================
+  // Auth use cases
    getit.registerLazySingleton(() => SignIn(getit()));
    getit.registerLazySingleton(() => SignUp(getit()));
    getit.registerLazySingleton(() => SignOut(getit()));
@@ -34,30 +57,24 @@ void initDependency(){
    getit.registerLazySingleton(() => GetCurrentClient(getit()));
    getit.registerLazySingleton(() => UpdateClientProfile(getit()));
 
-
-   // ===========injectin auth bloc=================
-   getit.registerFactory(() => AuthBloc( getit(), getit(), getit(), getit(), getit(), getit(), getit(), getit(), getit()));
-
- 
-  // injecting auth repository===================
-   getit.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(getit()));
-
-   //injecting auth data source===================
-   getit.registerLazySingleton<AuthRemoteDataSource>(() => AuthRemoteDataSourceImpl());
-
-   // ===============injectin home use case=================
+    // Home use cases
    getit.registerLazySingleton(() => GetProfessionals(getit()));
-   getit.registerLazySingleton(() => GetServices(getit()));
+   getit.registerLazySingleton(() => GetServiceCategories(getit()));
    getit.registerLazySingleton(() => GetDeals(getit()));
 
-   // injectin home data source===================
-   getit.registerLazySingleton<HomeRemoteDataSource>(() => HomeRemoteDataSource());
- 
-  // ===========injectin home repository=================
-    getit.registerLazySingleton<HomeRepository>(() => HomeRepositoryImpl(remoteDataSource:getit()));
 
-    //injectin home bloc===================
+   // ===========injectin bloc=================
+   getit.registerFactory(() => AuthBloc( getit(), getit(), getit(), getit(), getit(), getit(), getit(), getit(), getit()));
     getit.registerFactory(() => HomeBloc(getDeals:getit(), getProfessionals:getit(), getServices:getit()));
+
+ 
+
+
+   
+   
+
+ 
+
 
    //
 }

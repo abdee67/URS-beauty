@@ -1,28 +1,18 @@
 import 'package:urs_beauty/features/professionals/domain/entities/professioanls.dart';
 
-class ProfessionalModel {
-  final String id;
-  final String businessName;
-  final String description;
-  final double serviceRadiusKm;
-  final double rating;
-  final String imageUrl;
-  final bool isVerified;
-  final String reviews;
-  final int longitude;
-  final int latitude;
+class ProfessionalModel extends Professionals {
 
   ProfessionalModel({
-    required this.id,
-    required this.businessName,
-    required this.description,
-    required this.serviceRadiusKm,
-    required this.rating,
-    required this.imageUrl,
-    required this.isVerified,
-    required this.reviews,
-    required this.longitude,
-    required this.latitude,
+    required super.id,
+    required super.businessName,
+    required super.description,
+    required super.serviceRadiusKm,
+    required super.rating,
+    required super.imageUrl,
+    required super.isVerified,
+    required super.reviews,
+    required super.longitude,
+    required super.latitude,
   });
 
   factory ProfessionalModel.fromJson(Map<String, dynamic> json) {
