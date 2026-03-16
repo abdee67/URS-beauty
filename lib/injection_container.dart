@@ -23,11 +23,11 @@ import 'package:urs_beauty/features/deals/data/datasource/deals_remote_data_sour
 import 'package:urs_beauty/features/deals/data/repository/deals_repository_impl.dart';
 import 'package:urs_beauty/features/deals/domain/repository/deals_repository.dart';
 import 'package:urs_beauty/features/deals/domain/usescases/get_deals.dart';
-import 'package:urs_beauty/features/professionals/data/datasources/professionals_remote_data_source.dart';
-import 'package:urs_beauty/features/professionals/data/datasources/professionals_remote_datasource_impl.dart';
-import 'package:urs_beauty/features/professionals/data/repository/professionals_repository_impl.dart';
-import 'package:urs_beauty/features/professionals/domain/repository/professionals_repository.dart';
-import 'package:urs_beauty/features/professionals/domain/usecases/get_professionals.dart';
+import 'package:urs_beauty/features/stylists/data/datasources/stylists_remote_data_source.dart';
+import 'package:urs_beauty/features/stylists/data/datasources/stylists_remote_datasource_impl.dart';
+import 'package:urs_beauty/features/stylists/data/repository/stylists_repository_impl.dart';
+import 'package:urs_beauty/features/stylists/domain/repository/stylists_repository.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
 
 final getit = GetIt.instance;
@@ -36,12 +36,12 @@ void initDependency(){
   //==================injecting auth data source===================
    getit.registerLazySingleton<AuthRemoteDataSource>(() => AuthRemoteDataSourceImpl());
    getit.registerLazySingleton<ServiceCategoriesRemoteDataSource>(() => ServiceCategoriesRemoteDataSourceImpl());
-    getit.registerLazySingleton<ProfessionalsRemoteDataSource>(() => ProfessionalsRemoteDataSourceImpl());
+    getit.registerLazySingleton<StylistsRemoteDataSource>(() => StylistsRemoteDataSourceImpl());
     getit.registerLazySingleton<DealsRemoteDataSource>(() => DealsRemoteDataSourceImpl());
      //================== injecting  repository===================
    getit.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(getit()));
    getit.registerLazySingleton <ServiceCategoriesRepository>(() => ServiceCategoriesRepositoryImpl(remoteDataSource: getit()));
-   getit.registerLazySingleton<ProfessionalsRepository>(() => ProfessionalsRepositoryImpl(remoteDataSource: getit()));
+   getit.registerLazySingleton<StylistsRepository>(() => StylistsRepositoryImpl(remoteDataSource: getit()));
    getit.registerLazySingleton<DealsRepository>(() => DealsRepositoryImpl(remoteDataSource: getit()));
 
 
@@ -58,14 +58,14 @@ void initDependency(){
    getit.registerLazySingleton(() => UpdateClientProfile(getit()));
 
     // Home use cases
-   getit.registerLazySingleton(() => GetProfessionals(getit()));
+   getit.registerLazySingleton(() => GetStylists(getit()));
    getit.registerLazySingleton(() => GetServiceCategory(getit()));
    getit.registerLazySingleton(() => GetDeals(getit()));
 
 
    // ===========injectin bloc=================
    getit.registerFactory(() => AuthBloc( getit(), getit(), getit(), getit(), getit(), getit(), getit(), getit(), getit()));
-    getit.registerFactory(() => HomeBloc(getDeals:getit(), getProfessionals:getit(), getServices:getit()));
+    getit.registerFactory(() => HomeBloc(getDeals:getit(), getStylists:getit(), getServices:getit()));
 
  
 

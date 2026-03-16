@@ -40,7 +40,7 @@ class CustomBottomNavBar extends StatelessWidget {
               // Special center button for Booking
               _buildBookingButton(2),
 
-              _buildNavItem(3, Icons.chat_bubble_rounded, Icons.person_2_outlined, 'Professionals'),
+              _buildNavItem(3, Icons.chat_bubble_rounded, Icons.person_2_outlined, 'Stylist'),
               _buildNavItem(5, Icons.chat_bubble_rounded, Icons.chat_bubble_outline, 'Chat'),
             ],
           ),

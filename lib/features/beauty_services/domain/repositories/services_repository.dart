@@ -6,7 +6,7 @@ abstract class ServiceRepository {
 
   Future <Either<Failures, List<ServiceEntity>>> getServices();
   Future <Either<Failures, List<ServiceEntity>>> getServiceByCategory(String categoryId);
-  Future <Either<Failures, List<ServiceEntity>>> getServiceByProfessionals(String professionalsId);
+  Future <Either<Failures, List<ServiceEntity>>> getServiceByStylists(String stylistsId);
   Future <Either<Failures, ServiceEntity>> getServiceDetail(String serviceId);
   Future <Either<Failures, List<ServiceEntity>>> searchServices(String query);
 

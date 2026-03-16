@@ -2,15 +2,15 @@
   import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
-import 'package:urs_beauty/features/professionals/data/datasources/professionals_remote_data_source.dart';
-import 'package:urs_beauty/features/professionals/data/models/professionals_model.dart';
+import 'package:urs_beauty/features/stylists/data/datasources/stylists_remote_data_source.dart';
+import 'package:urs_beauty/features/stylists/data/models/stylists_model.dart';
 
-class ProfessionalsRemoteDataSourceImpl implements ProfessionalsRemoteDataSource {
+class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
   @override
- Future<List<ProfessionalModel>> getProfessionals() async {
+ Future<List<StylistModel>> getStylists() async {
     try {
       final response = await SupabaseConfig.client
-          .from('professionals')
+          .from('stylists')
           .select('''
       id,
       business_name,
@@ -18,7 +18,7 @@ class ProfessionalsRemoteDataSourceImpl implements ProfessionalsRemoteDataSource
       service_radius_km,
       avg_rating,
       image_url,
-      professionals_services (
+      stylists_services (
         service_id,
         services (
           name,
@@ -29,7 +29,7 @@ class ProfessionalsRemoteDataSourceImpl implements ProfessionalsRemoteDataSource
           .eq('is_verified', true)
           .limit(5);
 
-      return response.map(ProfessionalModel.fromJson).toList();
+      return response.map(StylistModel.fromJson).toList();
     } on PostgrestException catch (e) {
       throw Failures(message: e.message);
     } catch (e) {

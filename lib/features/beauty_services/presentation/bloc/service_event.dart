@@ -7,9 +7,9 @@ class FetchServiceByCategory extends ServiceEvent {
   FetchServiceByCategory(this.categoryId);
 }
 
-class FetchServiceByProfessionals extends ServiceEvent {
-  final String professionalsId;
-  FetchServiceByProfessionals(this.professionalsId);
+class FetchServiceByStylists extends ServiceEvent {
+  final String stylistsId;
+  FetchServiceByStylists(this.stylistsId);
 }
 
 class FetchServiceDetail extends ServiceEvent {

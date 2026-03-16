@@ -38,15 +38,15 @@ class ServiceRepositoryImpl implements ServiceRepository {
   }
 
 @override
-  Future<Either<Failures, List<ServiceEntity>>> getServiceByProfessionals(String professionalsId) async {
+  Future<Either<Failures, List<ServiceEntity>>> getServiceByStylists(String stylistsId) async {
     try{
-    final result = await remoteDataSource.getServiceByProfessionals(professionalsId);
+    final result = await remoteDataSource.getServiceByStylists(stylistsId);
       return Right(result.map((e) => e.toEntity()).toList());
   } on Failures catch (e) {
     if(kDebugMode) {
-      print('Error fetching services by professionals: ${e.message}');
+      print('Error fetching services by stylists: ${e.message}');
     }
-    return Left(Failures(message: 'No services found for the given professionals'));
+    return Left(Failures(message: 'No services found for the given stylists'));
   }
   }
 @override

@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:urs_beauty/features/beauty_services/domain/usecases/get_service_by_professionals.dart';
+import 'package:urs_beauty/features/beauty_services/domain/usecases/get_service_by_stylists.dart';
 import 'package:urs_beauty/features/beauty_services/domain/usecases/get_service_by_category.dart';
 import 'package:urs_beauty/features/beauty_services/domain/usecases/get_service_detail.dart';
 import 'package:urs_beauty/features/beauty_services/domain/usecases/get_services.dart';
@@ -11,14 +11,14 @@ class ServiceBloc extends Bloc<ServiceEvent, ServiceState> {
 
   final  GetServices getServices;
   final GetServiceByCategory getServiceByCategory;
-  final GetServiceByProfessionals getServiceByProfessionals;
+  final GetServiceByStylists getServiceByStylists;
   final GetServiceDetail getServiceDetail;
   final SearchService searchServices;
 
    ServiceBloc({
     required this.getServices,
     required this.getServiceByCategory,
-    required this.getServiceByProfessionals,
+    required this.getServiceByStylists,
     required this.getServiceDetail,
     required this.searchServices,
    }) : super(const ServiceState()) {
@@ -40,12 +40,12 @@ class ServiceBloc extends Bloc<ServiceEvent, ServiceState> {
       );
     });
 
-    on<FetchServiceByProfessionals> ((event,emit) async{
+    on<FetchServiceByStylists> ((event,emit) async{
       emit(state.serviceLoadingByProfesional());
-      final result = await getServiceByProfessionals(event.professionalsId);
+      final result = await getServiceByStylists(event.stylistsId);
       result.fold(
         (failure) => emit(state.serviceFailure(failure.message)),
-        (services) => emit(state.copyWith(servicesByProfessionals:services, status: ServiceStatus.serviceLoadedByProfessional)),
+        (services) => emit(state.copyWith(servicesByStylists:services, status: ServiceStatus.serviceLoadedByStylist)),
       );
     });
     on<FetchServiceDetail>((event,emit) async{

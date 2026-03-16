@@ -42,7 +42,7 @@ class ServieRemoteDataSourceImpl implements ServiceRemoteDataSource{
     try{
       final response = await SupabaseConfig.client
           .from('service')
-          .select('id, name, description, duration_minutes, min_price, base_price, professionals_id, icon_url, is_active')
+          .select('id, name, description, duration_minutes, min_price, base_price, stylists_id, icon_url, is_active')
           .eq('is_active', true)
           .eq('id', serviceId)
           .single();
@@ -55,13 +55,13 @@ class ServieRemoteDataSourceImpl implements ServiceRemoteDataSource{
           }
   }
   @override
-    Future <List<ServiceModel>> getServiceByProfessionals(String professionalsId) async{
+    Future <List<ServiceModel>> getServiceByStylists(String stylistsId) async{
     try{
       final response = await SupabaseConfig.client
           .from('service')
-          .select('id, name, description,professionals_id, icon_url, is_active')
+          .select('id, name, description,stylists_id, icon_url, is_active')
           .eq('is_active', true)
-          .eq('professionals_id', professionalsId);
+          .eq('stylists_id', stylistsId);
             return response.map(ServiceModel.fromJson).toList();
           }
           on PostgrestException catch (e){

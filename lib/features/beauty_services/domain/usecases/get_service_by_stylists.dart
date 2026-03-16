@@ -3,11 +3,11 @@ import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/beauty_services/domain/entities/service_entity.dart';
 import 'package:urs_beauty/features/beauty_services/domain/repositories/services_repository.dart';
 
-class GetServiceByProfessionals {
+class GetServiceByStylists {
   final ServiceRepository repository;
-  GetServiceByProfessionals({required this.repository});
+  GetServiceByStylists({required this.repository});
 
-  Future<Either<Failures, List<ServiceEntity>>> call(String professionalsId) async {
-    return await repository.getServiceByProfessionals(professionalsId);
+  Future<Either<Failures, List<ServiceEntity>>> call(String stylistsId) async {
+    return await repository.getServiceByStylists(stylistsId);
   }
 }

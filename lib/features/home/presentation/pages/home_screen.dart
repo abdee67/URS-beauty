@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/beauty_services/domain/usecases/get_service_categories.dart';
 import 'package:urs_beauty/features/deals/domain/usescases/get_deals.dart';
-import 'package:urs_beauty/features/professionals/domain/usecases/get_professionals.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/service_carousel.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/greeting_header.dart';
-import 'package:urs_beauty/features/professionals/presentation/widgets/professionals_widget.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/stylists_widget.dart';
 import 'package:urs_beauty/features/deals/presentation/widgets/delas_banner.dart';
 import 'package:urs_beauty/features/home/presentation/widgets/search_bar.dart';
 import 'package:urs_beauty/injection_container.dart';
@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.didChangeDependencies();
     if (!_isInitialized) {
       _homeBloc = HomeBloc(
-        getProfessionals: getit<GetProfessionals>(),
+        getStylists: getit<GetStylists>(),
         getServices: getit<GetServiceCategory>(),
         getDeals: getit<GetDeals>(),
       )..add(LoadHomeData());
@@ -76,8 +76,8 @@ void initState(){
                           const SizedBox(height: 20),
                           ServicesCarousel(services: state.services),
                           const SizedBox(height: 20),
-                          ProfessionalsWidget(
-                            professionals: state.professionals,
+                          StylistsWidget(
+                            stylists: state.stylists,
                           ),
                           const SizedBox(height: 20),
                         ],

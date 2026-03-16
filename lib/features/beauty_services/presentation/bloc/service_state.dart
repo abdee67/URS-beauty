@@ -7,8 +7,8 @@ enum ServiceStatus {
   serviceLoaded,
   serviceLoadingByCategory,
   serviceLoadedByCategory,
-  serviceLoadingByProfessioanl,
-  serviceLoadedByProfessional,
+  serviceLoadingBystylist,
+  serviceLoadedByStylist,
   searchedServiceLoading,
   searchedServiceLoaded,
   serviceDetailLoading,
@@ -21,7 +21,7 @@ class ServiceState extends Equatable {
   final ServiceEntity? service;
   final List<ServiceEntity> services;
   final List<ServiceEntity> servicesByCategory;
-  final List<ServiceEntity> servicesByProfessionals;
+  final List<ServiceEntity> servicesByStylists;
   final List<ServiceEntity> searchedServices;
   final ServiceEntity? serviceDetail;
   final String? message;
@@ -34,7 +34,7 @@ class ServiceState extends Equatable {
     this.servicesByCategory = const [],
     this.searchedServices = const [],
     this.serviceDetail ,
-    this.servicesByProfessionals = const [],
+    this.servicesByStylists = const [],
     this.query,
     this.services = const [],
   });
@@ -48,9 +48,9 @@ class ServiceState extends Equatable {
   ServiceState serviceLoadByCategory() =>
       copyWith(status: ServiceStatus.serviceLoadedByCategory);
   ServiceState serviceLoadingByProfesional() =>
-      copyWith(status: ServiceStatus.serviceLoadingByProfessioanl);
+      copyWith(status: ServiceStatus.serviceLoadingBystylist);
   ServiceState serviceLoadedByProfesional() =>
-      copyWith(status: ServiceStatus.serviceLoadedByProfessional);
+      copyWith(status: ServiceStatus.serviceLoadedByStylist);
   ServiceState serviceDetailLoading() =>
       copyWith(status: ServiceStatus.serviceDetailLoading);
   ServiceState serviceDetailLoaded() =>
@@ -69,8 +69,8 @@ class ServiceState extends Equatable {
   bool get isSearchedServiceLoaded =>
       status == ServiceStatus.searchedServiceLoaded;
   bool get isServiceDetailLoaded => status == ServiceStatus.serviceDetailLoaded;
-  bool get isServiceByProfessionalsLoaded =>
-      status == ServiceStatus.serviceLoadedByProfessional;
+  bool get isServiceByStylistsLoaded =>
+      status == ServiceStatus.serviceLoadedByStylist;
   bool get isServiceByCategoryLoaded =>
       status == ServiceStatus.serviceLoadedByCategory;
   bool get isFailure => status == ServiceStatus.serviceError;
@@ -82,7 +82,7 @@ class ServiceState extends Equatable {
     ServiceEntity? serviceDetail,
     List<ServiceEntity>? services,
     List<ServiceEntity>? servicesByCategory,
-    List<ServiceEntity>? servicesByProfessionals,
+    List<ServiceEntity>? servicesByStylists,
     List<ServiceEntity>? searchedServices,
     String? query,
     String? message,
@@ -94,8 +94,8 @@ class ServiceState extends Equatable {
       servicesByCategory: servicesByCategory ?? this.servicesByCategory,
       serviceDetail: serviceDetail ?? this.serviceDetail,
       searchedServices: searchedServices ?? this.searchedServices,
-      servicesByProfessionals:
-          servicesByProfessionals ?? this.servicesByProfessionals,
+      servicesByStylists:
+          servicesByStylists ?? this.servicesByStylists,
       message: message ?? this.message,
       query: query ?? this.query,
     );
@@ -107,7 +107,7 @@ class ServiceState extends Equatable {
     service,
     services,
     servicesByCategory,
-    servicesByProfessionals,
+    servicesByStylists,
     searchedServices,
     serviceDetail,
     message,

@@ -1,12 +1,12 @@
-// professional_widget.dart
+// stylist_widget.dart
 
 import 'package:flutter/material.dart';
-import 'package:urs_beauty/features/professionals/domain/entities/professioanls.dart';
+import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 
-class ProfessionalsWidget extends StatelessWidget {
-  final List<Professionals> professionals;
+class StylistsWidget extends StatelessWidget {
+  final List<Stylist> stylists;
 
-  const ProfessionalsWidget({super.key, required this.professionals});
+  const StylistsWidget({super.key, required this.stylists});
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -15,7 +15,7 @@ class ProfessionalsWidget extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Text(
-            'Top Professionals',
+            'Top Stylist',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
@@ -29,9 +29,9 @@ class ProfessionalsWidget extends StatelessWidget {
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
-          itemCount: professionals.length,
+          itemCount: stylists.length,
           itemBuilder: (context, index) {
-            final professional = professionals[index];
+            final stylist = stylists[index];
             return Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15),
@@ -44,7 +44,7 @@ class ProfessionalsWidget extends StatelessWidget {
                         top: Radius.circular(15),
                       ),
                       child: Image.network(
-                        professional.imageUrl,
+                        stylist.imageUrl,
                         fit: BoxFit.cover,
                         width: double.infinity,
                       ),
@@ -56,13 +56,13 @@ class ProfessionalsWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          professional.businessName,
+                          stylist.businessName,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          professional.description,
+                          stylist.description,
                           style: TextStyle(color: Colors.grey.shade600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -76,7 +76,7 @@ class ProfessionalsWidget extends StatelessWidget {
                               size: 16,
                             ),
                             Text(
-                              professional.rating.toStringAsFixed(1),
+                              stylist.averageRating.toStringAsFixed(1),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -87,7 +87,7 @@ class ProfessionalsWidget extends StatelessWidget {
                               size: 16,
                             ),
                             Text(
-                              professional.serviceRadiusKm.toStringAsFixed(1),
+                              stylist.serviceRadiusKm.toStringAsFixed(1),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
