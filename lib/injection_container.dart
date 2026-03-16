@@ -15,7 +15,7 @@ import 'package:urs_beauty/features/auth/domain/usecases/verify_otp.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/beauty_services/data/datasources/service_categories_remote_data_source.dart';
 import 'package:urs_beauty/features/beauty_services/data/datasources/service_categories_remote_data_source_impl.dart';
-import 'package:urs_beauty/features/beauty_services/data/repositories/services_repository_impl.dart';
+import 'package:urs_beauty/features/beauty_services/data/repositories/service_categories_repository_impl.dart';
 import 'package:urs_beauty/features/beauty_services/domain/repositories/service_categories_repository.dart';
 import 'package:urs_beauty/features/beauty_services/domain/usecases/get_service_categories.dart';
 import 'package:urs_beauty/features/deals/data/datasource/deals_remote_data_source.dart';
@@ -59,7 +59,7 @@ void initDependency(){
 
     // Home use cases
    getit.registerLazySingleton(() => GetProfessionals(getit()));
-   getit.registerLazySingleton(() => GetServiceCategories(getit()));
+   getit.registerLazySingleton(() => GetServiceCategory(getit()));
    getit.registerLazySingleton(() => GetDeals(getit()));
 
 

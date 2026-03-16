@@ -15,7 +15,7 @@ part 'home_state.dart';
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetProfessionals getProfessionals;
   final GetDeals getDeals;
-  final GetServiceCategories getServices;
+  final GetServiceCategory getServices;
   HomeBloc({
     required this.getProfessionals,
     required this.getDeals,

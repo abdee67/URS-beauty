@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!_isInitialized) {
       _homeBloc = HomeBloc(
         getProfessionals: getit<GetProfessionals>(),
-        getServices: getit<GetServiceCategories>(),
+        getServices: getit<GetServiceCategory>(),
         getDeals: getit<GetDeals>(),
       )..add(LoadHomeData());
       _isInitialized = true;
