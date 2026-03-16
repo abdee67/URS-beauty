@@ -4,7 +4,7 @@ class StylistsAvailabilityModel extends  StylistsAvailability {
 
   StylistsAvailabilityModel({
     required super.id,
-    required super.stylists_id,
+    required super.stylistsId,
     required super.dayOfWeek,
     required super.startTime,
     required super.endTime,
@@ -14,10 +14,10 @@ class StylistsAvailabilityModel extends  StylistsAvailability {
   factory StylistsAvailabilityModel.fromJson(Map<String, dynamic> json) {
     return StylistsAvailabilityModel(
       id: json['id'],
-      stylists_id: json['stylists_id'],
-      dayOfWeek: json['dayOfWeek'],
-      startTime: DateTime.parse(json['startTime']),
-      endTime: DateTime.parse(json['endTime']),
+      stylistsId: json['stylists_Id'],
+      dayOfWeek: json['day_of_Week'],
+      startTime: (json['start_time']),
+      endTime: (json['end_time']),
       isAvailable: json['isAvailable'] ?? false,
     );
   }
@@ -25,10 +25,10 @@ class StylistsAvailabilityModel extends  StylistsAvailability {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'stylists_id': stylists_id,
-      'dayOfWeek': dayOfWeek,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime.toIso8601String(),
+      'stylists_Id': stylistsId,
+      'day_of_Week': dayOfWeek,
+      'start_time': startTime,
+      'end_time': endTime,
       'isAvailable': isAvailable,
     };
   }

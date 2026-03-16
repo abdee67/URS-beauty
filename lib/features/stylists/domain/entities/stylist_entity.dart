@@ -6,9 +6,9 @@ class Stylist {
   final double averageRating;
   final String imageUrl;
   final bool isVerified;
-  final String reviews;
-  final int longitude;
-  final int latitude;
+  final int totalReview;
+  final double longitude;
+  final double latitude;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -20,7 +20,7 @@ class Stylist {
     required this.averageRating,
     required this.imageUrl,
     required this.isVerified,
-    required this.reviews,
+    required this.totalReview,
     required this.longitude,
     required this.latitude,
     this.createdAt,
