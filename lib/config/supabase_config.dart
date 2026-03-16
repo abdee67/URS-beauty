@@ -6,7 +6,7 @@ class SupabaseConfig {
   static Future<void> init() async {
     await Supabase.initialize(
       url: dotenv.env['SUPABASE_URL']!,
-      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+      anonKey: dotenv.env['SUPABASE_PUBLISHABLE_KEY']!,
     );
   }
 }

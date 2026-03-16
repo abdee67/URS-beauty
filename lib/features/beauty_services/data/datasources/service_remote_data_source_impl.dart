@@ -1,0 +1,3 @@
+class ServieRemoteDataSourceImpl implements ServiceRemoteDataSource{
+  
+}

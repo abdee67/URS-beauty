@@ -1,6 +1,7 @@
 // featured_services_carousel.dart
 import 'package:flutter/material.dart';
-import 'package:urs_beauty/features/home/domain/entities/services.dart';
+import 'package:urs_beauty/features/beauty_services/domain/entities/service_category_entity.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 class ServicesCarousel extends StatelessWidget {
   final List<ServiceCategories> services;
@@ -16,15 +17,24 @@ class ServicesCarousel extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             'Featured Services',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
         SizedBox(
           height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
+          child: CarouselSlider.builder(
             itemCount: services.length,
-            itemBuilder: (context, index) {
+            options: CarouselOptions(
+              height: 200,
+              enlargeCenterPage: true,
+              enableInfiniteScroll: false,
+              viewportFraction: 0.6,
+              autoPlay: true,
+              scrollPhysics: const BouncingScrollPhysics(),
+              autoPlayCurve: Curves.fastOutSlowIn,
+              autoPlayInterval: const Duration(seconds: 3),
+            ),
+            itemBuilder: (context, index, realIdx) {
               final service = services[index];
               return Container(
                 width: 160,

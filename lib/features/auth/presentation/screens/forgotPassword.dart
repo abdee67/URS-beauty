@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_state.dart';
-import 'package:urs_beauty/features/auth/data/repositories/auth_repository_impl.dart';
 
 class ForgotPasswordScreen extends StatelessWidget {
   ForgotPasswordScreen({super.key});
@@ -12,9 +11,7 @@ class ForgotPasswordScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => AuthBloc(authRepo: AuthRepositoryImpl()),
-      child: Scaffold(
+    return  Scaffold(
         appBar: AppBar(title: const Text('Forgot Password')),
         body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
@@ -53,7 +50,6 @@ class ForgotPasswordScreen extends StatelessWidget {
             );
           },
         ),
-      ),
-    );
+      );
   }
 }

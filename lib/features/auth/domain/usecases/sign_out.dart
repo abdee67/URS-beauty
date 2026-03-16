@@ -1,11 +1,10 @@
 import 'package:dartz/dartz.dart';
 
 import 'package:urs_beauty/core/errors/failures.dart';
-
-import '../../data/repositories/auth_repository_impl.dart';
+import 'package:urs_beauty/features/auth/domain/repositories/auth_repository.dart';
 
 class SignOut {
-  final AuthRepositoryImpl repo;
+  final AuthRepository repo;
   SignOut(this.repo);
 
   Future<Either<Failures, void>> call() {
