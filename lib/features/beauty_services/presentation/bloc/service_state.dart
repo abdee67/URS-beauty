@@ -64,16 +64,10 @@ class ServiceState extends Equatable {
   ServiceState serviceFailure(String error) =>
       copyWith(status: ServiceStatus.serviceError, message: error);
 
-  bool get isServiceLoading => status == ServiceStatus.serviceLoading;
-  bool get isServiceLoaded => status == ServiceStatus.serviceLoaded;
-  bool get isSearchedServiceLoaded =>
-      status == ServiceStatus.searchedServiceLoaded;
-  bool get isServiceDetailLoaded => status == ServiceStatus.serviceDetailLoaded;
-  bool get isServiceByStylistsLoaded =>
-      status == ServiceStatus.serviceLoadedByStylist;
-  bool get isServiceByCategoryLoaded =>
-      status == ServiceStatus.serviceLoadedByCategory;
-  bool get isFailure => status == ServiceStatus.serviceError;
+  ServiceState serviceByCategoryLoading() =>
+      copyWith(status: ServiceStatus.serviceLoadingByCategory);
+  ServiceState serviceByCategoryLoaded() =>
+      copyWith(status: ServiceStatus.serviceLoadedByCategory);
 
   // --- CopyWith for immutability ---
   ServiceState copyWith({
