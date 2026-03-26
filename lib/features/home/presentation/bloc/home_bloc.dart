@@ -4,20 +4,20 @@ import 'package:equatable/equatable.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/beauty_services/domain/usecases/get_service_categories.dart';
 import 'package:urs_beauty/features/deals/domain/entities/deal.dart';
-import 'package:urs_beauty/features/professionals/domain/entities/professioanls.dart';
+import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 import 'package:urs_beauty/features/beauty_services/domain/entities/service_category_entity.dart';
 import 'package:urs_beauty/features/deals/domain/usescases/get_deals.dart';
-import 'package:urs_beauty/features/professionals/domain/usecases/get_professionals.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists.dart';
 
 part 'home_event.dart';
 part 'home_state.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
-  final GetProfessionals getProfessionals;
+  final GetStylists getStylists;
   final GetDeals getDeals;
-  final GetServiceCategories getServices;
+  final GetServiceCategory getServices;
   HomeBloc({
-    required this.getProfessionals,
+    required this.getStylists,
     required this.getDeals,
     required this.getServices,
   }) : super(HomeInitial()) {
@@ -30,17 +30,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   ) async {
     emit(HomeLoading());
 
-    final Either<Failures, List<Professionals>> professionalsResult =
-        await getProfessionals();
+    final Either<Failures, List<Stylist>> stylistsResult =
+        await getStylists();
     final Either<Failures, List<ServiceCategories>> servicesResult =
         await getServices();
     final Either<Failures, List<Deal>> dealsResult = await getDeals();
 
     // Debug: Print results
     print('HomeBloc: Loading data...');
-    professionalsResult.fold(
-      (failure) => print('Professionals error: ${failure.message}'),
-      (professionals) => print('Professionals loaded: ${professionals.length}'),
+    stylistsResult.fold(
+      (failure) => print('Stylist error: ${failure.message}'),
+      (stylists) => print('Stylist loaded: ${stylists.length}'),
     );
     servicesResult.fold(
       (failure) => print('Services error: ${failure.message}'),
@@ -50,16 +50,16 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       (failure) => print('Deals error: ${failure.message}'),
       (deals) => print('Deals loaded: ${deals.length}'),
     );
-    professionalsResult.fold(
+    stylistsResult.fold(
       (failure) => emit(HomeLoadFailure(failure.message)),
-      (professionals) {
+      (stylists) {
         dealsResult.fold(
           (failure) => emit(HomeLoadFailure(failure.message)),
           (deals) => servicesResult.fold(
             (failure) => emit(HomeLoadFailure(failure.message)),
             (services) => emit(
               HomeLoadSuccess(
-                professionals: professionals,
+                stylists: stylists,
                 deals: deals,
                 services: services,
               ),

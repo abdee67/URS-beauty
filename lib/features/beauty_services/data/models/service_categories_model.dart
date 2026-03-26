@@ -1,18 +1,13 @@
 import 'package:urs_beauty/features/beauty_services/domain/entities/service_category_entity.dart';
 
-class ServiceCategoriesModel {
-  final String id;
-  final String name;
-  final String description;
-  final String iconUrl;
-  final bool isActive;
 
+class ServiceCategoriesModel extends ServiceCategories {
   ServiceCategoriesModel({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.iconUrl,
-    required this.isActive,
+    required super.id,
+    required super.name,
+    required super.description,
+    required super.iconUrl,
+    required super.isActive,
   });
 
   factory ServiceCategoriesModel.fromJson(Map<String, dynamic> json) {

@@ -12,18 +12,18 @@ class HomeInitial extends HomeState {}
 class HomeLoading extends HomeState {}
 
 class HomeLoadSuccess extends HomeState {
-  final List<Professionals> professionals;
+  final List<Stylist> stylists;
   final List<Deal> deals;
   final List<ServiceCategories> services;
 
   const HomeLoadSuccess({
-    required this.professionals,
+    required this.stylists,
     required this.deals,
     required this.services,
   });
 
   @override
-  List<Object> get props => [professionals, deals, services];
+  List<Object> get props => [stylists, deals, services];
 }
 
 class HomeLoadFailure extends HomeState {
