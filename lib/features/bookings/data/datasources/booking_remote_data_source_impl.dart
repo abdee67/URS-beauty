@@ -153,9 +153,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<List<BookingModel>> getBookingsByStatus(String status) {
+  Future<List<BookingModel>> getBookingsByStatus(BookingStatus status) {
     return _run(() async {
-      final normalizedStatus = _normalizeStatus(status);
+      final normalizedStatus = _normalizeStatus(status.name);
 
       final response = await _client
           .from('bookings')
@@ -206,10 +206,6 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
           .from('bookings')
           .select(_bookingColumns)
           .or(
-            'id.ilike.%$normalizedQuery%,'
-            'customer.ilike.%$normalizedQuery%,'
-            'stylist.ilike.%$normalizedQuery%,'
-            'status.ilike.%$normalizedQuery%,'
             'address.ilike.%$normalizedQuery%,'
             'notes.ilike.%$normalizedQuery%',
           )
@@ -310,8 +306,6 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'total_amount': booking.totalAmount,
       'scheduled_at': booking.scheduledAt.toIso8601String(),
       'end_at': booking.endAt.toIso8601String(),
-      'created_at': booking.createdAt.toIso8601String(),
-      'updated_at': booking.updatedAt.toIso8601String(),
     };
 
     if (booking.id.trim().isNotEmpty) {
@@ -356,10 +350,10 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     }
 
     for (final item in request.items) {
-      if (item.serviceId <= 0) {
+      if (item.serviceId.trim().isEmpty) {
         throw Failures(message: 'Each booking item must have a valid service');
       }
-      if (item.stylistServiceId <= 0) {
+      if (item.stylistServiceId.trim().isEmpty) {
         throw Failures(
           message: 'Each booking item must have a valid stylist service',
         );
@@ -377,8 +371,4 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       throw Failures(message: message);
     }
   }
-}
-
-class BookingsRemoteDataSourceImpl extends BookingRemoteDataSourceImpl {
-  BookingsRemoteDataSourceImpl({super.client});
 }

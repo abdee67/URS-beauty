@@ -32,17 +32,20 @@ class _HomeScreenState extends State<HomeScreen> {
       )..add(LoadHomeData());
       _isInitialized = true;
     }
-  }
+  } 
 
   bool _isInitialized = false;
 
 @override
 void initState(){
-   context.read<HomeBloc>().add(LoadHomeData());
+   _refreshHomeData();
    super.initState();
-
 }
- 
+
+void _refreshHomeData() {
+  context.read<HomeBloc>().add(LoadHomeData());
+}
+
   @override
   void dispose() {
     _homeBloc.close();
@@ -70,7 +73,10 @@ void initState(){
                 BlocBuilder<HomeBloc, HomeState>(
                   builder: (context, state) {
                     if (state is HomeLoadSuccess) {
-                      return Column(
+                      return RefreshIndicator(
+                        onRefresh: () async =>  _refreshHomeData,
+                        child: SingleChildScrollView(
+                      child: Column(
                         children: [
                           PromotionsBanner(deals: state.deals),
                           const SizedBox(height: 20),
@@ -81,6 +87,8 @@ void initState(){
                           ),
                           const SizedBox(height: 20),
                         ],
+                      )
+                      )
                       );
                     } else if (state is HomeLoadFailure) {
                       return Center(child: Text(state.message));

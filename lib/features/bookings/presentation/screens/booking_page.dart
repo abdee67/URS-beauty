@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:urs_beauty/features/beauty_services/presentation/screens/service_list_screen.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
@@ -10,20 +11,6 @@ class BookingPage extends StatefulWidget {
 class _BookingPageState extends State<BookingPage> {
   @override
   Widget build(BuildContext context) {
-    return  Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFFFE5B4), // Light peach color
-            Color(0xFFFFC1A6), // Soft coral color
-          ],
-        ),
-      ),
-      child: Center(
-        child: Text('Booking Page'),
-      ),
-    );
+    return const ServiceListScreen();
   }
 }

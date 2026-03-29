@@ -111,7 +111,7 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failures, List<BookingEntity>>> getBookingsByStatus(
-    String status,
+    BookingStatus status,
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.getBookingsByStatus(status);

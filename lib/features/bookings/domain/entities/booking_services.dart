@@ -2,8 +2,8 @@ class BookingServicesEntity {
   final String id;
   final String bookingId;
   final String serviceName;
-  final int serviceId;
-  final int stylistServiceId;
+  final String serviceId;
+  final String stylistServiceId;
   final int quantity;
   final double priceAtBooking;
   final int durationAtBooking;

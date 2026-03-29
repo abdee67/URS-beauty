@@ -4,86 +4,105 @@ import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/beauty_services/data/datasources/service_remote_data_source.dart';
 import 'package:urs_beauty/features/beauty_services/data/models/service_model.dart';
 
-class ServieRemoteDataSourceImpl implements ServiceRemoteDataSource{
+class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
+  ServiceRemoteDataSourceImpl({SupabaseClient? client})
+    : _client = client ?? SupabaseConfig.client;
+
+  final SupabaseClient _client;
+
+  static const String _serviceTable = 'services';
+  static const String _serviceColumns =
+      'id, name, description, category_id, duration_minutes, base_price, '
+      'min_price, created_at, updated_at, icon_url, is_active';
+
   @override
-   Future<List<ServiceModel>> getServices() async {
-    try {
-      final response = await SupabaseConfig.client
-          .from('service')
-          .select('id,name,description,icon_url,is_active')
+  Future<List<ServiceModel>> getServices() {
+    return _run(() async {
+      final response = await _client
+          .from(_serviceTable)
+          .select(_serviceColumns)
           .eq('is_active', true)
-          //.limit(5)
-          ;
-      return response.map(ServiceModel.fromJson).toList();
-    } on PostgrestException catch (e) {
-      throw Failures(message: e.message);
-    } catch (e) {
-      throw Failures(message: e.toString());
-    }
+          .order('name');
+
+      return _mapServiceList(response);
+    });
   }
+
   @override
-  Future <List<ServiceModel>> getServiceByCategory( String categoryId) async{
-    try{
-      final response = await SupabaseConfig.client
-          .from('service')
-          .select('id, name, description,category_id, icon_url, is_active')
+  Future<List<ServiceModel>> getServiceByCategory(String categoryId) {
+    return _run(() async {
+      _requireValue(categoryId, 'Category id is required');
+
+      final response = await _client
+          .from(_serviceTable)
+          .select(_serviceColumns)
           .eq('is_active', true)
-          .eq('category_id', categoryId);
-            return response.map(ServiceModel.fromJson).toList();
-          }
-          on PostgrestException catch (e){
-            throw Failures(message: e.message);
-          } catch (e){
-            throw Failures(message: e.toString());
-          }
+          .eq('category_id', categoryId)
+          .order('name');
+
+      return _mapServiceList(response);
+    });
   }
+
   @override
-  Future <ServiceModel> getServiceDetail(String serviceId) async{
-    try{
-      final response = await SupabaseConfig.client
-          .from('service')
-          .select('id, name, description, duration_minutes, min_price, base_price, stylists_id, icon_url, is_active')
+  Future<ServiceModel> getServiceDetail(String serviceId) {
+    return _run(() async {
+      _requireValue(serviceId, 'Service id is required');
+
+      final response = await _client
+          .from(_serviceTable)
+          .select(_serviceColumns)
           .eq('is_active', true)
           .eq('id', serviceId)
           .single();
-            return ServiceModel.fromJson(response);
-          }
-          on PostgrestException catch (e){
-            throw Failures(message: e.message);
-          } catch (e){
-            throw Failures(message: e.toString());
-          }
+
+      return _mapService(response);
+    });
   }
+
   @override
-    Future <List<ServiceModel>> getServiceByStylists(String stylistsId) async{
-    try{
-      final response = await SupabaseConfig.client
-          .from('service')
-          .select('id, name, description,stylists_id, icon_url, is_active')
+  Future<List<ServiceModel>> getServiceByStylists(String stylistsId) {
+    return _run(() async {
+      _requireValue(stylistsId, 'Stylist id is required');
+
+      final response = await _client
+          .from(_serviceTable)
+          .select(_serviceColumns)
           .eq('is_active', true)
-          .eq('stylists_id', stylistsId);
-            return response.map(ServiceModel.fromJson).toList();
-          }
-          on PostgrestException catch (e){
-            throw Failures(message: e.message);
-          } catch (e){
-            throw Failures(message: e.toString());
-          }
+          .eq('stylists_id', stylistsId)
+          .order('name');
+
+      return _mapServiceList(response);
+    });
   }
+
   @override
-  Future<List<ServiceModel>> searchServices(String query) async {
-    try {
-      final response = await SupabaseConfig.client
-          .from('service')
-          .select('*')
-          .or('name.ilike.%query%, description.ilike.%query%')//search by name, description, or other relevant fields
-          .eq('is_active', true)
-          .limit(5);
-      if (response.isNotEmpty) {
-        return response.map(ServiceModel.fromJson).toList();
-      } else {
-        throw Failures(message: 'No services found matching the search query');
+  Future<List<ServiceModel>> searchServices(String query) {
+    return _run(() async {
+      final normalizedQuery = query.trim();
+      if (normalizedQuery.isEmpty) {
+        return getServices();
       }
+
+      final response = await _client
+          .from(_serviceTable)
+          .select(_serviceColumns)
+          .or(
+            'name.ilike.%$normalizedQuery%,description.ilike.%$normalizedQuery%',
+          )
+          .eq('is_active', true)
+          .order('name')
+          .limit(5);
+
+      return _mapServiceList(response);
+    });
+  }
+
+  Future<T> _run<T>(Future<T> Function() operation) async {
+    try {
+      return await operation();
+    } on Failures {
+      rethrow;
     } on PostgrestException catch (e) {
       throw Failures(message: e.message);
     } catch (e) {
@@ -91,4 +110,22 @@ class ServieRemoteDataSourceImpl implements ServiceRemoteDataSource{
     }
   }
 
+  List<ServiceModel> _mapServiceList(dynamic response) {
+    return (response as List)
+        .map(
+          (item) =>
+              ServiceModel.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
+  }
+
+  ServiceModel _mapService(dynamic response) {
+    return ServiceModel.fromJson(Map<String, dynamic>.from(response as Map));
+  }
+
+  void _requireValue(String value, String message) {
+    if (value.trim().isEmpty) {
+      throw Failures(message: message);
+    }
+  }
 }

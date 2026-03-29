@@ -86,7 +86,7 @@ class GetBookingsByStylistIdEvent extends BookingEvent {
 class GetBookingsByStatusEvent extends BookingEvent {
   const GetBookingsByStatusEvent(this.status);
 
-  final String status;
+  final BookingStatus status;
 
   @override
   List<Object?> get props => [status];
@@ -133,4 +133,19 @@ class SearchBookingsEvent extends BookingEvent {
 
 class ClearBookingMessageEvent extends BookingEvent {
   const ClearBookingMessageEvent();
+}
+
+class SelectDateEvent extends BookingEvent {
+  const SelectDateEvent(this.date);
+
+  final DateTime date;
+
+  @override
+  List<Object?> get props => [date];
+}
+
+class SelectTimeEvent extends BookingEvent {
+  const SelectTimeEvent(this.time);  
+
+  final String time;
 }

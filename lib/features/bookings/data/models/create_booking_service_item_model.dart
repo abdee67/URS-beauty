@@ -5,8 +5,8 @@ class CreateBookingServiceItemModel {
     required this.quantity,
   });
 
-  final int serviceId;
-  final int stylistServiceId;
+  final String serviceId;
+  final String stylistServiceId;
   final int quantity;
 
   Map<String, dynamic> toRpcJson() {

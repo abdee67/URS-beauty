@@ -12,6 +12,8 @@ enum BookingBlocStatus {
   cancelled,
   servicesLoading,
   servicesLoaded,
+  booking,
+  rescheduling,
   searching,
   searched,
   failure,
@@ -26,6 +28,8 @@ class BookingState extends Equatable {
     this.statusBookings = const [],
     this.searchedBookings = const [],
     this.bookingServices = const [],
+    this.selectedDate,
+    this.selectedTime = '',
     this.selectedBooking,
     this.message,
     this.errorMessage = '',
@@ -40,6 +44,8 @@ class BookingState extends Equatable {
   final List<BookingEntity> searchedBookings;
   final List<BookingServicesEntity> bookingServices;
   final BookingEntity? selectedBooking;
+  final DateTime? selectedDate;
+  final String selectedTime;
   final String? message;
   final String errorMessage;
   final String? query;
@@ -58,6 +64,11 @@ class BookingState extends Equatable {
 
   BookingState cancelling() =>
       copyWith(status: BookingBlocStatus.cancelling, clearError: true);
+
+  BookingState rescheduling() =>
+      copyWith(status: BookingBlocStatus.rescheduling, clearError: true);
+
+  BookingState booking() => copyWith(status: BookingBlocStatus.booking);
 
   BookingState servicesLoading() =>
       copyWith(status: BookingBlocStatus.servicesLoading, clearError: true);
@@ -80,6 +91,8 @@ class BookingState extends Equatable {
     List<BookingEntity>? searchedBookings,
     List<BookingServicesEntity>? bookingServices,
     BookingEntity? selectedBooking,
+    DateTime? selectedDate,
+    String? selectedTime,
     String? message,
     String? errorMessage,
     String? query,
@@ -99,6 +112,8 @@ class BookingState extends Equatable {
       selectedBooking: clearSelectedBooking
           ? null
           : (selectedBooking ?? this.selectedBooking),
+      selectedDate: selectedDate ?? this.selectedDate,
+      selectedTime: selectedTime ?? this.selectedTime,
       message: clearMessage ? null : (message ?? this.message),
       errorMessage: clearError ? '' : (errorMessage ?? this.errorMessage),
       query: clearQuery ? null : (query ?? this.query),
@@ -115,6 +130,8 @@ class BookingState extends Equatable {
     searchedBookings,
     bookingServices,
     selectedBooking,
+    selectedDate,
+    selectedTime,
     message,
     errorMessage,
     query,

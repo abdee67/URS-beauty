@@ -53,6 +53,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     on<UpdateBookingStatusEvent>(_onUpdateBookingStatus);
     on<SearchBookingsEvent>(_onSearchBookings);
     on<ClearBookingMessageEvent>(_onClearBookingMessage);
+    on<SelectDateEvent>(_onSelectDate);
+    on<SelectTimeEvent>(_onSelectTime);
   }
 
   final CreateBooking createBooking;
@@ -351,6 +353,20 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         ),
       ),
     );
+  }
+
+  Future<void> _onSelectDate(
+    SelectDateEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.copyWith(selectedDate: event.date));
+  }
+
+  Future<void> _onSelectTime(
+    SelectTimeEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.copyWith(selectedTime: event.time));
   }
 
   void _onClearBookingMessage(

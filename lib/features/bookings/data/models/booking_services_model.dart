@@ -17,10 +17,10 @@ class BookingServicesModel extends BookingServicesEntity {
       id: (json['id'] ?? '').toString(),
       bookingId: (json['booking_id'] ?? json['booking'] ?? '').toString(),
       serviceName: (json['service_name'] ?? '').toString(),
-      serviceId: _asInt(json['service_id'] ?? json['service']),
-      stylistServiceId: _asInt(
-        json['stylist_service_id'] ?? json['stylist_service'],
-      ),
+      serviceId: (json['service_id'] ?? json['service'] ?? '').toString(),
+      stylistServiceId:
+          (json['stylist_service_id'] ?? json['stylist_service'] ?? '')
+              .toString(),
       quantity: _asInt(json['quantity']),
       priceAtBooking: (json['price_at_booking'] as num?)?.toDouble() ?? 0.0,
       durationAtBooking: _asInt(json['duration_at_booking']),

@@ -14,7 +14,7 @@ abstract class BookingRepository {
   Future<Either<Failures, List<BookingEntity>>> getBookingsByCustomerId(String customerId);
   Future<Either<Failures, List<BookingServicesEntity>>> getBookingServices(String bookingId);
   Future<Either<Failures, List<BookingEntity>>> getBookingsByStylistId(String stylistId);
-  Future<Either<Failures, List<BookingEntity>>> getBookingsByStatus(String status);
+  Future<Either<Failures, List<BookingEntity>>> getBookingsByStatus(BookingStatus status);
   Future<Either<Failures, BookingEntity>> rescheduleBooking(String bookingId, DateTime newScheduledAt);
   Future<Either<Failures, BookingEntity>> addNotesToBooking(String bookingId, String notes);
   Future<Either<Failures, BookingEntity>> updateBookingStatus(String bookingId, String status);
