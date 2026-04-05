@@ -9,7 +9,7 @@ import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart
 
 class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   BookingRemoteDataSourceImpl({SupabaseClient? client})
-    : _client = client ?? SupabaseConfig.client;
+      : _client = client ?? SupabaseConfig.client;
 
   final SupabaseClient _client;
 
@@ -205,10 +205,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       final response = await _client
           .from('bookings')
           .select(_bookingColumns)
-          .or(
-            'address.ilike.%$normalizedQuery%,'
-            'notes.ilike.%$normalizedQuery%',
-          )
+          .ilike('notes', '%$normalizedQuery%')
           .order('scheduled_at', ascending: false);
 
       return _mapBookingList(response);
@@ -247,10 +244,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   List<BookingModel> _mapBookingList(dynamic response) {
     return (response as List)
-        .map(
-          (item) =>
-              BookingModel.fromJson(Map<String, dynamic>.from(item as Map)),
-        )
+        .map((item) => BookingModel.fromJson(Map<String, dynamic>.from(item as Map)))
         .toList();
   }
 
@@ -302,7 +296,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'stylist': booking.stylistId,
       'status': booking.status.name,
       'notes': booking.notes,
-      'address': booking.address,
+      'address': booking.addressId,
       'total_amount': booking.totalAmount,
       'scheduled_at': booking.scheduledAt.toIso8601String(),
       'end_at': booking.endAt.toIso8601String(),
@@ -321,7 +315,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'stylist': booking.stylistId,
       'status': booking.status.name,
       'notes': booking.notes,
-      'address': booking.address,
+      'address': booking.addressId,
       'total_amount': booking.totalAmount,
       'scheduled_at': booking.scheduledAt.toIso8601String(),
       'end_at': booking.endAt.toIso8601String(),
@@ -343,7 +337,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   void _validateCreateBookingRequest(CreateBookingRequestModel request) {
     _requireValue(request.customerId, 'Customer id is required');
     _requireValue(request.stylistId, 'Stylist id is required');
-    _requireValue(request.address, 'Booking address is required');
+    _requireValue(request.addressId, 'Booking address is required');
 
     if (request.items.isEmpty) {
       throw Failures(message: 'At least one service item is required');

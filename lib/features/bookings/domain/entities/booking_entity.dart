@@ -1,4 +1,4 @@
-enum BookingStatus{
+enum BookingStatus {
   pending,
   confirmed,
   completed,
@@ -11,20 +11,20 @@ class BookingEntity {
   final String stylistId;
   final BookingStatus status;
   final String? notes;
-  final String address;
+  final String addressId;
   final double totalAmount;
   final DateTime scheduledAt;
   final DateTime endAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  BookingEntity({
+  const BookingEntity({
     required this.id,
     required this.customerId,
     required this.stylistId,
     required this.status,
-     this.notes,
-    required this.address,
+    this.notes,
+    required this.addressId,
     required this.totalAmount,
     required this.scheduledAt,
     required this.endAt,

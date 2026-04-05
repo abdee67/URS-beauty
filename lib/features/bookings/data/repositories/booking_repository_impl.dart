@@ -57,9 +57,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, List<BookingEntity>>> getBookings() async {
     return _runOperation(() async {
       final result = await remoteDataSource.getBookings();
-      return result
-          .map<BookingEntity>((booking) => booking.toEntity())
-          .toList();
+      return result.map<BookingEntity>((booking) => booking.toEntity()).toList();
     });
   }
 
@@ -79,9 +77,7 @@ class BookingRepositoryImpl implements BookingRepository {
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.getBookingsByCustomerId(customerId);
-      return result
-          .map<BookingEntity>((booking) => booking.toEntity())
-          .toList();
+      return result.map<BookingEntity>((booking) => booking.toEntity()).toList();
     });
   }
 
@@ -103,9 +99,7 @@ class BookingRepositoryImpl implements BookingRepository {
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.getBookingsByStylistId(stylistId);
-      return result
-          .map<BookingEntity>((booking) => booking.toEntity())
-          .toList();
+      return result.map<BookingEntity>((booking) => booking.toEntity()).toList();
     });
   }
 
@@ -115,9 +109,7 @@ class BookingRepositoryImpl implements BookingRepository {
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.getBookingsByStatus(status);
-      return result
-          .map<BookingEntity>((booking) => booking.toEntity())
-          .toList();
+      return result.map<BookingEntity>((booking) => booking.toEntity()).toList();
     });
   }
 
@@ -166,9 +158,7 @@ class BookingRepositoryImpl implements BookingRepository {
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.searchBookings(query);
-      return result
-          .map<BookingEntity>((booking) => booking.toEntity())
-          .toList();
+      return result.map<BookingEntity>((booking) => booking.toEntity()).toList();
     });
   }
 
@@ -197,7 +187,7 @@ class BookingRepositoryImpl implements BookingRepository {
       stylistId: booking.stylistId,
       status: booking.status,
       notes: booking.notes,
-      address: booking.address,
+      addressId: booking.addressId,
       totalAmount: booking.totalAmount,
       scheduledAt: booking.scheduledAt,
       endAt: booking.endAt,

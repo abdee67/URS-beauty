@@ -5,7 +5,7 @@ class CreateBookingRequestModel {
     required this.customerId,
     required this.stylistId,
     required this.scheduledAt,
-    required this.address,
+    required this.addressId,
     required this.items,
     this.notes,
   });
@@ -13,7 +13,7 @@ class CreateBookingRequestModel {
   final String customerId;
   final String stylistId;
   final DateTime scheduledAt;
-  final String address;
+  final String addressId;
   final String? notes;
   final List<CreateBookingServiceItemModel> items;
 
@@ -24,7 +24,7 @@ class CreateBookingRequestModel {
       'p_customer_id': customerId,
       'p_stylist_id': stylistId,
       'p_scheduled_at': scheduledAt.toIso8601String(),
-      'p_address': address.trim(),
+      'p_address_id': addressId,
       'p_notes': normalizedNotes == null || normalizedNotes.isEmpty
           ? null
           : normalizedNotes,
