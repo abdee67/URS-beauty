@@ -1,6 +1,10 @@
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
+import 'package:urs_beauty/features/auth/data/models/customer_address_model.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_entity.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/get_current_client.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_service_item_model.dart';
@@ -33,21 +37,21 @@ class BookingConfirmationScreen extends StatefulWidget {
 }
 
 class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
-  late final TextEditingController _addressController;
   late final TextEditingController _notesController;
   late final Future<_BookingPayloadContext> _payloadContextFuture;
+  final List<CustomerAddressModel> _newAddresses = <CustomerAddressModel>[];
+  String? _selectedAddressId;
+  bool _isSavingCurrentLocation = false;
 
   @override
   void initState() {
     super.initState();
-    _addressController = TextEditingController();
     _notesController = TextEditingController();
     _payloadContextFuture = _loadPayloadContext();
   }
 
   @override
   void dispose() {
-    _addressController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -124,6 +128,14 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     );
                   }
 
+                  final addresses = _resolvedAddresses(payloadContext);
+                  final selectedAddressId =
+                      _selectedAddressId ?? payloadContext.customer.defaultAddress?.id;
+                  final selectedAddress = addresses
+                      .where((address) => address.id == selectedAddressId)
+                      .cast<CustomerAddressModel?>()
+                      .firstWhere((address) => address != null, orElse: () => null);
+
                   return SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                     child: Column(
@@ -149,14 +161,50 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                               ),
                         ),
                         const SizedBox(height: 10),
-                        TextField(
-                          controller: _addressController,
-                          minLines: 2,
-                          maxLines: 3,
-                          decoration: _inputDecoration(
-                            hintText: 'Where should the stylist come?',
+                        if (addresses.isEmpty)
+                          _AddressEmptyState(
+                            isBusy: _isSavingCurrentLocation,
+                            onUseCurrentLocation: () => _saveCurrentLocationAddress(
+                              payloadContext.customer,
+                            ),
+                          )
+                        else ...[
+                          ...addresses.map(
+                            (address) => _AddressOptionCard(
+                              address: address,
+                              isSelected: address.id == selectedAddressId,
+                              onTap: () {
+                                setState(() {
+                                  _selectedAddressId = address.id;
+                                });
+                              },
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: _isSavingCurrentLocation
+                                ? null
+                                : () => _saveCurrentLocationAddress(
+                                      payloadContext.customer,
+                                    ),
+                            icon: _isSavingCurrentLocation
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.my_location_rounded),
+                            label: Text(
+                              _isSavingCurrentLocation
+                                  ? 'Saving current location...'
+                                  : 'Use current location as new address',
+                            ),
+                          ),
+                        ],
+                        if (selectedAddress != null) ...[
+                          const SizedBox(height: 18),
+                          _SelectedAddressPreview(address: selectedAddress),
+                        ],
                         const SizedBox(height: 18),
                         Text(
                           'Notes',
@@ -183,10 +231,11 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                             onPressed: isSubmitting
                                 ? null
                                 : () => _submitBooking(
-                                    context,
-                                    payloadContext,
-                                    scheduledAt,
-                                  ),
+                                      context,
+                                      payloadContext,
+                                      scheduledAt,
+                                      selectedAddressId,
+                                    ),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               child: Text(
@@ -209,30 +258,36 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     );
   }
 
-  Future<_BookingPayloadContext> _loadPayloadContext() async {
-    final clientResult = await getit<GetCurrentClient>()();
-    final stylistServicesResult = await getit<StylistsRepository>()
-        .getStylistsServices(widget.stylist.id);
+  List<CustomerAddressModel> _resolvedAddresses(_BookingPayloadContext context) {
+    final existing = context.addresses;
+    final merged = <CustomerAddressModel>[...existing];
+    for (final address in _newAddresses) {
+      final alreadyExists = merged.any((item) => item.id == address.id);
+      if (!alreadyExists) {
+        merged.add(address);
+      }
+    }
+    return merged;
+  }
 
-    final clientLookup = clientResult.fold<_ClientLookupResult>(
-      (failure) => _ClientLookupResult(error: failure.message),
-      (value) => _ClientLookupResult(customerId: value.id),
+  Future<_BookingPayloadContext> _loadPayloadContext() async {
+    final customerResult = await getit<GetCurrentCustomer>()();
+    final stylistServicesResult =
+        await getit<StylistsRepository>().getStylistsServices(widget.stylist.id);
+
+    final customer = customerResult.fold<CustomerEntity>(
+      (failure) => throw Exception(failure.message),
+      (value) => value,
     );
 
-    final customerId =
-        clientLookup.customerId ?? SupabaseConfig.client.auth.currentUser?.id;
-
-    if (customerId == null || customerId.trim().isEmpty) {
-      throw Exception(
-        clientLookup.error ?? 'No authenticated customer found for booking.',
-      );
+    if (customer.id.trim().isEmpty) {
+      throw Exception('No authenticated customer found for booking.');
     }
 
-    final stylistServices = stylistServicesResult
-        .fold<List<StylistsServiceModel>>(
-          (failure) => throw Exception(failure.message),
-          (value) => value,
-        );
+    final stylistServices = stylistServicesResult.fold<List<StylistsServiceModel>>(
+      (failure) => throw Exception(failure.message),
+      (value) => value,
+    );
 
     final matchingService = stylistServices
         .where((service) => service.isAvailable)
@@ -246,34 +301,201 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
       );
     }
 
+    final addresses = customer.addresses
+        .map((address) => _toAddressModel(address, customer.id))
+        .toList();
+
     return _BookingPayloadContext(
-      customerId: customerId,
+      customer: customer,
       stylistService: matchingService,
+      addresses: addresses,
     );
+  }
+
+  CustomerAddressModel _toAddressModel(dynamic address, String customerId) {
+    if (address is CustomerAddressModel) {
+      return address;
+    }
+
+    return CustomerAddressModel(
+      id: address.id.toString(),
+      customerId: customerId,
+      addressLine1: address.addressLine1?.toString() ?? '',
+      addressLine2: address.addressLine2?.toString() ?? '',
+      city: address.city?.toString() ?? '',
+      state: address.state?.toString() ?? '',
+      postalCode: address.postalCode?.toString() ?? '',
+      country: address.country?.toString() ?? '',
+      latitude: (address.latitude as num?)?.toDouble() ?? 0,
+      longitude: (address.longitude as num?)?.toDouble() ?? 0,
+      isDefault: address.isDefault == true,
+      createdAt: address.createdAt is DateTime
+          ? address.createdAt as DateTime
+          : DateTime.now(),
+      updatedAt: address.updatedAt is DateTime
+          ? address.updatedAt as DateTime
+          : DateTime.now(),
+    );
+  }
+
+  Future<void> _saveCurrentLocationAddress(CustomerEntity customer) async {
+    if (_isSavingCurrentLocation) {
+      return;
+    }
+
+    setState(() {
+      _isSavingCurrentLocation = true;
+    });
+
+    try {
+      final permission = await _ensureLocationPermission();
+      if (!permission) {
+        throw Exception('Location permission is required to use your current address.');
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      final placemark = placemarks.isNotEmpty ? placemarks.first : null;
+
+      final addressLine1 = _composeAddressLine1(placemark);
+      final addressLine2 = _composeAddressLine2(placemark);
+      final city = placemark?.locality ?? placemark?.subAdministrativeArea ?? '';
+      final state = placemark?.administrativeArea ?? '';
+      final postalCode = placemark?.postalCode ?? '';
+      final country = placemark?.country ?? '';
+      final now = DateTime.now().toIso8601String();
+
+      final payload = <String, dynamic>{
+        'customer_id': customer.id,
+        'address_line1': addressLine1,
+        'address_line2': addressLine2,
+        'city': city,
+        'state': state,
+        'postal_code': postalCode,
+        'country': country,
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'is_default': customer.addresses.isEmpty && _newAddresses.isEmpty,
+        'created_at': now,
+        'updated_at': now,
+      };
+
+      final response = await SupabaseConfig.client
+          .from('customer_addresses')
+          .insert(payload)
+          .select()
+          .single();
+
+      final savedAddress = CustomerAddressModel.fromJson(
+        Map<String, dynamic>.from(response),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _newAddresses.add(savedAddress);
+        _selectedAddressId = savedAddress.id;
+      });
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Current location saved as address.')),
+        );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingCurrentLocation = false;
+        });
+      }
+    }
+  }
+
+  Future<bool> _ensureLocationPermission() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception('Location services are turned off on this device.');
+    }
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return false;
+    }
+
+    return true;
+  }
+
+  String _composeAddressLine1(Placemark? placemark) {
+    final parts = <String>[
+      if ((placemark?.street ?? '').trim().isNotEmpty) placemark!.street!.trim(),
+      if ((placemark?.subLocality ?? '').trim().isNotEmpty)
+        placemark!.subLocality!.trim(),
+    ];
+
+    if (parts.isEmpty) {
+      return 'Current location';
+    }
+
+    return parts.join(', ');
+  }
+
+  String _composeAddressLine2(Placemark? placemark) {
+    final parts = <String>[
+      if ((placemark?.thoroughfare ?? '').trim().isNotEmpty)
+        placemark!.thoroughfare!.trim(),
+      if ((placemark?.subThoroughfare ?? '').trim().isNotEmpty)
+        placemark!.subThoroughfare!.trim(),
+    ];
+
+    return parts.join(', ');
   }
 
   void _submitBooking(
     BuildContext context,
     _BookingPayloadContext payloadContext,
     DateTime scheduledAt,
+    String? selectedAddressId,
   ) {
-    final address = _addressController.text.trim();
     final notes = _notesController.text.trim();
+    final addressId = selectedAddressId?.trim() ?? '';
 
-    if (address.isEmpty) {
+    if (addressId.isEmpty) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(content: Text('Please enter a booking address.')),
+          const SnackBar(content: Text('Please choose a booking address.')),
         );
       return;
     }
 
     final request = CreateBookingRequestModel(
-      customerId: payloadContext.customerId,
+      customerId: payloadContext.customer.id,
       stylistId: widget.stylist.id,
       scheduledAt: scheduledAt,
-      address: address,
+      addressId: addressId,
       notes: notes.isEmpty ? null : notes,
       items: [
         CreateBookingServiceItemModel(
@@ -300,9 +522,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
   TimeOfDay _parseTimeLabel(String value) {
     final normalized = value.trim().toUpperCase();
-    final match = RegExp(
-      r'^(\d{1,2}):(\d{2})\s?(AM|PM)$',
-    ).firstMatch(normalized);
+    final match = RegExp(r'^(\d{1,2}):(\d{2})\s?(AM|PM)$').firstMatch(normalized);
 
     if (match == null) {
       throw FormatException('Invalid time slot: $value');
@@ -370,9 +590,10 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'with $stylistName',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: const Color(0xFF7C5342)),
+            style: Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(color: const Color(0xFF7C5342)),
           ),
           const SizedBox(height: 16),
           _SummaryRow(label: 'Date', value: dateLabel),
@@ -399,9 +620,10 @@ class _SummaryRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF7C5342)),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: const Color(0xFF7C5342)),
             ),
           ),
           Expanded(
@@ -409,9 +631,211 @@ class _SummaryRow extends StatelessWidget {
               value,
               textAlign: TextAlign.right,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF43261D),
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF43261D),
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddressOptionCard extends StatelessWidget {
+  const _AddressOptionCard({
+    required this.address,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final CustomerAddressModel address;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFFFFF0E1) : Colors.white.withAlpha(225),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? const Color(0xFFDA8A5B) : const Color(0xFFE7D2C1),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                isSelected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_off_rounded,
+                color: isSelected
+                    ? const Color(0xFFDA8A5B)
+                    : const Color(0xFFB89D8C),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            address.addressLine1,
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF43261D),
+                                ),
+                          ),
+                        ),
+                        if (address.isDefault)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF43261D),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'Default',
+                              style: TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _formatAddress(address),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: const Color(0xFF7C5342),
+                            height: 1.35,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _formatAddress(CustomerAddressModel address) {
+    final parts = <String>[
+      if (address.addressLine2.trim().isNotEmpty) address.addressLine2.trim(),
+      if (address.city.trim().isNotEmpty) address.city.trim(),
+      if (address.state.trim().isNotEmpty) address.state.trim(),
+      if (address.postalCode.trim().isNotEmpty) address.postalCode.trim(),
+      if (address.country.trim().isNotEmpty) address.country.trim(),
+    ];
+    return parts.join(', ');
+  }
+}
+
+class _SelectedAddressPreview extends StatelessWidget {
+  const _SelectedAddressPreview({required this.address});
+
+  final CustomerAddressModel address;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(220),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Selected address',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: const Color(0xFF7C5342),
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            address.addressLine1,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: const Color(0xFF43261D),
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _AddressOptionCard._formatAddress(address),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF7C5342),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddressEmptyState extends StatelessWidget {
+  const _AddressEmptyState({
+    required this.isBusy,
+    required this.onUseCurrentLocation,
+  });
+
+  final bool isBusy;
+  final VoidCallback onUseCurrentLocation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(220),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'No saved address yet',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF43261D),
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Use your current location and we will save it as a customer address for this booking.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF7C5342),
+                  height: 1.4,
+                ),
+          ),
+          const SizedBox(height: 14),
+          ElevatedButton.icon(
+            onPressed: isBusy ? null : onUseCurrentLocation,
+            icon: isBusy
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.my_location_rounded),
+            label: Text(
+              isBusy ? 'Getting location...' : 'Use current location',
             ),
           ),
         ],
@@ -426,16 +850,6 @@ class _BookingErrorState extends StatelessWidget {
   final String message;
 
   @override
-  /*************  ✨ Windsurf Command ⭐  *************/
-  /// Builds a centered widget with an amber warning icon and
-  /// a centered text message.
-  ///
-  /// The icon is displayed first, followed by a 12px
-  /// height gap, and then the text message.
-  ///
-  /// The text message is centered and fills the available width.
-  ///
-  /// The widget is padded by 24px on all sides.
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
@@ -455,17 +869,16 @@ class _BookingErrorState extends StatelessWidget {
 
 class _BookingPayloadContext {
   const _BookingPayloadContext({
-    required this.customerId,
+    required this.customer,
     required this.stylistService,
+    required this.addresses,
   });
 
-  final String customerId;
+  final CustomerEntity customer;
   final StylistsServiceModel stylistService;
+  final List<CustomerAddressModel> addresses;
 }
 
-class _ClientLookupResult {
-  const _ClientLookupResult({this.customerId, this.error});
 
-  final String? customerId;
-  final String? error;
-}
+
+
