@@ -136,8 +136,8 @@ void initDependency() {
   getit.registerLazySingleton(() => VerifyOTP(getit()));
   getit.registerLazySingleton(() => ForgotPassword(getit()));
   getit.registerLazySingleton(() => ResetPassword(getit()));
-  getit.registerLazySingleton(() => GetCurrentClient(getit()));
-  getit.registerLazySingleton(() => UpdateClientProfile(getit()));
+  getit.registerLazySingleton(() => GetCurrentCustomer(getit()));
+  getit.registerLazySingleton(() => UpdateCustomerProfile(getit()));
 
   // Beauty services use cases
   getit.registerLazySingleton(() => GetServices(getit()));

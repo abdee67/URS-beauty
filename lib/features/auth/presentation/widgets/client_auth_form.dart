@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class ClientAuthForm extends StatelessWidget {
+class CustomerAuthForm extends StatelessWidget {
   final List<Widget> children;
   final VoidCallback onSubmit;
   final bool loading;
 
-  const ClientAuthForm({
+  const CustomerAuthForm({
     super.key,
     required this.children,
     required this.onSubmit,

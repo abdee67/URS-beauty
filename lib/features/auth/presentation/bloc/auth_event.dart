@@ -1,3 +1,5 @@
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
+
 abstract class AuthEvent {}
 
 class SignInRequested extends AuthEvent {
@@ -8,19 +10,21 @@ class SignInRequested extends AuthEvent {
 }
 
 class SignUpRequested extends AuthEvent {
+  final String email;
+  final String password;
   final String firstName;
   final String lastName;
   final String phone;
-  final String email;
-  final String password;
+  final CustomerAddressInput address;
 
-  SignUpRequested(
-    this.email,
-    this.password,
-    this.firstName,
-    this.lastName,
-    this.phone,
-  );
+  SignUpRequested({
+    required this.email,
+    required this.password,
+    required this.firstName,
+    required this.lastName,
+    required this.phone,
+    required this.address,
+  });
 }
 
 class SendOtpRequested extends AuthEvent {

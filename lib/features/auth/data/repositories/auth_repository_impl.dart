@@ -3,8 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:urs_beauty/features/auth/data/models/client_model.dart';
-import 'package:urs_beauty/features/auth/domain/entities/client.dart';
+import 'package:urs_beauty/features/auth/data/models/customer_model.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_entity.dart';
 import 'package:urs_beauty/features/auth/domain/repositories/auth_repository.dart';
  class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
@@ -30,9 +31,17 @@ Future<Either<Failures, Session>> signIn(
     String firstName,
     String lastName,
     String phone,
+    CustomerAddressInput address,
   ) async {
     try {
-     await remoteDataSource.signUp(email, password, firstName, lastName, phone);
+     await remoteDataSource.signUp(
+       email,
+       password,
+       firstName,
+       lastName,
+       phone,
+       address,
+     );
       return const Right(null);
     } catch (e) {
       return Left(Failures(message: e.toString()));
@@ -68,25 +77,25 @@ Future<Either<Failures, Session>> signIn(
     }
   }
   @override
-  Future<Either<Failures, ClientModel>> getCurrentClient() async {
+  Future<Either<Failures, CustomerModel>> getCurrentCustomer() async {
     try {
-      final user = remoteDataSource.getCurrentClient();
+      final user = remoteDataSource.getCurrentCustomer();
       return Right(await user);
     } catch (e) {
       return Left(Failures(message: e.toString()));
     }
   }
   @override
-  Future<Either<Failures, ClientEntity>> updateClientProfile(ClientEntity client) async {
+  Future<Either<Failures, CustomerEntity>> updateCustomerProfile(CustomerEntity client) async {
     try {
-      final clientModel = ClientModel(
+      final clientModel = CustomerModel(
         id: client.id,
         email: client.email,
         firstName: client.firstName,
         lastName: client.lastName,
         phone: client.phone,
       );
-      await remoteDataSource.updateClientProfile(clientModel);
+      await remoteDataSource.updateCustomerProfile(clientModel);
       return Right(client);
     } catch (e) {
       return Left(Failures(message: e.toString()));
