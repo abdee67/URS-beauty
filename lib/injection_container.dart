@@ -242,6 +242,8 @@ void initDependency() {
       addNotesToBooking: getit(),
       updateBookingStatus: getit(),
       searchBookings: getit(),
+      getCurrentCustomer: getit(),
+      getStylistsService: getit(),
 
     ),
   );

@@ -149,3 +149,9 @@ class SelectTimeEvent extends BookingEvent {
 
   final String time;
 }
+
+class LoadBookingContextEvent extends BookingEvent {
+  final String serviceId;
+  final String stylistId;
+  const LoadBookingContextEvent( this.serviceId, this.stylistId);
+}

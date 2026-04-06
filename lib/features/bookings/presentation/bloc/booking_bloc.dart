@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/get_current_client.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_services.dart';
@@ -17,6 +18,7 @@ import 'package:urs_beauty/features/bookings/domain/usecases/reschedule_booking.
 import 'package:urs_beauty/features/bookings/domain/usecases/search_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/update_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/update_booking_status.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_service.dart';
 
 part 'booking_event.dart';
 part 'booking_state.dart';
@@ -37,6 +39,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     required this.addNotesToBooking,
     required this.updateBookingStatus,
     required this.searchBookings,
+    required this.getCurrentCustomer,
+    required this.getStylistsService,
   }) : super(const BookingState()) {
     on<CreateBookingEvent>(_onCreateBooking);
     on<CreateBookingWithServicesEvent>(_onCreateBookingWithServices);
@@ -55,6 +59,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     on<ClearBookingMessageEvent>(_onClearBookingMessage);
     on<SelectDateEvent>(_onSelectDate);
     on<SelectTimeEvent>(_onSelectTime);
+    on<LoadBookingContextEvent>(_onLoadBookingContext);
   }
 
   final CreateBooking createBooking;
@@ -71,6 +76,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   final AddNotesToBooking addNotesToBooking;
   final UpdateBookingStatus updateBookingStatus;
   final SearchBookings searchBookings;
+  final GetCurrentCustomer getCurrentCustomer;
+  final GetStylistsService getStylistsService;
 
   Future<void> _onCreateBooking(
     CreateBookingEvent event,
@@ -374,5 +381,37 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     Emitter<BookingState> emit,
   ) {
     emit(state.copyWith(clearMessage: true, clearError: true));
+  }
+
+  Future<void> _onLoadBookingContext(
+    LoadBookingContextEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.loading());
+
+    final serviceResult = await getBookingServices(event.serviceId);
+    final stylistResult = await getBookingsByStylistId(event.stylistId);
+
+    serviceResult.fold(
+      (failure) => emit(state.failure(failure.message)),
+      (services) => emit(
+        state.copyWith(
+          bookingServices: services,
+          message: 'Services loaded successfully.',
+          clearError: true,
+        ),
+      ),
+    );
+
+    stylistResult.fold(
+      (failure) => emit(state.failure(failure.message)),
+      (bookings) => emit(
+        state.copyWith(
+          stylistBookings: bookings,
+          message: 'Stylist bookings loaded successfully.',
+          clearError: true,
+        ),
+      ),
+    );
   }
 }
