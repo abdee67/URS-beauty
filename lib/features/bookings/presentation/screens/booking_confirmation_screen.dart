@@ -440,10 +440,14 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
       permission = await Geolocator.requestPermission();
     }
 
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      return false;
+    if (permission == LocationPermission.denied) {
+   return Future.error('Location permissions are denied');
     }
+
+        if (permission == LocationPermission.deniedForever) {
+    return Future.error(
+      'Location permissions are permanently denied, we cannot request permissions.');
+  } 
 
     return true;
   }
