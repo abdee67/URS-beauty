@@ -10,6 +10,11 @@ import 'package:urs_beauty/features/bookings/data/models/create_booking_request_
 import 'package:urs_beauty/features/bookings/data/models/create_booking_service_item_model.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_success_screen.dart';
+import 'package:urs_beauty/features/bookings/presentation/widgets/address_option_card_widget.dart';
+import 'package:urs_beauty/features/bookings/presentation/widgets/booking_error_widget.dart';
+import 'package:urs_beauty/features/bookings/presentation/widgets/empty_address_state_widget.dart';
+import 'package:urs_beauty/features/bookings/presentation/widgets/selected_address_preview_widget.dart';
+import 'package:urs_beauty/features/bookings/presentation/widgets/summary_card_widget.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_service_model.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 import 'package:urs_beauty/features/stylists/domain/repository/stylists_repository.dart';
@@ -27,7 +32,7 @@ class BookingConfirmationScreen extends StatefulWidget {
 
   final String serviceId;
   final String serviceName;
-  final Stylist stylist;
+  final Stylist stylist;  
   final DateTime selectedDate;
   final String selectedTime;
 
@@ -116,14 +121,14 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                   }
 
                   if (snapshot.hasError) {
-                    return _BookingErrorState(
+                    return BookingErrorState(
                       message: snapshot.error.toString(),
                     );
                   }
 
                   final payloadContext = snapshot.data;
                   if (payloadContext == null) {
-                    return const _BookingErrorState(
+                    return const BookingErrorState(
                       message: 'Unable to prepare booking details.',
                     );
                   }
@@ -141,7 +146,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _SummaryCard(
+                        SummaryCard(
                           serviceName: widget.serviceName,
                           stylistName: widget.stylist.businessName,
                           dateLabel: localizations.formatMediumDate(
@@ -162,7 +167,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                         ),
                         const SizedBox(height: 10),
                         if (addresses.isEmpty)
-                          _AddressEmptyState(
+                          AddressEmptyState(
                             isBusy: _isSavingCurrentLocation,
                             onUseCurrentLocation: () => _saveCurrentLocationAddress(
                               payloadContext.customer,
@@ -170,7 +175,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                           )
                         else ...[
                           ...addresses.map(
-                            (address) => _AddressOptionCard(
+                            (address) => AddressOptionCard(
                               address: address,
                               isSelected: address.id == selectedAddressId,
                               onTap: () {
@@ -203,7 +208,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                         ],
                         if (selectedAddress != null) ...[
                           const SizedBox(height: 18),
-                          _SelectedAddressPreview(address: selectedAddress),
+                          SelectedAddressPreview(address: selectedAddress),
                         ],
                         const SizedBox(height: 18),
                         Text(
@@ -558,318 +563,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.serviceName,
-    required this.stylistName,
-    required this.dateLabel,
-    required this.timeLabel,
-    required this.priceLabel,
-  });
 
-  final String serviceName;
-  final String stylistName;
-  final String dateLabel;
-  final String timeLabel;
-  final String priceLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(225),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            serviceName,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF43261D),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'with $stylistName',
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(color: const Color(0xFF7C5342)),
-          ),
-          const SizedBox(height: 16),
-          _SummaryRow(label: 'Date', value: dateLabel),
-          _SummaryRow(label: 'Time', value: timeLabel),
-          _SummaryRow(label: 'Estimated price', value: 'From $priceLabel'),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: const Color(0xFF7C5342)),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF43261D),
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AddressOptionCard extends StatelessWidget {
-  const _AddressOptionCard({
-    required this.address,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final CustomerAddressModel address;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFFFF0E1) : Colors.white.withAlpha(225),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected ? const Color(0xFFDA8A5B) : const Color(0xFFE7D2C1),
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                isSelected
-                    ? Icons.radio_button_checked_rounded
-                    : Icons.radio_button_off_rounded,
-                color: isSelected
-                    ? const Color(0xFFDA8A5B)
-                    : const Color(0xFFB89D8C),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            address.addressLine1,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF43261D),
-                                ),
-                          ),
-                        ),
-                        if (address.isDefault)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF43261D),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: const Text(
-                              'Default',
-                              style: TextStyle(color: Colors.white, fontSize: 12),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _formatAddress(address),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF7C5342),
-                            height: 1.35,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static String _formatAddress(CustomerAddressModel address) {
-    final parts = <String>[
-      if (address.addressLine2.trim().isNotEmpty) address.addressLine2.trim(),
-      if (address.city.trim().isNotEmpty) address.city.trim(),
-      if (address.state.trim().isNotEmpty) address.state.trim(),
-      if (address.postalCode.trim().isNotEmpty) address.postalCode.trim(),
-      if (address.country.trim().isNotEmpty) address.country.trim(),
-    ];
-    return parts.join(', ');
-  }
-}
-
-class _SelectedAddressPreview extends StatelessWidget {
-  const _SelectedAddressPreview({required this.address});
-
-  final CustomerAddressModel address;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(220),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Selected address',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: const Color(0xFF7C5342),
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            address.addressLine1,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF43261D),
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _AddressOptionCard._formatAddress(address),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF7C5342),
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AddressEmptyState extends StatelessWidget {
-  const _AddressEmptyState({
-    required this.isBusy,
-    required this.onUseCurrentLocation,
-  });
-
-  final bool isBusy;
-  final VoidCallback onUseCurrentLocation;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(220),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'No saved address yet',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF43261D),
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Use your current location and we will save it as a customer address for this booking.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF7C5342),
-                  height: 1.4,
-                ),
-          ),
-          const SizedBox(height: 14),
-          ElevatedButton.icon(
-            onPressed: isBusy ? null : onUseCurrentLocation,
-            icon: isBusy
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.my_location_rounded),
-            label: Text(
-              isBusy ? 'Getting location...' : 'Use current location',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BookingErrorState extends StatelessWidget {
-  const _BookingErrorState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.warning_amber_rounded, size: 44),
-            const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _BookingPayloadContext {
   const _BookingPayloadContext({
