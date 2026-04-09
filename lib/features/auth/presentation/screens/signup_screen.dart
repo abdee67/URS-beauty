@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
@@ -34,7 +32,6 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _passwordsMatch = true;
-  bool _isGettingLocation = false;
   double _latitude = 0;
   double _longitude = 0;
 
@@ -68,6 +65,11 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: Colors.pink[50],
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
+          if (state is AuthAddressAutofilled) {
+            _applyAutofilledAddress(state.address);
+            return;
+          }
+
           if (state is EmailVerificationSent) {
             showDialog(
               context: context,
@@ -88,13 +90,16 @@ class _SignupScreenState extends State<SignupScreen> {
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.message),
+                content: Text(_cleanErrorMessage(state.message)),
                 backgroundColor: Colors.red[400],
               ),
             );
           }
         },
         builder: (context, state) {
+          final isSigningUp = state is AuthLoading;
+          final isGettingLocation = state is AuthAddressLoading;
+
           return Container(
             height: MediaQuery.of(context).size.height,
             decoration: BoxDecoration(
@@ -144,13 +149,13 @@ class _SignupScreenState extends State<SignupScreen> {
                         topLeft: Radius.circular(40),
                         topRight: Radius.circular(40),
                       ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple.withValues(alpha: 0.1),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.purple.withValues(alpha: 0.1),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ],
                     ),
                     child: Form(
                       key: _formKey,
@@ -297,10 +302,14 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   const SizedBox(height: 10),
                                   OutlinedButton.icon(
-                                    onPressed: _isGettingLocation
+                                    onPressed: isGettingLocation
                                         ? null
-                                        : _fillAddressFromCurrentLocation,
-                                    icon: _isGettingLocation
+                                        : () {
+                                            context.read<AuthBloc>().add(
+                                              AutoFillCurrentLocationAddressRequested(),
+                                            );
+                                          },
+                                    icon: isGettingLocation
                                         ? const SizedBox(
                                             width: 18,
                                             height: 18,
@@ -310,7 +319,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                           )
                                         : const Icon(Icons.my_location_rounded),
                                     label: Text(
-                                      _isGettingLocation
+                                      isGettingLocation
                                           ? 'Detecting location...'
                                           : 'Use current location',
                                     ),
@@ -383,7 +392,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                         ),
                                         elevation: 5,
                                       ),
-                                      child: state is AuthLoading
+                                      child: isSigningUp
                                           ? const CircularProgressIndicator(
                                               color: Colors.white,
                                             )
@@ -437,94 +446,28 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Future<void> _fillAddressFromCurrentLocation() async {
+  void _applyAutofilledAddress(CustomerAddressInput address) {
     setState(() {
-      _isGettingLocation = true;
+      _latitude = address.latitude;
+      _longitude = address.longitude;
+      addressLine1Controller.text = address.addressLine1;
+      addressLine2Controller.text = address.addressLine2;
+      cityController.text = address.city;
+      stateController.text = address.state;
+      postalCodeController.text = address.postalCode;
+      countryController.text = address.country;
     });
-
-    try {
-      final hasPermission = await _ensureLocationPermission();
-      if (!hasPermission) {
-        throw Exception('Location permission is required to autofill address.');
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
-      );
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      final placemark = placemarks.isNotEmpty ? placemarks.first : null;
-
-      setState(() {
-        _latitude = position.latitude;
-        _longitude = position.longitude;
-        addressLine1Controller.text = _composeAddressLine1(placemark);
-        addressLine2Controller.text = _composeAddressLine2(placemark);
-        cityController.text =
-            placemark?.locality ?? placemark?.subAdministrativeArea ?? '';
-        stateController.text = placemark?.administrativeArea ?? '';
-        postalCodeController.text = placemark?.postalCode ?? '';
-        countryController.text = placemark?.country ?? '';
-      });
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGettingLocation = false;
-        });
-      }
-    }
   }
 
-  Future<bool> _ensureLocationPermission() async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw Exception('Location services are turned off on this device.');
+  String _cleanErrorMessage(String message) {
+    if (message.startsWith('Exception: ')) {
+      return message.replaceFirst('Exception: ', '');
     }
-
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    return permission != LocationPermission.denied &&
-        permission != LocationPermission.deniedForever;
-  }
-
-  String _composeAddressLine1(Placemark? placemark) {
-    final parts = <String>[
-      if ((placemark?.street ?? '').trim().isNotEmpty)
-        placemark!.street!.trim(),
-      if ((placemark?.name ?? '').trim().isNotEmpty)
-        placemark!.name!.trim(),
-    ];
-
-    return parts.isEmpty ? 'Current location' : parts.join(', ');
-  }
-
-  String _composeAddressLine2(Placemark? placemark) {
-    final parts = <String>[
-      if ((placemark?.subLocality ?? '').trim().isNotEmpty)
-        placemark!.subLocality!.trim(),
-      if ((placemark?.thoroughfare ?? '').trim().isNotEmpty)
-        placemark!.thoroughfare!.trim(),
-    ];
-
-    return parts.join(', ');
+    return message;
   }
 
   void _submit(BuildContext context, AuthState state) {
-    if (state is AuthLoading) {
+    if (state is AuthLoading || state is AuthAddressLoading) {
       return;
     }
 

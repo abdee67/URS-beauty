@@ -27,6 +27,10 @@ class SignUpRequested extends AuthEvent {
   });
 }
 
+class AutoFillCurrentLocationAddressRequested extends AuthEvent {
+  AutoFillCurrentLocationAddressRequested();
+}
+
 class SendOtpRequested extends AuthEvent {
   final String email;
 

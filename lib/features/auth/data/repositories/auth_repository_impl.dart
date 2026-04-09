@@ -2,14 +2,17 @@ import 'package:dartz/dartz.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:urs_beauty/features/auth/data/models/customer_model.dart';
+import 'package:urs_beauty/features/auth/data/models/customer_address_model.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_entity.dart';
 import 'package:urs_beauty/features/auth/domain/repositories/auth_repository.dart';
  class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
-  AuthRepositoryImpl(this.remoteDataSource);  
+  final AuthLocationDataSource locationDataSource;
+  AuthRepositoryImpl(this.remoteDataSource, this.locationDataSource);  
 @override
 Future<Either<Failures, Session>> signIn(
   String email,
@@ -115,6 +118,25 @@ Future<Either<Failures, Session>> signIn(
     try {
    await remoteDataSource.resetPassword(email, password);
       return const Right(null);
+    } catch (e) {
+      return Left(Failures(message: e.toString()));
+    }
+  }
+  @override
+  Future<Either<Failures, CustomerAddressInput>> getCurrentLocationAddress() async {
+    try {
+      final address = await locationDataSource.getCurrentLocationAddress();
+      return Right(address);
+    } catch (e) {
+      return Left(Failures(message: e.toString()));
+    }
+  }
+  @override
+  Future<Either<Failures, CustomerAddressModel>> createCustomerAddress(
+      CustomerAddressInput input) async {
+    try {
+      final saved = await remoteDataSource.createCustomerAddress(input.toJson());
+      return Right(saved);
     } catch (e) {
       return Left(Failures(message: e.toString()));
     }
