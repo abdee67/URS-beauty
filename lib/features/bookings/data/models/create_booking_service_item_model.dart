@@ -1,13 +1,11 @@
-class CreateBookingServiceItemModel {
-  const CreateBookingServiceItemModel({
-    required this.serviceId,
-    required this.stylistServiceId,
-    required this.quantity,
-  });
+import 'package:urs_beauty/features/bookings/domain/entities/create_booking_service_item.dart';
 
-  final String serviceId;
-  final String stylistServiceId;
-  final int quantity;
+class CreateBookingServiceItemModel extends CreateBookingServiceItemEntity {
+  const CreateBookingServiceItemModel({
+    required super.serviceId,
+    required super.stylistServiceId,
+    required super.quantity,
+  });
 
   Map<String, dynamic> toRpcJson() {
     return <String, dynamic>{

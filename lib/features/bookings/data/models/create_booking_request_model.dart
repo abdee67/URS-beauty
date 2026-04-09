@@ -1,21 +1,15 @@
+import 'package:urs_beauty/features/bookings/domain/entities/create_booking_request.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_service_item_model.dart';
 
-class CreateBookingRequestModel {
+class CreateBookingRequestModel extends CreateBookingRequestEntity {
   const CreateBookingRequestModel({
-    required this.customerId,
-    required this.stylistId,
-    required this.scheduledAt,
-    required this.addressId,
-    required this.items,
-    this.notes,
+    required super.customerId,
+    required super.stylistId,
+    required super.scheduledAt,
+    required super.addressId,
+    required List<CreateBookingServiceItemModel> super.items,
+    super.notes,
   });
-
-  final String customerId;
-  final String stylistId;
-  final DateTime scheduledAt;
-  final String addressId;
-  final String? notes;
-  final List<CreateBookingServiceItemModel> items;
 
   Map<String, dynamic> toRpcParams() {
     final normalizedNotes = notes?.trim();
@@ -28,7 +22,15 @@ class CreateBookingRequestModel {
       'p_notes': normalizedNotes == null || normalizedNotes.isEmpty
           ? null
           : normalizedNotes,
-      'p_items': items.map((item) => item.toRpcJson()).toList(),
+      'p_items': items
+          .map(
+            (item) => CreateBookingServiceItemModel(
+              serviceId: item.serviceId,
+              stylistServiceId: item.stylistServiceId,
+              quantity: item.quantity,
+            ).toRpcJson(),
+          )
+          .toList(),
     };
   }
 }
