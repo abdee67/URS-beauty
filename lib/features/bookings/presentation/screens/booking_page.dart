@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:urs_beauty/features/beauty_services/presentation/screens/service_list_screen.dart';
+import 'package:urs_beauty/features/bookings/presentation/screens/my_booking.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
@@ -11,6 +11,6 @@ class BookingPage extends StatefulWidget {
 class _BookingPageState extends State<BookingPage> {
   @override
   Widget build(BuildContext context) {
-    return const ServiceListScreen();
+    return const MyBookingScreen();
   }
 }

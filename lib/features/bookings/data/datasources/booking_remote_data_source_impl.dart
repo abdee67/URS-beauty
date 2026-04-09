@@ -15,7 +15,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   static const String _bookingColumns =
       'id, customer, stylist, status, notes, address, total_amount, '
-      'scheduled_at, end_at, created_at, updated_at';
+      'scheduled_at, end_at, created_at, updated_at, '
+      'stylist_profile:stylists(business_name), '
+      'booked_services:booking_services(service_name)';
   static const String _bookingServicesColumns =
       'id, booking_id, service_name, service_id, stylist_service_id, '
       'quantity, price_at_booking, duration_at_booking';

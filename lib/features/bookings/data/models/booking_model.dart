@@ -5,6 +5,8 @@ class BookingModel extends BookingEntity {
     required super.id,
     required super.customerId,
     required super.stylistId,
+    super.serviceName,
+    super.stylistName,
     required super.status,
     super.notes,
     required super.addressId,
@@ -16,10 +18,24 @@ class BookingModel extends BookingEntity {
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
+    final stylistProfile = json['stylist_profile'];
+    final bookedServices = json['booked_services'];
+    final resolvedServiceName = bookedServices is List && bookedServices.isNotEmpty
+        ? (Map<String, dynamic>.from(bookedServices.first as Map)['service_name'] ??
+                '')
+            .toString()
+        : '';
+    final resolvedStylistName = stylistProfile is Map
+        ? (Map<String, dynamic>.from(stylistProfile)['business_name'] ?? '')
+            .toString()
+        : '';
+
     return BookingModel(
       id: (json['id'] ?? '').toString(),
       customerId: (json['customer'] ?? '').toString(),
       stylistId: (json['stylist'] ?? '').toString(),
+      serviceName: resolvedServiceName,
+      stylistName: resolvedStylistName,
       status: _bookingStatusFromString((json['status'] ?? 'pending').toString()),
       notes: json['notes']?.toString(),
       addressId: (json['address'] ?? '').toString(),
@@ -36,6 +52,8 @@ class BookingModel extends BookingEntity {
       id: id,
       customerId: customerId,
       stylistId: stylistId,
+      serviceName: serviceName,
+      stylistName: stylistName,
       status: status,
       notes: notes,
       addressId: addressId,

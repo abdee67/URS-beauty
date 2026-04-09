@@ -9,6 +9,8 @@ class BookingEntity {
   final String id;
   final String customerId;
   final String stylistId;
+  final String serviceName;
+  final String stylistName;
   final BookingStatus status;
   final String? notes;
   final String addressId;
@@ -22,6 +24,8 @@ class BookingEntity {
     required this.id,
     required this.customerId,
     required this.stylistId,
+    this.serviceName = '',
+    this.stylistName = '',
     required this.status,
     this.notes,
     required this.addressId,
