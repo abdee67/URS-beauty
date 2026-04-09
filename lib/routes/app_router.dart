@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:urs_beauty/core/constants/app_routes.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/forgotPassword.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/resetPassword.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/welcome_screen.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/login_screen.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/signup_screen.dart';
+import 'package:urs_beauty/features/beauty_services/presentation/screens/service_list_screen.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_page.dart';
 import 'package:urs_beauty/features/chat/presentation/screens/chat_screen.dart';
 import 'package:urs_beauty/features/dashboard/dashboard_wrapper.dart';
@@ -24,18 +26,18 @@ class AppRouter {
 
   late final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: showOnboarding ? '/welcome' : '/login',
+    initialLocation: showOnboarding ? AppRoutes.onboardingScreen : AppRoutes.loginScreen,
     routes: [
       GoRoute(
-        path: '/welcome',
+        path: AppRoutes.onboardingScreen,
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
-        path: '/login',
+        path: AppRoutes.loginScreen,
         name: 'login',
         builder: (context, state) => const LoginScreen(),
       ),
-      GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
+      GoRoute(path: AppRoutes.signupScreen, builder: (_, __) => const SignupScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return DashboardWrapper(navigationShell: navigationShell);
@@ -43,22 +45,23 @@ class AppRouter {
         branches: [
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
+              GoRoute(path: AppRoutes.homeScreen, builder: (_, __) => const HomeScreen()),
             ],
           ),
+          
           // Additional branches can be added here for other tabs
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/location',
-                builder: (_, __) => const LocationScreen(),
+                path: AppRoutes.serviceScreen,
+                builder: (_, __) => const ServiceListScreen(),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/booking',
+                path: AppRoutes.bookingScreen,
                 builder: (_, __) => const BookingPage(),
               ),
             ],
@@ -66,7 +69,7 @@ class AppRouter {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/stylists',
+                path: AppRoutes.stylistsScreen,
                 builder: (_, state) {
                   final serviceId = state.uri.queryParameters['serviceId'];
                   final serviceName = _decodeParam(
@@ -94,13 +97,13 @@ class AppRouter {
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/chat', builder: (_, __) => const ChatScreen()),
+              GoRoute(path: AppRoutes.chat, builder: (_, __) => const ChatScreen()),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/payment',
+                path: AppRoutes.payment,
                 builder: (_, __) => const PaymentMethodsScreen(),
               ),
             ],
@@ -108,11 +111,11 @@ class AppRouter {
         ],
       ),
       GoRoute(
-        path: '/forgot-password',
+        path: AppRoutes.forgotPasswordScreen,
         builder: (_, __) => ForgotPasswordScreen(),
       ),
       GoRoute(
-        path: '/reset-password',
+        path: AppRoutes.resetPasswordScreen,
         builder: (_, __) => ResetPasswordScreen(),
       ),
     ],

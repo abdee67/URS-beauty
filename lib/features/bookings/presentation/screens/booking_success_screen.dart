@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:urs_beauty/core/constants/app_routes.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 
 class BookingSuccessScreen extends StatelessWidget {
@@ -91,12 +92,12 @@ class BookingSuccessScreen extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () => context.go('/booking'),
+                        onPressed: () => context.go(AppRoutes.serviceScreen),
                         child: const Text('Book another service'),
                       ),
                     ),
                     TextButton(
-                      onPressed: () => context.go('/home'),
+                      onPressed: () => context.go(AppRoutes.homeScreen),
                       child: const Text('Back to home'),
                     ),
                   ],

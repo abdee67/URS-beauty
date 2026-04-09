@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:urs_beauty/core/constants/app_routes.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_schedule_screen.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
@@ -143,7 +144,7 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
                         Navigator.of(context).pop();
                         return;
                       }
-                      context.go('/booking');
+                      context.go(AppRoutes.serviceScreen);
                     },
                     child: const Text('Back to services'),
                   ),

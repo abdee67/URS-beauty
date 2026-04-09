@@ -35,7 +35,7 @@ class CustomBottomNavBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
-              _buildNavItem(1, Icons.map_rounded, Icons.map_outlined, 'Location'),
+              _buildNavItem(1, Icons.room_service_rounded, Icons.room_service_outlined, 'Services'),
               
               // Special center button for Booking
               _buildBookingButton(2),
