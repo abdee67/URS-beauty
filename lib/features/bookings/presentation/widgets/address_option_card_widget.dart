@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:urs_beauty/features/auth/data/models/customer_address_model.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity.dart';
 
 class AddressOptionCard extends StatelessWidget {
   const AddressOptionCard({
@@ -9,7 +9,7 @@ class AddressOptionCard extends StatelessWidget {
     required this.onTap,
   });
 
-  final CustomerAddressModel address;
+  final CustomerAddressEntity address;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -91,7 +91,7 @@ class AddressOptionCard extends StatelessWidget {
     );
   }
   
-  static String formatAddress(CustomerAddressModel address) {
+  static String formatAddress(CustomerAddressEntity address) {
     final parts = <String>[
       if (address.addressLine2.trim().isNotEmpty) address.addressLine2.trim(),
       if (address.city.trim().isNotEmpty) address.city.trim(),

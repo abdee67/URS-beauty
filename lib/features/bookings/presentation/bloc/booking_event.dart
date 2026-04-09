@@ -19,7 +19,7 @@ class CreateBookingEvent extends BookingEvent {
 class CreateBookingWithServicesEvent extends BookingEvent {
   const CreateBookingWithServicesEvent(this.request);
 
-  final CreateBookingRequestModel request;
+  final CreateBookingRequestEntity request;
 
   @override
   List<Object?> get props => [request];
@@ -63,6 +63,10 @@ class GetBookingsByCustomerIdEvent extends BookingEvent {
 
   @override
   List<Object?> get props => [customerId];
+}
+
+class LoadMyBookingsEvent extends BookingEvent {
+  const LoadMyBookingsEvent();
 }
 
 class GetBookingServicesEvent extends BookingEvent {
@@ -131,6 +135,45 @@ class SearchBookingsEvent extends BookingEvent {
   List<Object?> get props => [query];
 }
 
+class CreateCustomerAddressEvent extends BookingEvent {
+  const CreateCustomerAddressEvent(this.input);
+
+  final CustomerAddressInput input;
+
+  @override
+  List<Object?> get props => [input];
+}
+
+class UseCurrentLocationAddressEvent extends BookingEvent {
+  const UseCurrentLocationAddressEvent();
+}
+
+class SelectBookingAddressEvent extends BookingEvent {
+  const SelectBookingAddressEvent(this.addressId);
+
+  final String addressId;
+
+  @override
+  List<Object?> get props => [addressId];
+}
+
+class ConfirmBookingEvent extends BookingEvent {
+  const ConfirmBookingEvent({
+    required this.serviceId,
+    required this.stylistId,
+    required this.scheduledAt,
+    this.notes,
+  });
+
+  final String serviceId;
+  final String stylistId;
+  final DateTime scheduledAt;
+  final String? notes;
+
+  @override
+  List<Object?> get props => [serviceId, stylistId, scheduledAt, notes];
+}
+
 class ClearBookingMessageEvent extends BookingEvent {
   const ClearBookingMessageEvent();
 }
@@ -148,10 +191,16 @@ class SelectTimeEvent extends BookingEvent {
   const SelectTimeEvent(this.time);  
 
   final String time;
+
+  @override
+  List<Object?> get props => [time];
 }
 
 class LoadBookingContextEvent extends BookingEvent {
   final String serviceId;
   final String stylistId;
   const LoadBookingContextEvent( this.serviceId, this.stylistId);
+
+  @override
+  List<Object?> get props => [serviceId, stylistId];
 }

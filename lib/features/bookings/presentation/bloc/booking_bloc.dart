@@ -1,13 +1,20 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/get_current_client.dart';
-import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/create_customer_address.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_entity.dart';
+import 'package:urs_beauty/features/stylists/domain/entities/stylists_service.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
+import 'package:urs_beauty/features/bookings/domain/entities/create_booking_request.dart';
+import 'package:urs_beauty/features/bookings/domain/entities/create_booking_service_item.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_services.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/add_notes_to_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/cancel_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/create_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/create_booking_with_services.dart';
+import 'package:urs_beauty/features/bookings/domain/usecases/get_current_location_address.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_customer_id.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_status.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_sylist_id.dart';
@@ -18,7 +25,7 @@ import 'package:urs_beauty/features/bookings/domain/usecases/reschedule_booking.
 import 'package:urs_beauty/features/bookings/domain/usecases/search_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/update_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/update_booking_status.dart';
-import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_service.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_services.dart';
 
 part 'booking_event.dart';
 part 'booking_state.dart';
@@ -39,13 +46,16 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     required this.addNotesToBooking,
     required this.updateBookingStatus,
     required this.searchBookings,
+    required this.createCustomerAddress,
+    required this.getCurrentLocationAddress,
     required this.getCurrentCustomer,
-    required this.getStylistsService,
+    required this.getStylistServices,
   }) : super(const BookingState()) {
     on<CreateBookingEvent>(_onCreateBooking);
     on<CreateBookingWithServicesEvent>(_onCreateBookingWithServices);
     on<UpdateBookingEvent>(_onUpdateBooking);
     on<CancelBookingEvent>(_onCancelBooking);
+    on<LoadMyBookingsEvent>(_onLoadMyBookings);
     on<GetBookingsEvent>(_onGetBookings);
     on<GetBookingByIdEvent>(_onGetBookingById);
     on<GetBookingsByCustomerIdEvent>(_onGetBookingsByCustomerId);
@@ -56,6 +66,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     on<AddNotesToBookingEvent>(_onAddNotesToBooking);
     on<UpdateBookingStatusEvent>(_onUpdateBookingStatus);
     on<SearchBookingsEvent>(_onSearchBookings);
+    on<CreateCustomerAddressEvent>(_onCreateCustomerAddress);
+    on<UseCurrentLocationAddressEvent>(_onUseCurrentLocationAddress);
+    on<SelectBookingAddressEvent>(_onSelectBookingAddress);
+    on<ConfirmBookingEvent>(_onConfirmBooking);
     on<ClearBookingMessageEvent>(_onClearBookingMessage);
     on<SelectDateEvent>(_onSelectDate);
     on<SelectTimeEvent>(_onSelectTime);
@@ -76,8 +90,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   final AddNotesToBooking addNotesToBooking;
   final UpdateBookingStatus updateBookingStatus;
   final SearchBookings searchBookings;
+  final CreateCustomerAddress createCustomerAddress;
+  final GetCurrentLocationAddress getCurrentLocationAddress;
   final GetCurrentCustomer getCurrentCustomer;
-  final GetStylistsService getStylistsService;
+  final GetStylistServices getStylistServices;
 
   Future<void> _onCreateBooking(
     CreateBookingEvent event,
@@ -151,10 +167,35 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       (_) => emit(
         state.copyWith(
           status: BookingBlocStatus.cancelled,
+          customerBookings: _markBookingCancelled(
+            state.customerBookings,
+            event.bookingId,
+          ),
           message: 'Booking cancelled successfully.',
           clearError: true,
         ),
       ),
+    );
+  }
+
+  Future<void> _onLoadMyBookings(
+    LoadMyBookingsEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.loading());
+
+    final customerResult = await getCurrentCustomer();
+    customerResult.fold(
+      (failure) => emit(state.failure(failure.message)),
+      (customer) {
+        emit(
+          state.copyWith(
+            customer: customer,
+            clearError: true,
+          ),
+        );
+        add(GetBookingsByCustomerIdEvent(customer.id));
+      },
     );
   }
 
@@ -362,6 +403,108 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     );
   }
 
+  Future<void> _onCreateCustomerAddress(
+    CreateCustomerAddressEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.addressCreating());
+
+    final result = await createCustomerAddress(event.input);
+    result.fold(
+      (failure) => emit(state.failure(failure.message)),
+      (address) => emit(
+        state.copyWith(
+          status: BookingBlocStatus.addressCreated,
+          createdAddress: address,
+          addresses: _mergeAddresses(state.addresses, address),
+          selectedAddressId: address.id,
+          message: 'Address saved successfully.',
+          clearError: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onUseCurrentLocationAddress(
+    UseCurrentLocationAddressEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.addressCreating());
+
+    final locationResult = await getCurrentLocationAddress();
+    if (locationResult.isLeft()) {
+      locationResult.fold(
+        (failure) => emit(state.failure(failure.message)),
+        (_) => null,
+      );
+      return;
+    }
+
+    final input = locationResult.fold((_) => null, (value) => value)!;
+    add(CreateCustomerAddressEvent(input));
+  }
+
+  void _onSelectBookingAddress(
+    SelectBookingAddressEvent event,
+    Emitter<BookingState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        selectedAddressId: event.addressId,
+        clearError: true,
+      ),
+    );
+  }
+
+  Future<void> _onConfirmBooking(
+    ConfirmBookingEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    final customer = state.customer;
+    final stylistService = state.stylistService;
+    final selectedAddressId = state.selectedAddressId?.trim() ?? '';
+
+    if (customer == null || stylistService == null) {
+      emit(state.failure('Booking details are still loading. Please try again.'));
+      return;
+    }
+
+    if (selectedAddressId.isEmpty) {
+      emit(state.failure('Please choose a booking address.'));
+      return;
+    }
+
+    emit(state.creating());
+
+    final request = CreateBookingRequestEntity(
+      customerId: customer.id,
+      stylistId: event.stylistId,
+      scheduledAt: event.scheduledAt,
+      addressId: selectedAddressId,
+      notes: event.notes,
+      items: [
+        CreateBookingServiceItemEntity(
+          serviceId: event.serviceId,
+          stylistServiceId: stylistService.id,
+          quantity: 1,
+        ),
+      ],
+    );
+
+    final result = await createBookingWithServices(request);
+    result.fold(
+      (failure) => emit(state.failure(failure.message)),
+      (booking) => emit(
+        state.copyWith(
+          status: BookingBlocStatus.created,
+          selectedBooking: booking,
+          message: 'Booking created successfully.',
+          clearError: true,
+        ),
+      ),
+    );
+  }
+
   Future<void> _onSelectDate(
     SelectDateEvent event,
     Emitter<BookingState> emit,
@@ -389,29 +532,95 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   ) async {
     emit(state.loading());
 
-    final serviceResult = await getBookingServices(event.serviceId);
-    final stylistResult = await getBookingsByStylistId(event.stylistId);
+    final customerResult = await getCurrentCustomer();
+    final stylistServicesResult = await getStylistServices(event.stylistId);
 
-    serviceResult.fold(
-      (failure) => emit(state.failure(failure.message)),
-      (services) => emit(
-        state.copyWith(
-          bookingServices: services,
-          message: 'Services loaded successfully.',
-          clearError: true,
-        ),
-      ),
+    // Handle failures
+    if (customerResult.isLeft()) {
+      return customerResult.fold(
+        (failure) => emit(state.failure(failure.message)),
+        (_) => null,
+      );
+    }
+
+    if (stylistServicesResult.isLeft()) {
+      return stylistServicesResult.fold(
+        (failure) => emit(state.failure(failure.message)),
+        (_) => null,
+      );
+    }
+
+    final customer = customerResult.fold((l) => null, (r) => r)!;
+    final stylistServices = stylistServicesResult.fold(
+      (l) => <StylistsServiceEntity>[],
+      (r) => r,
     );
 
-    stylistResult.fold(
-      (failure) => emit(state.failure(failure.message)),
-      (bookings) => emit(
-        state.copyWith(
-          stylistBookings: bookings,
-          message: 'Stylist bookings loaded successfully.',
-          clearError: true,
-        ),
+    final matchingService = stylistServices
+        .where((service) => service.isAvailable)
+        .where((service) => service.serviceId == event.serviceId)
+        .cast<StylistsServiceEntity?>()
+        .firstWhere((service) => service != null, orElse: () => null);
+
+    if (matchingService == null) {
+      emit(state.failure('This stylist is not available for the selected service.'));
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        status: BookingBlocStatus.loaded,
+        customer: customer,
+        stylistService: matchingService,
+        addresses: customer.addresses,
+        selectedAddressId: customer.defaultAddress?.id,
+        message: 'Booking context loaded.',
+        clearError: true,
       ),
     );
+  }
+
+  List<CustomerAddressEntity> _mergeAddresses(
+    List<CustomerAddressEntity> addresses,
+    CustomerAddressEntity createdAddress,
+  ) {
+    final existingIndex = addresses.indexWhere(
+      (address) => address.id == createdAddress.id,
+    );
+
+    if (existingIndex == -1) {
+      return <CustomerAddressEntity>[...addresses, createdAddress];
+    }
+
+    final updated = <CustomerAddressEntity>[...addresses];
+    updated[existingIndex] = createdAddress;
+    return updated;
+  }
+
+  List<BookingEntity> _markBookingCancelled(
+    List<BookingEntity> bookings,
+    String bookingId,
+  ) {
+    return bookings
+        .map(
+          (booking) => booking.id != bookingId
+              ? booking
+              : BookingEntity(
+                  id: booking.id,
+                  customerId: booking.customerId,
+                  stylistId: booking.stylistId,
+                  serviceName: booking.serviceName,
+                  stylistName: booking.stylistName,
+                  status: BookingStatus.cancelled,
+                  notes: booking.notes,
+                  addressId: booking.addressId,
+                  totalAmount: booking.totalAmount,
+                  scheduledAt: booking.scheduledAt,
+                  endAt: booking.endAt,
+                  createdAt: booking.createdAt,
+                  updatedAt: DateTime.now(),
+                ),
+        )
+        .toList();
   }
 }

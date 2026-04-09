@@ -1,13 +1,6 @@
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:urs_beauty/config/supabase_config.dart';
-import 'package:urs_beauty/features/auth/data/models/customer_address_model.dart';
-import 'package:urs_beauty/features/auth/domain/entities/customer_entity.dart';
-import 'package:urs_beauty/features/auth/domain/usecases/get_current_client.dart';
-import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
-import 'package:urs_beauty/features/bookings/data/models/create_booking_service_item_model.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_success_screen.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/address_option_card_widget.dart';
@@ -15,10 +8,7 @@ import 'package:urs_beauty/features/bookings/presentation/widgets/booking_error_
 import 'package:urs_beauty/features/bookings/presentation/widgets/empty_address_state_widget.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/selected_address_preview_widget.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/summary_card_widget.dart';
-import 'package:urs_beauty/features/stylists/data/models/stylists_service_model.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
-import 'package:urs_beauty/features/stylists/domain/repository/stylists_repository.dart';
-import 'package:urs_beauty/injection_container.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({
@@ -32,7 +22,7 @@ class BookingConfirmationScreen extends StatefulWidget {
 
   final String serviceId;
   final String serviceName;
-  final Stylist stylist;  
+  final Stylist stylist;
   final DateTime selectedDate;
   final String selectedTime;
 
@@ -43,16 +33,20 @@ class BookingConfirmationScreen extends StatefulWidget {
 
 class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
   late final TextEditingController _notesController;
-  late final Future<_BookingPayloadContext> _payloadContextFuture;
-  final List<CustomerAddressModel> _newAddresses = <CustomerAddressModel>[];
-  String? _selectedAddressId;
-  bool _isSavingCurrentLocation = false;
 
   @override
   void initState() {
     super.initState();
     _notesController = TextEditingController();
-    _payloadContextFuture = _loadPayloadContext();
+    Future.microtask(() {
+      if (!mounted) {
+        return;
+      }
+
+      context.read<BookingBloc>().add(
+        LoadBookingContextEvent(widget.serviceId, widget.stylist.id),
+      );
+    });
   }
 
   @override
@@ -78,6 +72,13 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             ..showSnackBar(SnackBar(content: Text(state.errorMessage)));
         }
 
+        if (state.status == BookingBlocStatus.addressCreated &&
+            (state.message?.isNotEmpty ?? false)) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(state.message!)));
+        }
+
         if (state.status == BookingBlocStatus.created &&
             state.selectedBooking != null) {
           Navigator.of(context).pushReplacement(
@@ -92,170 +93,182 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
         }
       },
       builder: (context, state) {
+        if (_isInitialLoading(state)) {
+          return _buildScaffold(
+            context,
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (_isInitialError(state)) {
+          return _buildScaffold(
+            context,
+            child: BookingErrorState(message: state.errorMessage),
+          );
+        }
+
+        final customer = state.customer!;
+        final stylistService = state.stylistService!;
+        final addresses = state.addresses;
+        final selectedAddress = _findSelectedAddress(
+          addresses,
+          state.selectedAddressId,
+        );
+        final isSavingAddress = state.status == BookingBlocStatus.addressCreating;
         final isSubmitting = state.status == BookingBlocStatus.creating;
 
-        return Scaffold(
-          backgroundColor: const Color(0xFFFFFBF6),
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            title: const Text(
-              'Confirm booking',
-              style: TextStyle(color: Color(0xFF5C2E1F)),
-            ),
-          ),
-          body: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFFFFF4EA), Color(0xFFFFE0C7)],
-              ),
-            ),
-            child: SafeArea(
-              child: FutureBuilder<_BookingPayloadContext>(
-                future: _payloadContextFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (snapshot.hasError) {
-                    return BookingErrorState(
-                      message: snapshot.error.toString(),
-                    );
-                  }
-
-                  final payloadContext = snapshot.data;
-                  if (payloadContext == null) {
-                    return const BookingErrorState(
-                      message: 'Unable to prepare booking details.',
-                    );
-                  }
-
-                  final addresses = _resolvedAddresses(payloadContext);
-                  final selectedAddressId =
-                      _selectedAddressId ?? payloadContext.customer.defaultAddress?.id;
-                  final selectedAddress = addresses
-                      .where((address) => address.id == selectedAddressId)
-                      .cast<CustomerAddressModel?>()
-                      .firstWhere((address) => address != null, orElse: () => null);
-
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SummaryCard(
-                          serviceName: widget.serviceName,
-                          stylistName: widget.stylist.businessName,
-                          dateLabel: localizations.formatMediumDate(
-                            widget.selectedDate,
-                          ),
-                          timeLabel: widget.selectedTime,
-                          priceLabel: payloadContext.stylistService.price
-                              .toStringAsFixed(0),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          'Address',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF43261D),
-                              ),
-                        ),
-                        const SizedBox(height: 10),
-                        if (addresses.isEmpty)
-                          AddressEmptyState(
-                            isBusy: _isSavingCurrentLocation,
-                            onUseCurrentLocation: () => _saveCurrentLocationAddress(
-                              payloadContext.customer,
-                            ),
-                          )
-                        else ...[
-                          ...addresses.map(
-                            (address) => AddressOptionCard(
+        return _buildScaffold(
+          context,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _HeroBanner(
+                  serviceName: widget.serviceName,
+                  stylistName: widget.stylist.businessName,
+                  dateLabel: localizations.formatMediumDate(widget.selectedDate),
+                  timeLabel: widget.selectedTime,
+                ),
+                const SizedBox(height: 18),
+                SummaryCard(
+                  serviceName: widget.serviceName,
+                  stylistName: widget.stylist.businessName,
+                  dateLabel: localizations.formatMediumDate(widget.selectedDate),
+                  timeLabel: widget.selectedTime,
+                  priceLabel: stylistService.price.toStringAsFixed(0),
+                ),
+                const SizedBox(height: 18),
+                _SectionCard(
+                  title: 'Service address',
+                  subtitle:
+                      'Choose where your stylist should arrive for this appointment.',
+                  child: Column(
+                    children: [
+                      if (addresses.isEmpty)
+                        AddressEmptyState(
+                          isBusy: isSavingAddress,
+                          onUseCurrentLocation: () {
+                            context.read<BookingBloc>().add(
+                              const UseCurrentLocationAddressEvent(),
+                            );
+                          },
+                        )
+                      else ...[
+                        ...addresses.map(
+                          (address) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: AddressOptionCard(
                               address: address,
-                              isSelected: address.id == selectedAddressId,
+                              isSelected: address.id == state.selectedAddressId,
                               onTap: () {
-                                setState(() {
-                                  _selectedAddressId = address.id;
-                                });
+                                context.read<BookingBloc>().add(
+                                  SelectBookingAddressEvent(address.id),
+                                );
                               },
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          OutlinedButton.icon(
-                            onPressed: _isSavingCurrentLocation
+                        ),
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: isSavingAddress
                                 ? null
-                                : () => _saveCurrentLocationAddress(
-                                      payloadContext.customer,
-                                    ),
-                            icon: _isSavingCurrentLocation
+                                : () {
+                                    context.read<BookingBloc>().add(
+                                      const UseCurrentLocationAddressEvent(),
+                                    );
+                                  },
+                            icon: isSavingAddress
                                 ? const SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Icon(Icons.my_location_rounded),
                             label: Text(
-                              _isSavingCurrentLocation
+                              isSavingAddress
                                   ? 'Saving current location...'
                                   : 'Use current location as new address',
                             ),
-                          ),
-                        ],
-                        if (selectedAddress != null) ...[
-                          const SizedBox(height: 18),
-                          SelectedAddressPreview(address: selectedAddress),
-                        ],
-                        const SizedBox(height: 18),
-                        Text(
-                          'Notes',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF43261D),
-                              ),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: _notesController,
-                          minLines: 3,
-                          maxLines: 4,
-                          decoration: _inputDecoration(
-                            hintText:
-                                'Anything the stylist should know before arriving?',
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: isSubmitting
-                                ? null
-                                : () => _submitBooking(
-                                      context,
-                                      payloadContext,
-                                      scheduledAt,
-                                      selectedAddressId,
-                                    ),
-                            child: Padding(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF7A4A39),
+                              side: const BorderSide(color: Color(0xFFD9B7A9)),
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              child: Text(
-                                isSubmitting
-                                    ? 'Confirming...'
-                                    : 'Confirm booking',
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
                           ),
                         ),
                       ],
+                      if (selectedAddress != null) ...[
+                        const SizedBox(height: 16),
+                        SelectedAddressPreview(address: selectedAddress),
+                      ],
+                      if (addresses.isNotEmpty && customer.defaultAddress == null)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 12),
+                          child: _MutedInfoText(
+                            'Your selected address will be used for this booking.',
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _SectionCard(
+                  title: 'Appointment notes',
+                  subtitle:
+                      'Add any helpful details for the stylist before arrival.',
+                  child: TextField(
+                    controller: _notesController,
+                    minLines: 4,
+                    maxLines: 5,
+                    decoration: _inputDecoration(
+                      hintText:
+                          'Gate code, landmark, parking info, or anything else they should know.',
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isSubmitting
+                        ? null
+                        : () {
+                            context.read<BookingBloc>().add(
+                              ConfirmBookingEvent(
+                                serviceId: widget.serviceId,
+                                stylistId: widget.stylist.id,
+                                scheduledAt: scheduledAt,
+                                notes: _notesController.text.trim(),
+                              ),
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6B3F32),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    child: Text(
+                      isSubmitting ? 'Confirming...' : 'Confirm booking',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -263,259 +276,58 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     );
   }
 
-  List<CustomerAddressModel> _resolvedAddresses(_BookingPayloadContext context) {
-    final existing = context.addresses;
-    final merged = <CustomerAddressModel>[...existing];
-    for (final address in _newAddresses) {
-      final alreadyExists = merged.any((item) => item.id == address.id);
-      if (!alreadyExists) {
-        merged.add(address);
-      }
-    }
-    return merged;
-  }
-
-  Future<_BookingPayloadContext> _loadPayloadContext() async {
-    final customerResult = await getit<GetCurrentCustomer>()();
-    final stylistServicesResult =
-        await getit<StylistsRepository>().getStylistsServices(widget.stylist.id);
-
-    final customer = customerResult.fold<CustomerEntity>(
-      (failure) => throw Exception(failure.message),
-      (value) => value,
-    );
-
-    if (customer.id.trim().isEmpty) {
-      throw Exception('No authenticated customer found for booking.');
-    }
-
-    final stylistServices = stylistServicesResult.fold<List<StylistsServiceModel>>(
-      (failure) => throw Exception(failure.message),
-      (value) => value,
-    );
-
-    final matchingService = stylistServices
-        .where((service) => service.isAvailable)
-        .where((service) => service.serviceId == widget.serviceId)
-        .cast<StylistsServiceModel?>()
-        .firstWhere((service) => service != null, orElse: () => null);
-
-    if (matchingService == null) {
-      throw Exception(
-        'This stylist is not available for the selected service.',
-      );
-    }
-
-    final addresses = customer.addresses
-        .map((address) => _toAddressModel(address, customer.id))
-        .toList();
-
-    return _BookingPayloadContext(
-      customer: customer,
-      stylistService: matchingService,
-      addresses: addresses,
-    );
-  }
-
-  CustomerAddressModel _toAddressModel(dynamic address, String customerId) {
-    if (address is CustomerAddressModel) {
-      return address;
-    }
-
-    return CustomerAddressModel(
-      id: address.id.toString(),
-      customerId: customerId,
-      addressLine1: address.addressLine1?.toString() ?? '',
-      addressLine2: address.addressLine2?.toString() ?? '',
-      city: address.city?.toString() ?? '',
-      state: address.state?.toString() ?? '',
-      postalCode: address.postalCode?.toString() ?? '',
-      country: address.country?.toString() ?? '',
-      latitude: (address.latitude as num?)?.toDouble() ?? 0,
-      longitude: (address.longitude as num?)?.toDouble() ?? 0,
-      isDefault: address.isDefault == true,
-      createdAt: address.createdAt is DateTime
-          ? address.createdAt as DateTime
-          : DateTime.now(),
-      updatedAt: address.updatedAt is DateTime
-          ? address.updatedAt as DateTime
-          : DateTime.now(),
-    );
-  }
-
-  Future<void> _saveCurrentLocationAddress(CustomerEntity customer) async {
-    if (_isSavingCurrentLocation) {
-      return;
-    }
-
-    setState(() {
-      _isSavingCurrentLocation = true;
-    });
-
-    try {
-      final permission = await _ensureLocationPermission();
-      if (!permission) {
-        throw Exception('Location permission is required to use your current address.');
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
+  Scaffold _buildScaffold(BuildContext context, {required Widget child}) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFFBF6),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Confirm booking',
+          style: TextStyle(color: Color(0xFF5C2E1F)),
         ),
-      );
-
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      final placemark = placemarks.isNotEmpty ? placemarks.first : null;
-
-      final addressLine1 = _composeAddressLine1(placemark);
-      final addressLine2 = _composeAddressLine2(placemark);
-      final city = placemark?.locality ?? placemark?.subAdministrativeArea ?? '';
-      final state = placemark?.administrativeArea ?? '';
-      final postalCode = placemark?.postalCode ?? '';
-      final country = placemark?.country ?? '';
-      final now = DateTime.now().toIso8601String();
-
-      final payload = <String, dynamic>{
-        'customer_id': customer.id,
-        'address_line1': addressLine1,
-        'address_line2': addressLine2,
-        'city': city,
-        'state': state,
-        'postal_code': postalCode,
-        'country': country,
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-        'is_default': customer.addresses.isEmpty && _newAddresses.isEmpty,
-        'created_at': now,
-        'updated_at': now,
-      };
-
-      final response = await SupabaseConfig.client
-          .from('customer_addresses')
-          .insert(payload)
-          .select()
-          .single();
-
-      final savedAddress = CustomerAddressModel.fromJson(
-        Map<String, dynamic>.from(response),
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _newAddresses.add(savedAddress);
-        _selectedAddressId = savedAddress.id;
-      });
-
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Current location saved as address.')),
-        );
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(error.toString())));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSavingCurrentLocation = false;
-        });
-      }
-    }
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFF4EA), Color(0xFFFFE0C7)],
+          ),
+        ),
+        child: SafeArea(child: child),
+      ),
+    );
   }
 
-  Future<bool> _ensureLocationPermission() async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw Exception('Location services are turned off on this device.');
-    }
-
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.denied) {
-   return Future.error('Location permissions are denied');
-    }
-
-        if (permission == LocationPermission.deniedForever) {
-    return Future.error(
-      'Location permissions are permanently denied, we cannot request permissions.');
-  } 
-
-    return true;
+  bool _isInitialLoading(BookingState state) {
+    return state.status == BookingBlocStatus.loading ||
+        (state.customer == null &&
+            state.status != BookingBlocStatus.failure &&
+            state.stylistService == null);
   }
 
-  String _composeAddressLine1(Placemark? placemark) {
-    final parts = <String>[
-      if ((placemark?.street ?? '').trim().isNotEmpty) placemark!.street!.trim(),
-      if ((placemark?.subLocality ?? '').trim().isNotEmpty)
-        placemark!.subLocality!.trim(),
-    ];
-
-    if (parts.isEmpty) {
-      return 'Current location';
-    }
-
-    return parts.join(', ');
+  bool _isInitialError(BookingState state) {
+    return state.status == BookingBlocStatus.failure &&
+        state.customer == null &&
+        state.stylistService == null;
   }
 
-  String _composeAddressLine2(Placemark? placemark) {
-    final parts = <String>[
-      if ((placemark?.thoroughfare ?? '').trim().isNotEmpty)
-        placemark!.thoroughfare!.trim(),
-      if ((placemark?.subThoroughfare ?? '').trim().isNotEmpty)
-        placemark!.subThoroughfare!.trim(),
-    ];
-
-    return parts.join(', ');
-  }
-
-  void _submitBooking(
-    BuildContext context,
-    _BookingPayloadContext payloadContext,
-    DateTime scheduledAt,
+  CustomerAddressEntity? _findSelectedAddress(
+    List<CustomerAddressEntity> addresses,
     String? selectedAddressId,
   ) {
-    final notes = _notesController.text.trim();
-    final addressId = selectedAddressId?.trim() ?? '';
-
-    if (addressId.isEmpty) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Please choose a booking address.')),
-        );
-      return;
+    if ((selectedAddressId ?? '').trim().isEmpty) {
+      return null;
     }
 
-    final request = CreateBookingRequestModel(
-      customerId: payloadContext.customer.id,
-      stylistId: widget.stylist.id,
-      scheduledAt: scheduledAt,
-      addressId: addressId,
-      notes: notes.isEmpty ? null : notes,
-      items: [
-        CreateBookingServiceItemModel(
-          serviceId: widget.serviceId,
-          stylistServiceId: payloadContext.stylistService.id,
-          quantity: 1,
-        ),
-      ],
-    );
+    for (final address in addresses) {
+      if (address.id == selectedAddressId) {
+        return address;
+      }
+    }
 
-    context.read<BookingBloc>().add(CreateBookingWithServicesEvent(request));
+    return null;
   }
 
   DateTime _combineDateAndTime(DateTime date, String timeLabel) {
@@ -531,7 +343,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
   TimeOfDay _parseTimeLabel(String value) {
     final normalized = value.trim().toUpperCase();
-    final match = RegExp(r'^(\d{1,2}):(\d{2})\s?(AM|PM)$').firstMatch(normalized);
+    final match = RegExp(r'^(\d{1,2}):(\d{2})\s?(AM|PM)$').firstMatch(
+      normalized,
+    );
 
     if (match == null) {
       throw FormatException('Invalid time slot: $value');
@@ -554,29 +368,182 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     return InputDecoration(
       hintText: hintText,
       filled: true,
-      fillColor: Colors.white.withAlpha(225),
+      fillColor: const Color(0xFFFFFAF5),
+      contentPadding: const EdgeInsets.all(18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Color(0xFFF1D8CB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: Color(0xFFB67C65)),
       ),
     );
   }
 }
 
-
-
-class _BookingPayloadContext {
-  const _BookingPayloadContext({
-    required this.customer,
-    required this.stylistService,
-    required this.addresses,
+class _HeroBanner extends StatelessWidget {
+  const _HeroBanner({
+    required this.serviceName,
+    required this.stylistName,
+    required this.dateLabel,
+    required this.timeLabel,
   });
 
-  final CustomerEntity customer;
-  final StylistsServiceModel stylistService;
-  final List<CustomerAddressModel> addresses;
+  final String serviceName;
+  final String stylistName;
+  final String dateLabel;
+  final String timeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7A4A39), Color(0xFFA7684F)],
+        ),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Almost there',
+            style: TextStyle(
+              color: Color(0xFFFFE9DC),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            serviceName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'with $stylistName',
+            style: const TextStyle(
+              color: Color(0xFFFFE9DC),
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _InfoChip(icon: Icons.calendar_today_outlined, label: dateLabel),
+              _InfoChip(icon: Icons.access_time_rounded, label: timeLabel),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
 
+  final String title;
+  final String subtitle;
+  final Widget child;
 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFF0D7CB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF43261D),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF7B6156),
+            ),
+          ),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+}
 
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MutedInfoText extends StatelessWidget {
+  const _MutedInfoText(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: const Color(0xFF7B6156),
+      ),
+    );
+  }
+}

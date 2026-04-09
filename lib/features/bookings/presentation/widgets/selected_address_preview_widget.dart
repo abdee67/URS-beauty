@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:urs_beauty/features/auth/data/models/customer_address_model.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/address_option_card_widget.dart';
 
 class SelectedAddressPreview extends StatelessWidget {
   const SelectedAddressPreview({super.key, required this.address});
 
-  final CustomerAddressModel address;
+  final CustomerAddressEntity address;
 
   @override
   Widget build(BuildContext context) {

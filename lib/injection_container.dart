@@ -1,10 +1,15 @@
 import 'package:get_it/get_it.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
+import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
+import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source_impl.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source_impl.dart';
 import 'package:urs_beauty/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:urs_beauty/features/auth/domain/repositories/auth_repository.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/forgot_password.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/get_current_location_address.dart'
+    as auth_usecases;
 import 'package:urs_beauty/features/auth/domain/usecases/get_current_client.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/create_customer_address.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/reset_password.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/send_otp.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/sign_in.dart';
@@ -29,6 +34,8 @@ import 'package:urs_beauty/features/beauty_services/domain/usecases/get_services
 import 'package:urs_beauty/features/beauty_services/domain/usecases/search_services.dart';
 import 'package:urs_beauty/features/beauty_services/presentation/bloc/service_bloc.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source.dart';
+import 'package:urs_beauty/features/bookings/data/datasources/booking_location_data_source.dart';
+import 'package:urs_beauty/features/bookings/data/datasources/booking_location_data_source_impl.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source_impl.dart';
 import 'package:urs_beauty/features/bookings/data/repositories/booking_repository_impl.dart';
 import 'package:urs_beauty/features/bookings/domain/repositories/booking_repository.dart';
@@ -36,6 +43,7 @@ import 'package:urs_beauty/features/bookings/domain/usecases/add_notes_to_bookin
 import 'package:urs_beauty/features/bookings/domain/usecases/cancel_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/create_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/create_booking_with_services.dart';
+import 'package:urs_beauty/features/bookings/domain/usecases/get_current_location_address.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_customer_id.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_status.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_sylist_id.dart';
@@ -75,6 +83,7 @@ import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability_by_day.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability_by_time.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_services.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_service.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/search_stylists.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/update_stylists_availability.dart';
@@ -84,6 +93,9 @@ void initDependency() {
   //==================injecting auth data source===================
   getit.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(),
+  );
+  getit.registerLazySingleton<AuthLocationDataSource>(
+    () => AuthLocationDataSourceImpl(),
   );
   getit.registerLazySingleton<ServiceCategoriesRemoteDataSource>(
     () => ServiceCategoriesRemoteDataSourceImpl(),
@@ -97,6 +109,9 @@ void initDependency() {
   getit.registerLazySingleton<BookingRemoteDataSource>(
     () => BookingRemoteDataSourceImpl(),
   );
+  getit.registerLazySingleton<BookingLocationDataSource>(
+    () => BookingLocationDataSourceImpl(),
+  );
   getit.registerLazySingleton<ServiceRemoteDataSource>(
     () => ServiceRemoteDataSourceImpl(),
   );
@@ -106,7 +121,7 @@ void initDependency() {
 
   //================== injecting  repository===================
   getit.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(getit()),
+    () => AuthRepositoryImpl(getit(), getit()),
   );
   getit.registerLazySingleton<ServiceCategoriesRepository>(
     () => ServiceCategoriesRepositoryImpl(remoteDataSource: getit()),
@@ -121,7 +136,10 @@ void initDependency() {
     () => DealsRepositoryImpl(remoteDataSource: getit()),
   );
   getit.registerLazySingleton<BookingRepository>(
-    () => BookingRepositoryImpl(remoteDataSource: getit()),
+    () => BookingRepositoryImpl(
+      remoteDataSource: getit(),
+      locationDataSource: getit(),
+    ),
   );
   getit.registerLazySingleton<ReviewRepository>(
     () => ReviewRepositoryImpl(remoteDataSource: getit()),
@@ -134,9 +152,11 @@ void initDependency() {
   getit.registerLazySingleton(() => SignOut(getit()));
   getit.registerLazySingleton(() => SendOtp(getit()));
   getit.registerLazySingleton(() => VerifyOTP(getit()));
+  getit.registerLazySingleton(() => auth_usecases.GetCurrentLocationAddress(getit()));
   getit.registerLazySingleton(() => ForgotPassword(getit()));
   getit.registerLazySingleton(() => ResetPassword(getit()));
   getit.registerLazySingleton(() => GetCurrentCustomer(getit()));
+  getit.registerLazySingleton(() => CreateCustomerAddress(getit()));
   getit.registerLazySingleton(() => UpdateCustomerProfile(getit()));
 
   // Beauty services use cases
@@ -153,6 +173,7 @@ void initDependency() {
 
   // Stylists use cases
   getit.registerLazySingleton(() => GetStylistDetail(getit()));
+  getit.registerLazySingleton(() => GetStylistServices(getit()));
   getit.registerLazySingleton(() => GetNearbyStylists(getit()));
   getit.registerLazySingleton(() => GetStylistByService(getit()));
   getit.registerLazySingleton(() => GetStylistsAvailability(getit()));
@@ -165,6 +186,7 @@ void initDependency() {
   // Booking use cases
   getit.registerLazySingleton(() => CreateBooking(getit()));
   getit.registerLazySingleton(() => CreateBookingWithServices(getit()));
+  getit.registerLazySingleton(() => GetCurrentLocationAddress(getit()));
   getit.registerLazySingleton(() => UpdateBooking(repository: getit()));
   getit.registerLazySingleton(() => CancelBooking(getit()));
   getit.registerLazySingleton(() => AddNotesToBooking(repository: getit()));
@@ -188,6 +210,7 @@ void initDependency() {
   // ===========injectin bloc=================
   getit.registerFactory(
     () => AuthBloc(
+      getit(),
       getit(),
       getit(),
       getit(),
@@ -242,8 +265,10 @@ void initDependency() {
       addNotesToBooking: getit(),
       updateBookingStatus: getit(),
       searchBookings: getit(),
+      createCustomerAddress: getit(),
+      getCurrentLocationAddress: getit(),
       getCurrentCustomer: getit(),
-      getStylistsService: getit(),
+      getStylistServices: getit(),
 
     ),
   );
