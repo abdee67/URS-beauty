@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:urs_beauty/core/constants/app_routes.dart';
-import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
-import 'package:urs_beauty/features/bookings/presentation/screens/booking_schedule_screen.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
-import 'package:urs_beauty/injection_container.dart';
+import 'package:urs_beauty/features/stylists/presentation/pages/stylist_profile_screen.dart';
 
 class StylistDetailScreen extends StatefulWidget {
   const StylistDetailScreen({super.key, this.serviceId, this.serviceName});
@@ -71,19 +69,17 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
     bloc.add(const GetStylistsEvent());
   }
 
+  //load all stylists
+  void _loadAllStylists() {
+    final bloc = context.read<StylistsBloc>();
+    bloc.add(const GetStylistsEvent());
+  }
+
   @override
   Widget build(BuildContext context) {
     final serviceTitle = _serviceTitle;
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBF6),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'Choose a stylist',
-          style: TextStyle(color: Color(0xFF5C2E1F)),
-        ),
-      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -101,52 +97,47 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
                 _buildTitle(context, serviceTitle),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: BlocBuilder<StylistsBloc, StylistsState>(
-                    builder: (context, state) {
-                      if (_isLoading(state.status)) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (state.errorMessage.isNotEmpty) {
-                        return _EmptyState(message: state.errorMessage);
-                      }
-
-                      final stylists = _stylistsFromState(state);
-                      if (stylists.isEmpty) {
-                        return _EmptyState(
-                          message: _hasSelectedService
-                              ? 'No stylists found for this service.'
-                              : 'No stylists are available right now.',
-                        );
-                      }
-
-                      return ListView.separated(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.only(bottom: 16),
-                        itemCount: stylists.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final stylist = stylists[index];
-                          return _StylistCard(
-                            stylist: stylist,
-                            onTap: () => _openBookingFlow(context, stylist),
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      _loadAllStylists();
+                    },
+                    child: BlocBuilder<StylistsBloc, StylistsState>(
+                      builder: (context, state) {
+                        if (_isLoading(state.status)) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
                           );
-                        },
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (Navigator.of(context).canPop()) {
-                        Navigator.of(context).pop();
-                        return;
-                      }
-                      context.go(AppRoutes.serviceScreen);
-                    },
-                    child: const Text('Back to services'),
+                        }
+                        if (state.errorMessage.isNotEmpty) {
+                          return _EmptyState(message: state.errorMessage);
+                        }
+
+                        final stylists = _stylistsFromState(state);
+                        if (stylists.isEmpty) {
+                          return _EmptyState(
+                            message: _hasSelectedService
+                                ? 'No stylists found for this service.'
+                                : 'No stylists are available right now.',
+                          );
+                        }
+
+                        return ListView.separated(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.only(bottom: 16),
+                          itemCount: stylists.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final stylist = stylists[index];
+                            return _StylistCard(
+                              stylist: stylist,
+                              onTap: () =>
+                                  _openStylistProfile(context, stylist),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -177,21 +168,13 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
     );
   }
 
-  void _openBookingFlow(BuildContext context, Stylist stylist) {
-    final serviceId = widget.serviceId?.trim();
-    if (serviceId == null || serviceId.isEmpty) {
-      return;
-    }
-
+  void _openStylistProfile(BuildContext context, Stylist stylist) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => BlocProvider(
-          create: (_) => getit<BookingBloc>(),
-          child: BookingScheduleScreen(
-            serviceId: serviceId,
-            serviceName: _serviceTitle,
-            stylist: stylist,
-          ),
+        builder: (_) => StylistProfileScreen(
+          stylist: stylist,
+          serviceId: widget.serviceId,
+          serviceName: widget.serviceName,
         ),
       ),
     );
@@ -259,6 +242,14 @@ class _StylistCard extends StatelessWidget {
                               ?.copyWith(color: Colors.grey.shade600),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap to view profile, ratings, and recent reviews.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF8A6A5C),
+                        height: 1.35,
+                      ),
                     ),
                   ],
                 ),

@@ -31,8 +31,7 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
           .from(_stylistsTable)
           .select(_stylistColumns)
           .eq('is_verified', true)
-          .order('avg_rating', ascending: false)
-          .limit(5);
+          .order('avg_rating', ascending: false);
 
       return _mapStylistList(response);
     });
