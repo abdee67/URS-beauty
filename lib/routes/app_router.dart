@@ -13,9 +13,9 @@ import 'package:urs_beauty/features/chat/presentation/screens/chat_screen.dart';
 import 'package:urs_beauty/features/dashboard/dashboard_wrapper.dart';
 import 'package:urs_beauty/features/home/presentation/pages/home_screen.dart';
 import 'package:urs_beauty/features/payments/presentation/screens/payment_methods_screen.dart';
+import 'package:urs_beauty/features/profile/presentation/screens/settings_screen.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/stylists/presentation/pages/stylist_detail_screen.dart';
-import 'package:urs_beauty/features/stylists_location_finder/presentation/screens/location_screen.dart';
 import 'package:urs_beauty/injection_container.dart';
 
 class AppRouter {
@@ -26,7 +26,9 @@ class AppRouter {
 
   late final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: showOnboarding ? AppRoutes.onboardingScreen : AppRoutes.loginScreen,
+    initialLocation: showOnboarding
+        ? AppRoutes.onboardingScreen
+        : AppRoutes.loginScreen,
     routes: [
       GoRoute(
         path: AppRoutes.onboardingScreen,
@@ -37,7 +39,10 @@ class AppRouter {
         name: 'login',
         builder: (context, state) => const LoginScreen(),
       ),
-      GoRoute(path: AppRoutes.signupScreen, builder: (_, __) => const SignupScreen()),
+      GoRoute(
+        path: AppRoutes.signupScreen,
+        builder: (_, __) => const SignupScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return DashboardWrapper(navigationShell: navigationShell);
@@ -45,10 +50,13 @@ class AppRouter {
         branches: [
           StatefulShellBranch(
             routes: [
-              GoRoute(path: AppRoutes.homeScreen, builder: (_, __) => const HomeScreen()),
+              GoRoute(
+                path: AppRoutes.homeScreen,
+                builder: (_, __) => const HomeScreen(),
+              ),
             ],
           ),
-          
+
           // Additional branches can be added here for other tabs
           StatefulShellBranch(
             routes: [
@@ -97,7 +105,10 @@ class AppRouter {
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: AppRoutes.chat, builder: (_, __) => const ChatScreen()),
+              GoRoute(
+                path: AppRoutes.settings,
+                builder: (_, __) => const SettingsScreen(),
+              ),
             ],
           ),
           StatefulShellBranch(
