@@ -39,14 +39,6 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBF6),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'Choose a service',
-          style: TextStyle(color: Color(0xFF5C2E1F)),
-        ),
-      ),
       body: FutureBuilder<Either<Failures, List<ServiceEntity>>>(
         future: _servicesFuture,
         builder: (context, snapshot) {
@@ -82,40 +74,44 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                 );
               }
 
-              return RefreshIndicator(
-                onRefresh: _refreshServices,
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: services.length + 1,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return _Header(theme: theme);
-                    }
+              return SafeArea(
+                child: RefreshIndicator(
+                  onRefresh: _refreshServices,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: services.length + 1,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return _Header(theme: theme);
+                      }
 
-                    final service = services[index - 1];
-                    return _ServiceTile(
-                      service: service,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => BlocProvider(
-                              create: (_) {
-                                final bloc = getit<StylistsBloc>();
-                                bloc.add(GetStylistsByServiceEvent(service.id));
-                                return bloc;
-                              },
-                              child: StylistDetailScreen(
-                                serviceId: service.id,
-                                serviceName: service.name,
+                      final service = services[index - 1];
+                      return _ServiceTile(
+                        service: service,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => BlocProvider(
+                                create: (_) {
+                                  final bloc = getit<StylistsBloc>();
+                                  bloc.add(
+                                    GetStylistsByServiceEvent(service.id),
+                                  );
+                                  return bloc;
+                                },
+                                child: StylistDetailScreen(
+                                  serviceId: service.id,
+                                  serviceName: service.name,
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
               );
             },

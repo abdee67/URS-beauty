@@ -12,5 +12,15 @@ class AppRoutes{
   static const String serviceScreen = '/service-screen';
   static const String chat = '/chat';
   static const String payment = '/payment';
+  static const String paymentSuccess = '/payment-success';
+  static const String myBooking = '/my-booking';
+  static const String profile = '/profile';
+  static const String notification = '/notification';
+  static const String settings = '/settings';
+  static const String help = '/help';
+  static const String about = '/about';
+  static const String privacyPolicy = '/privacy-policy';
+  static const String termsAndConditions = '/terms-and-conditions';
+  static const String logout = '/logout';
 
 }
