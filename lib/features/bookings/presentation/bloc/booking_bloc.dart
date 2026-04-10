@@ -246,15 +246,22 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     emit(state.loading());
 
     final result = await getBookingsByCustomerId(event.customerId);
-    result.fold(
-      (failure) => emit(state.failure(failure.message)),
-      (bookings) => emit(
-        state.copyWith(
-          status: BookingBlocStatus.loaded,
-          customerBookings: bookings,
-          message: 'Customer bookings loaded successfully.',
-          clearError: true,
-        ),
+    if (result.isLeft()) {
+      result.fold(
+        (failure) => emit(state.failure(failure.message)),
+        (_) => null,
+      );
+      return;
+    }
+
+    final bookings = result.fold((_) => <BookingEntity>[], (items) => items);
+    final syncedBookings = await _syncExpiredBookings(bookings);
+    emit(
+      state.copyWith(
+        status: BookingBlocStatus.loaded,
+        customerBookings: syncedBookings,
+        message: 'Customer bookings loaded successfully.',
+        clearError: true,
       ),
     );
   }
@@ -375,6 +382,17 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         state.copyWith(
           status: BookingBlocStatus.updated,
           selectedBooking: booking,
+          customerBookings: _mergeUpdatedBooking(
+            state.customerBookings,
+            booking,
+          ),
+          bookings: _mergeUpdatedBooking(state.bookings, booking),
+          stylistBookings: _mergeUpdatedBooking(state.stylistBookings, booking),
+          statusBookings: _mergeUpdatedBooking(state.statusBookings, booking),
+          searchedBookings: _mergeUpdatedBooking(
+            state.searchedBookings,
+            booking,
+          ),
           message: 'Booking status updated successfully.',
           clearError: true,
         ),
@@ -595,6 +613,68 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     final updated = <CustomerAddressEntity>[...addresses];
     updated[existingIndex] = createdAddress;
     return updated;
+  }
+
+  Future<List<BookingEntity>> _syncExpiredBookings(
+    List<BookingEntity> bookings,
+  ) async {
+    final now = DateTime.now();
+    final syncedBookings = <BookingEntity>[];
+
+    for (final booking in bookings) {
+      final shouldMarkPassed =
+          booking.status == BookingStatus.pending && booking.endAt.isBefore(now);
+
+      if (!shouldMarkPassed) {
+        syncedBookings.add(booking);
+        continue;
+      }
+
+      final result = await updateBookingStatus(
+        booking.id,
+        BookingStatus.passed.name,
+      );
+
+      result.fold(
+        (_) => syncedBookings.add(
+          BookingEntity(
+            id: booking.id,
+            customerId: booking.customerId,
+            stylistId: booking.stylistId,
+            serviceName: booking.serviceName,
+            stylistName: booking.stylistName,
+            status: BookingStatus.passed,
+            notes: booking.notes,
+            addressId: booking.addressId,
+            totalAmount: booking.totalAmount,
+            scheduledAt: booking.scheduledAt,
+            endAt: booking.endAt,
+            createdAt: booking.createdAt,
+            updatedAt: DateTime.now(),
+          ),
+        ),
+        (updatedBooking) => syncedBookings.add(updatedBooking),
+      );
+    }
+
+    return syncedBookings;
+  }
+
+  List<BookingEntity> _mergeUpdatedBooking(
+    List<BookingEntity> bookings,
+    BookingEntity updatedBooking,
+  ) {
+    final bookingIndex = bookings.indexWhere(
+      (booking) => booking.id == updatedBooking.id,
+    );
+
+    if (bookingIndex == -1) {
+      return bookings;
+    }
+
+    final mergedBookings = <BookingEntity>[...bookings];
+    mergedBookings[bookingIndex] = updatedBooking;
+    return mergedBookings;
   }
 
   List<BookingEntity> _markBookingCancelled(

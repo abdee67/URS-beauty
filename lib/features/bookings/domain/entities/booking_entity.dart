@@ -3,6 +3,7 @@ enum BookingStatus {
   confirmed,
   completed,
   cancelled,
+  passed,
 }
 
 class BookingEntity {

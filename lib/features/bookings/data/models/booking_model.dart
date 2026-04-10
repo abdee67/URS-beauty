@@ -75,6 +75,8 @@ class BookingModel extends BookingEntity {
         return BookingStatus.completed;
       case 'cancelled':
         return BookingStatus.cancelled;
+      case 'passed':
+        return BookingStatus.passed;
       default:
         return BookingStatus.pending;
     }
