@@ -16,8 +16,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFFFE5B4), // Light peach color
-            Color(0xFFFFC1A6), // Soft coral color
+            Color(0xFFFFF7F0), // Light peach color
+            Color(0xFFFFE5D2), // Soft coral color
           ],
         ),
       ),
