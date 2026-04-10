@@ -12,6 +12,8 @@ class AuthAddressLoading extends AuthState {}
 
 class AuthSuccess extends AuthState {}
 
+class AuthLoggedOut extends AuthState {}
+
 class OtpSent extends AuthState {}
 
 class OtpVerified extends AuthState {}

@@ -49,6 +49,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         (_) => emit(EmailVerificationSent()),
       );
     });
+    on<SignOutRequested>((event, emit) async {
+      emit(AuthLoading());
+      final result = await signOut();
+      result.fold(
+        (failure) => emit(AuthFailure(failure.message)),
+        (_) => emit(AuthLoggedOut()),
+      );
+    });
     on<AutoFillCurrentLocationAddressRequested>((event, emit) async {
       emit(AuthAddressLoading());
       final result = await getCurrentLocationAddress();
