@@ -41,14 +41,23 @@ class ReviewBloc extends Bloc<ReviewEvent, ReviewState> {
     final result = await submitReview(event.review);
     result.fold(
       (failure) => emit(state.failure(failure.message)),
-      (review) => emit(
-        state.copyWith(
-          status: ReviewBlocStatus.submitted,
-          selectedReview: review,
-          message: 'Review submitted successfully.',
-          clearError: true,
-        ),
-      ),
+      (review) {
+        final updatedCustomerReviews = _upsertReview(state.customerReviews, review);
+        final updatedStylistReviews = _upsertReview(state.stylistReviews, review);
+        final ratingSummary = _buildRatingSummary(updatedStylistReviews);
+
+        emit(
+          state.copyWith(
+            status: ReviewBlocStatus.submitted,
+            selectedReview: review,
+            customerReviews: updatedCustomerReviews,
+            stylistReviews: updatedStylistReviews,
+            ratingSummary: ratingSummary,
+            message: 'Review submitted successfully.',
+            clearError: true,
+          ),
+        );
+      },
     );
   }
 
@@ -105,6 +114,7 @@ class ReviewBloc extends Bloc<ReviewEvent, ReviewState> {
         state.copyWith(
           status: ReviewBlocStatus.loaded,
           selectedReview: review,
+          clearSelectedReview: review == null,
           message: 'Review loaded successfully.',
           clearError: true,
         ),
@@ -137,5 +147,37 @@ class ReviewBloc extends Bloc<ReviewEvent, ReviewState> {
     Emitter<ReviewState> emit,
   ) {
     emit(state.copyWith(clearMessage: true, clearError: true));
+  }
+
+  List<ReviewEntity> _upsertReview(List<ReviewEntity> reviews, ReviewEntity review) {
+    final existingIndex = reviews.indexWhere(
+      (item) => item.bookingId == review.bookingId,
+    );
+
+    if (existingIndex == -1) {
+      return <ReviewEntity>[review, ...reviews];
+    }
+
+    final updatedReviews = <ReviewEntity>[...reviews];
+    updatedReviews[existingIndex] = review;
+    return updatedReviews;
+  }
+
+  ({double averageRating, int totalReviews})? _buildRatingSummary(
+    List<ReviewEntity> reviews,
+  ) {
+    if (reviews.isEmpty) {
+      return null;
+    }
+
+    final totalReviews = reviews.length;
+    final averageRating =
+        reviews.map((review) => review.rating).reduce((a, b) => a + b) /
+            totalReviews;
+
+    return (
+      averageRating: averageRating,
+      totalReviews: totalReviews,
+    );
   }
 }

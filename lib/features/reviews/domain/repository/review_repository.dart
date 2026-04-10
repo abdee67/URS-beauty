@@ -12,6 +12,8 @@ abstract class ReviewRepository {
   Future<Either<Failures, List<ReviewEntity>>> getReviewsByCustomerId(
     String customerId,
   );
-  Future<Either<Failures, ReviewEntity>> getReviewByBookingId(String bookingId);
+  Future<Either<Failures, ReviewEntity?>> getReviewByBookingId(
+    String bookingId,
+  );
   Future<Either<Failures, RatingSummary>> getRatingSummary(String stylistId);
 }

@@ -8,7 +8,7 @@ class GetReviewByBookingIdUsecase {
 
   GetReviewByBookingIdUsecase(this.repository);
 
-  Future<Either<Failures, ReviewEntity>> call(String bookingId) {
+  Future<Either<Failures, ReviewEntity?>> call(String bookingId) {
     return repository.getReviewByBookingId(bookingId);
-}
+  }
 }

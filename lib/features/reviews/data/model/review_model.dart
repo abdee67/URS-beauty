@@ -1,7 +1,7 @@
 import 'package:urs_beauty/features/reviews/domain/entity/review_entity.dart';
 
 class ReviewModel extends ReviewEntity {
-  ReviewModel({
+ const ReviewModel({
     required super.id,
     required super.bookingId,
     required super.customerId,
@@ -16,7 +16,7 @@ class ReviewModel extends ReviewEntity {
       id: json['id'] as String,
       bookingId: json['booking_id'] as String,
       customerId: json['customer_id'] as String,
-      stylistId: json['stylist_id'] as String,
+      stylistId: json['stylists_id'] as String,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       comment: json['comment'],
       createdAt: json['created_at'] != null
@@ -30,7 +30,7 @@ class ReviewModel extends ReviewEntity {
       'id': id,
       'booking_id': bookingId,
       'customer_id': customerId,
-      'stylist_id': stylistId,
+      'stylists_id': stylistId,
       'rating': rating,
       'comment': comment,
       'created_at': createdAt.toIso8601String(),

@@ -5,6 +5,6 @@ abstract class ReviewRemoteDataSource {
   Future<ReviewModel> submitReview(ReviewModel review);
   Future<List<ReviewModel>> getReviewsByStylistId(String stylistId);
   Future<List<ReviewModel>> getReviewsByCustomerId(String customerId);
-  Future<ReviewModel> getReviewByBookingId(String bookingId);
+  Future<ReviewModel?> getReviewByBookingId(String bookingId);
   Future<RatingSummaryDto> getRatingSummary(String stylistId);
 }

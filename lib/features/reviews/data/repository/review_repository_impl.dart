@@ -24,12 +24,12 @@ class ReviewRepositoryImpl implements ReviewRepository {
   }
 
   @override
-  Future<Either<Failures, ReviewEntity>> getReviewByBookingId(
+  Future<Either<Failures, ReviewEntity?>> getReviewByBookingId(
     String bookingId,
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.getReviewByBookingId(bookingId);
-      return result.toEntity();
+      return result?.toEntity();
     });
   }
 
@@ -89,8 +89,16 @@ class ReviewRepositoryImpl implements ReviewRepository {
   }
 
   void _validateReview(ReviewEntity review) {
-    if (review.bookingId.isEmpty) {
+    if (review.bookingId.trim().isEmpty) {
       throw Failures(message: 'Booking ID is required');
+    }
+
+    if (review.customerId.trim().isEmpty) {
+      throw Failures(message: 'Customer ID is required');
+    }
+
+    if (review.stylistId.trim().isEmpty) {
+      throw Failures(message: 'Stylist ID is required');
     }
 
     if (review.rating < 1 || review.rating > 5) {

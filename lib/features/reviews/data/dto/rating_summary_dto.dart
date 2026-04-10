@@ -10,7 +10,10 @@ class RatingSummaryDto {
   factory RatingSummaryDto.fromJson(Map<String, dynamic> json) {
     return RatingSummaryDto(
       averageRating: (json['avg_rating'] as num?)?.toDouble() ?? 0.0,
-      totalReviews: (json['total_review'] as num?)?.toInt() ?? 0,
+      totalReviews:
+          (json['total_reviews'] as num?)?.toInt() ??
+          (json['total_review'] as num?)?.toInt() ??
+          0,
     );
   }
 
