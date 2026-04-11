@@ -1,4 +1,4 @@
-package com.example.urs_beauty
+package com.abdee67.urs_beauty
 
 import io.flutter.embedding.android.FlutterActivity
 
