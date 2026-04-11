@@ -14,7 +14,7 @@ import 'package:urs_beauty/features/bookings/domain/usecases/add_notes_to_bookin
 import 'package:urs_beauty/features/bookings/domain/usecases/cancel_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/create_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/create_booking_with_services.dart';
-import 'package:urs_beauty/features/bookings/domain/usecases/get_current_location_address.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/get_current_location_address.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_customer_id.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_status.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_sylist_id.dart';
@@ -91,7 +91,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   final UpdateBookingStatus updateBookingStatus;
   final SearchBookings searchBookings;
   final CreateCustomerAddress createCustomerAddress;
-  final GetCurrentLocationAddress getCurrentLocationAddress;
+  final GetCurrentLocationAddress getCurrentLocationAddress;//this is common location getter(can used eveywhere it wanted as a constant)
   final GetCurrentCustomer getCurrentCustomer;
   final GetStylistServices getStylistServices;
 

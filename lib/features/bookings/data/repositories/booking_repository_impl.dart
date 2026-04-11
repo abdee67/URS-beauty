@@ -1,5 +1,5 @@
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
-import 'package:urs_beauty/features/bookings/data/datasources/booking_location_data_source.dart';
+import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source.dart';
@@ -18,7 +18,7 @@ class BookingRepositoryImpl implements BookingRepository {
   });
 
   final BookingRemoteDataSource remoteDataSource;
-  final BookingLocationDataSource locationDataSource;
+  final AuthLocationDataSource locationDataSource;
 
   @override
   Future<Either<Failures, BookingEntity>> createBooking(
@@ -67,7 +67,9 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, List<BookingEntity>>> getBookings() async {
     return _runOperation(() async {
       final result = await remoteDataSource.getBookings();
-      return result.map<BookingEntity>((booking) => booking.toEntity()).toList();
+      return result
+          .map<BookingEntity>((booking) => booking.toEntity())
+          .toList();
     });
   }
 
@@ -87,7 +89,9 @@ class BookingRepositoryImpl implements BookingRepository {
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.getBookingsByCustomerId(customerId);
-      return result.map<BookingEntity>((booking) => booking.toEntity()).toList();
+      return result
+          .map<BookingEntity>((booking) => booking.toEntity())
+          .toList();
     });
   }
 
@@ -109,7 +113,9 @@ class BookingRepositoryImpl implements BookingRepository {
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.getBookingsByStylistId(stylistId);
-      return result.map<BookingEntity>((booking) => booking.toEntity()).toList();
+      return result
+          .map<BookingEntity>((booking) => booking.toEntity())
+          .toList();
     });
   }
 
@@ -119,7 +125,9 @@ class BookingRepositoryImpl implements BookingRepository {
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.getBookingsByStatus(status);
-      return result.map<BookingEntity>((booking) => booking.toEntity()).toList();
+      return result
+          .map<BookingEntity>((booking) => booking.toEntity())
+          .toList();
     });
   }
 
@@ -168,7 +176,9 @@ class BookingRepositoryImpl implements BookingRepository {
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.searchBookings(query);
-      return result.map<BookingEntity>((booking) => booking.toEntity()).toList();
+      return result
+          .map<BookingEntity>((booking) => booking.toEntity())
+          .toList();
     });
   }
 

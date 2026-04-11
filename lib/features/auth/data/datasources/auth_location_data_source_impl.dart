@@ -1,15 +1,22 @@
 import 'package:geocoding/geocoding.dart';
+import 'package:location/location.dart' as loc;
 import 'package:geolocator/geolocator.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
-import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
+import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 
 class AuthLocationDataSourceImpl implements AuthLocationDataSource {
   @override
   Future<CustomerAddressInput> getCurrentLocationAddress() async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+   loc.Location location =  loc.Location();
+    bool serviceEnabled = await location.serviceEnabled();
     if (!serviceEnabled) {
-      throw Failures(message: 'Location services are turned off on this device.');
+      serviceEnabled = await location.requestService();
+    }
+      if (!serviceEnabled) {
+      throw Failures(
+        message: 'Location services are turned off on this device.',
+      );
     }
 
     var permission = await Geolocator.checkPermission();
@@ -18,9 +25,7 @@ class AuthLocationDataSourceImpl implements AuthLocationDataSource {
     }
 
     if (permission == LocationPermission.denied) {
-      throw Failures(
-        message: 'Location permission is required to autofill address.',
-      );
+      throw Failures(message: 'Location permissions are denied.');
     }
 
     if (permission == LocationPermission.deniedForever) {
@@ -35,6 +40,7 @@ class AuthLocationDataSourceImpl implements AuthLocationDataSource {
         accuracy: LocationAccuracy.high,
       ),
     );
+
     final placemarks = await placemarkFromCoordinates(
       position.latitude,
       position.longitude,
@@ -57,8 +63,8 @@ class AuthLocationDataSourceImpl implements AuthLocationDataSource {
     final parts = <String>[
       if ((placemark?.street ?? '').trim().isNotEmpty)
         placemark!.street!.trim(),
-      if ((placemark?.name ?? '').trim().isNotEmpty)
-        placemark!.name!.trim(),
+      if ((placemark?.subLocality ?? '').trim().isNotEmpty)
+        placemark!.subLocality!.trim(),
     ];
 
     return parts.isEmpty ? 'Current location' : parts.join(', ');
@@ -66,10 +72,10 @@ class AuthLocationDataSourceImpl implements AuthLocationDataSource {
 
   String _composeAddressLine2(Placemark? placemark) {
     final parts = <String>[
-      if ((placemark?.subLocality ?? '').trim().isNotEmpty)
-        placemark!.subLocality!.trim(),
       if ((placemark?.thoroughfare ?? '').trim().isNotEmpty)
         placemark!.thoroughfare!.trim(),
+      if ((placemark?.subThoroughfare ?? '').trim().isNotEmpty)
+        placemark!.subThoroughfare!.trim(),
     ];
 
     return parts.join(', ');

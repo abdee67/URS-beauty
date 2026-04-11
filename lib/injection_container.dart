@@ -34,8 +34,7 @@ import 'package:urs_beauty/features/beauty_services/domain/usecases/get_services
 import 'package:urs_beauty/features/beauty_services/domain/usecases/search_services.dart';
 import 'package:urs_beauty/features/beauty_services/presentation/bloc/service_bloc.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source.dart';
-import 'package:urs_beauty/features/bookings/data/datasources/booking_location_data_source.dart';
-import 'package:urs_beauty/features/bookings/data/datasources/booking_location_data_source_impl.dart';
+import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source_impl.dart';
 import 'package:urs_beauty/features/bookings/data/repositories/booking_repository_impl.dart';
 import 'package:urs_beauty/features/bookings/domain/repositories/booking_repository.dart';
@@ -109,9 +108,6 @@ void initDependency() {
   getit.registerLazySingleton<BookingRemoteDataSource>(
     () => BookingRemoteDataSourceImpl(),
   );
-  getit.registerLazySingleton<BookingLocationDataSource>(
-    () => BookingLocationDataSourceImpl(),
-  );
   getit.registerLazySingleton<ServiceRemoteDataSource>(
     () => ServiceRemoteDataSourceImpl(),
   );
@@ -152,7 +148,9 @@ void initDependency() {
   getit.registerLazySingleton(() => SignOut(getit()));
   getit.registerLazySingleton(() => SendOtp(getit()));
   getit.registerLazySingleton(() => VerifyOTP(getit()));
-  getit.registerLazySingleton(() => auth_usecases.GetCurrentLocationAddress(getit()));
+  getit.registerLazySingleton(
+    () => auth_usecases.GetCurrentLocationAddress(getit()),
+  );
   getit.registerLazySingleton(() => ForgotPassword(getit()));
   getit.registerLazySingleton(() => ResetPassword(getit()));
   getit.registerLazySingleton(() => GetCurrentCustomer(getit()));
@@ -269,7 +267,6 @@ void initDependency() {
       getCurrentLocationAddress: getit(),
       getCurrentCustomer: getit(),
       getStylistServices: getit(),
-
     ),
   );
   getit.registerFactory(
