@@ -1,6 +1,7 @@
-  import 'package:dartz/dartz.dart';
+import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/stylists/data/datasources/stylists_remote_data_source.dart';
+import 'package:urs_beauty/features/stylists/domain/entities/stylist_availability_slot_entity.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_availability_model.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_service_model.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
@@ -117,9 +118,9 @@ import 'package:urs_beauty/features/stylists/domain/repository/stylists_reposito
       return Left(e);
     }
  } @override
-  Future<Either<Failures, List<StylistsAvailabilityModel>>> getStylistsAvailabilityByTime(String stylistId, String dayOfWeek, String time) async {
+  Future<Either<Failures, List<StylistAvailabilitySlotEntity>>> getStylistsAvailabilityByTime(String stylistId, String serviceId, DateTime selectedDate) async {
     try {
-      final availability = await remoteDataSource.getStylistsAvailabilityByTime(stylistId, dayOfWeek, time);
+      final availability = await remoteDataSource.getStylistsAvailabilityByTime(stylistId, serviceId, selectedDate);
       return Right(availability);
     } on Failures catch (e) {
       return Left(e);

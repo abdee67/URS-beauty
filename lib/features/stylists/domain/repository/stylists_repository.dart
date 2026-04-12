@@ -1,5 +1,6 @@
-    import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:dartz/dartz.dart';
+import 'package:urs_beauty/features/stylists/domain/entities/stylist_availability_slot_entity.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_availability_model.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_service_model.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
@@ -13,5 +14,5 @@ Future<Either<Failures, List<Stylist>>> getNearByStylists(double latitude, doubl
 Future<Either<Failures, void>> updateStylistsAvailability(StylistsAvailabilityModel availability);
 Future<Either<Failures, List<StylistsAvailabilityModel>>> getStylistsAvailability(String stylistId);
 Future<Either<Failures, List<StylistsAvailabilityModel>>> getStylistsAvailabilityByDay(String stylistId, String dayOfWeek);
-Future<Either<Failures, List<StylistsAvailabilityModel>>> getStylistsAvailabilityByTime(String stylistId, String dayOfWeek, String time);
+Future<Either<Failures, List<StylistAvailabilitySlotEntity>>> getStylistsAvailabilityByTime(String stylistId, String serviceId, DateTime selectedDate);
 }
