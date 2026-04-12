@@ -18,13 +18,20 @@ dependencies:
   intl: ^0.20.2
   flutter_bloc: ^9.1.1
   equatable: ^2.0.7
-  get_it: ^8.0.3
-
+  get_it: ^9.2.1
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.3
   iconsax: ^0.0.8
   go_router: ^16.0.0
   dartz: ^0.10.1
+  lottie: ^3.3.1
+  flutter_onboarding: ^1.0.6
+  flutter_animate: ^4.5.2
+  flutter_onboarding_slider: ^1.0.11
+  animated_text_kit: ^4.2.3
+  otp_text_field: ^1.1.3
+  flutter_dotenv: ^5.2.1
+  carousel_slider: ^5.1.1
 
 dev_dependencies:
   flutter_test:
@@ -33,3 +40,21 @@ dev_dependencies:
 flutter:
 
   uses-material-design: true
+  assets:
+    - assets/images/image1.png
+    - assets/images/image2.png
+    - assets/images/welcome.png
+    - assets/images/wave.png
+    - assets/images/floral.png
+    - assets/images/logo.png
+    - assets/images/onboarding.png
+    - assets/images/onboarding1.png
+    - assets/images/onboarding2.png
+    - assets/images/onboarding3.png
+    - assets/images/onboarding4.png
+    - assets/images/onboarding3.jpeg
+    - .env
+  fonts:
+    - family: BitcountPropSingle
+      fonts:
+        - asset: assets/fonts/BitcountPropSingle-Medium.ttf

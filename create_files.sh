@@ -154,13 +154,13 @@ touch lib/features/bookings/presentation/widgets/booking_timeline.dart
 touch lib/features/bookings/presentation/widgets/booking_status_badge.dart
 touch lib/features/bookings/presentation/widgets/calendar_picker.dart
 
-# Professionals feature
-touch lib/features/professionals/data/models/professional_model.dart
+# Stylist feature
+touch lib/features/stylists/data/models/stylist_model.dart
 
-touch lib/features/professionals/presentation/screens/professional_detail_screen.dart
+touch lib/features/stylists/presentation/screens/stylist_detail_screen.dart
 
-touch lib/features/professionals/presentation/widgets/professional_card.dart
-touch lib/features/professionals/presentation/widgets/rating_bar.dart
+touch lib/features/stylists/presentation/widgets/stylist_card.dart
+touch lib/features/stylists/presentation/widgets/rating_bar.dart
 
 # Profile feature
 touch lib/features/profile/data/repositories/profile_repository_impl.dart
