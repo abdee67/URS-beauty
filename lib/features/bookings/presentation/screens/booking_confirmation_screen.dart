@@ -67,6 +67,12 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
       listener: (context, state) {
         if (state.status == BookingBlocStatus.failure &&
             state.errorMessage.isNotEmpty) {
+          final normalizedError = state.errorMessage.toLowerCase();
+          if (normalizedError.contains('slot already booked')) {
+            Navigator.of(context).pop(true);
+            return;
+          }
+
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(SnackBar(content: Text(state.errorMessage)));

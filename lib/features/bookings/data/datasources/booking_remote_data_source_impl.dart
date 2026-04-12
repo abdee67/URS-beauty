@@ -76,7 +76,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
           .from('bookings')
           .update({
             'status': BookingStatus.cancelled.name,
-            'updated_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', bookingId);
     });
@@ -175,8 +175,8 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     DateTime newScheduledAt,
   ) {
     return _updateBookingFields(bookingId, {
-      'scheduled_at': newScheduledAt.toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'scheduled_at': newScheduledAt.toUtc().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 
@@ -184,7 +184,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   Future<BookingModel> addNotesToBooking(String bookingId, String notes) {
     return _updateBookingFields(bookingId, {
       'notes': notes.trim().isEmpty ? null : notes.trim(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 
@@ -192,7 +192,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   Future<BookingModel> updateBookingStatus(String bookingId, String status) {
     return _updateBookingFields(bookingId, {
       'status': _normalizeStatus(status),
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 
@@ -300,8 +300,8 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'notes': booking.notes,
       'address': booking.addressId,
       'total_amount': booking.totalAmount,
-      'scheduled_at': booking.scheduledAt.toIso8601String(),
-      'end_at': booking.endAt.toIso8601String(),
+      'scheduled_at': booking.scheduledAt.toUtc().toIso8601String(),
+      'end_at': booking.endAt.toUtc().toIso8601String(),
     };
 
     if (booking.id.trim().isNotEmpty) {
@@ -319,9 +319,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'notes': booking.notes,
       'address': booking.addressId,
       'total_amount': booking.totalAmount,
-      'scheduled_at': booking.scheduledAt.toIso8601String(),
-      'end_at': booking.endAt.toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'scheduled_at': booking.scheduledAt.toUtc().toIso8601String(),
+      'end_at': booking.endAt.toUtc().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
   }
 

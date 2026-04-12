@@ -40,10 +40,10 @@ class BookingModel extends BookingEntity {
       notes: json['notes']?.toString(),
       addressId: (json['address'] ?? '').toString(),
       totalAmount: (json['total_amount'] as num?)?.toDouble() ?? 0.0,
-      scheduledAt: DateTime.parse(json['scheduled_at'].toString()),
-      endAt: DateTime.parse(json['end_at'].toString()),
-      createdAt: DateTime.parse(json['created_at'].toString()),
-      updatedAt: DateTime.parse(json['updated_at'].toString()),
+      scheduledAt: _asLocalDateTime(json['scheduled_at']),
+      endAt: _asLocalDateTime(json['end_at']),
+      createdAt: _asLocalDateTime(json['created_at']),
+      updatedAt: _asLocalDateTime(json['updated_at']),
     );
   }
 
@@ -80,5 +80,10 @@ class BookingModel extends BookingEntity {
       default:
         return BookingStatus.pending;
     }
+  }
+
+  static DateTime _asLocalDateTime(dynamic value) {
+    final parsed = DateTime.parse(value.toString());
+    return parsed.isUtc ? parsed.toLocal() : parsed;
   }
 }

@@ -17,7 +17,7 @@ class CreateBookingRequestModel extends CreateBookingRequestEntity {
     return <String, dynamic>{
       'p_customer_id': customerId,
       'p_stylist_id': stylistId,
-      'p_scheduled_at': scheduledAt.toIso8601String(),
+      'p_scheduled_at': scheduledAt.toUtc().toIso8601String(),
       'p_address_id': addressId,
       'p_notes': normalizedNotes == null || normalizedNotes.isEmpty
           ? null
