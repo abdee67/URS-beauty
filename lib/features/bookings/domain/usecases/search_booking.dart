@@ -13,6 +13,3 @@ class SearchBookings {
   }
 }
 
-class SearchBooking extends SearchBookings {
-  SearchBooking(super.repository);
-}

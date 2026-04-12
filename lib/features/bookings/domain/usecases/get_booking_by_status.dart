@@ -8,7 +8,7 @@ class GetBookingsByStatus {
 
   final BookingRepository repository;
 
-  Future<Either<Failures, List<BookingEntity>>> call(String status) {
+  Future<Either<Failures, List<BookingEntity>>> call(BookingStatus status) {
     return repository.getBookingsByStatus(status);
   }
 }

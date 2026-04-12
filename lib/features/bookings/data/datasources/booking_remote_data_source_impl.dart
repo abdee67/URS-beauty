@@ -9,13 +9,15 @@ import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart
 
 class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   BookingRemoteDataSourceImpl({SupabaseClient? client})
-    : _client = client ?? SupabaseConfig.client;
+      : _client = client ?? SupabaseConfig.client;
 
   final SupabaseClient _client;
 
   static const String _bookingColumns =
       'id, customer, stylist, status, notes, address, total_amount, '
-      'scheduled_at, end_at, created_at, updated_at';
+      'scheduled_at, end_at, created_at, updated_at, '
+      'stylist_profile:stylists(business_name), '
+      'booked_services:booking_services(service_name)';
   static const String _bookingServicesColumns =
       'id, booking_id, service_name, service_id, stylist_service_id, '
       'quantity, price_at_booking, duration_at_booking';
@@ -153,9 +155,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<List<BookingModel>> getBookingsByStatus(String status) {
+  Future<List<BookingModel>> getBookingsByStatus(BookingStatus status) {
     return _run(() async {
-      final normalizedStatus = _normalizeStatus(status);
+      final normalizedStatus = _normalizeStatus(status.name);
 
       final response = await _client
           .from('bookings')
@@ -205,14 +207,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       final response = await _client
           .from('bookings')
           .select(_bookingColumns)
-          .or(
-            'id.ilike.%$normalizedQuery%,'
-            'customer.ilike.%$normalizedQuery%,'
-            'stylist.ilike.%$normalizedQuery%,'
-            'status.ilike.%$normalizedQuery%,'
-            'address.ilike.%$normalizedQuery%,'
-            'notes.ilike.%$normalizedQuery%',
-          )
+          .ilike('notes', '%$normalizedQuery%')
           .order('scheduled_at', ascending: false);
 
       return _mapBookingList(response);
@@ -251,10 +246,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   List<BookingModel> _mapBookingList(dynamic response) {
     return (response as List)
-        .map(
-          (item) =>
-              BookingModel.fromJson(Map<String, dynamic>.from(item as Map)),
-        )
+        .map((item) => BookingModel.fromJson(Map<String, dynamic>.from(item as Map)))
         .toList();
   }
 
@@ -306,12 +298,10 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'stylist': booking.stylistId,
       'status': booking.status.name,
       'notes': booking.notes,
-      'address': booking.address,
+      'address': booking.addressId,
       'total_amount': booking.totalAmount,
       'scheduled_at': booking.scheduledAt.toIso8601String(),
       'end_at': booking.endAt.toIso8601String(),
-      'created_at': booking.createdAt.toIso8601String(),
-      'updated_at': booking.updatedAt.toIso8601String(),
     };
 
     if (booking.id.trim().isNotEmpty) {
@@ -327,7 +317,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'stylist': booking.stylistId,
       'status': booking.status.name,
       'notes': booking.notes,
-      'address': booking.address,
+      'address': booking.addressId,
       'total_amount': booking.totalAmount,
       'scheduled_at': booking.scheduledAt.toIso8601String(),
       'end_at': booking.endAt.toIso8601String(),
@@ -349,17 +339,17 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   void _validateCreateBookingRequest(CreateBookingRequestModel request) {
     _requireValue(request.customerId, 'Customer id is required');
     _requireValue(request.stylistId, 'Stylist id is required');
-    _requireValue(request.address, 'Booking address is required');
+    _requireValue(request.addressId, 'Booking address is required');
 
     if (request.items.isEmpty) {
       throw Failures(message: 'At least one service item is required');
     }
 
     for (final item in request.items) {
-      if (item.serviceId <= 0) {
+      if (item.serviceId.trim().isEmpty) {
         throw Failures(message: 'Each booking item must have a valid service');
       }
-      if (item.stylistServiceId <= 0) {
+      if (item.stylistServiceId.trim().isEmpty) {
         throw Failures(
           message: 'Each booking item must have a valid stylist service',
         );
@@ -377,8 +367,4 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       throw Failures(message: message);
     }
   }
-}
-
-class BookingsRemoteDataSourceImpl extends BookingRemoteDataSourceImpl {
-  BookingsRemoteDataSourceImpl({super.client});
 }

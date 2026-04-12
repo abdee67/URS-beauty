@@ -1,6 +1,6 @@
 class StylistsServiceEntity {
-  final int id;
-  final int serviceId;
+  final String id;
+  final String serviceId;
   final String stylistsId;
   final double price;
   final bool isAvailable;

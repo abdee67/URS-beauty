@@ -1,16 +1,21 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:urs_beauty/features/auth/data/models/client_model.dart';
+import 'package:urs_beauty/features/auth/data/models/customer_model.dart';
+import 'package:urs_beauty/features/auth/data/models/customer_address_model.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
 
- class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+  static const String _customerTable = 'customers';
+  static const String _customerAddressTable = 'customer_addresses';
+  static const String _customerColumns =
+      'id, email, first_name, last_name, phone_number, profile_image_url, '
+      'created_at, updated_at, addresses:customer_addresses(*)';
+
   @override
-    Future<Session> signIn(
-    String email,
-    String password,
-  ) async {
+  Future<Session> signIn(String email, String password) async {
     try {
-      // Attempt to sign in with email and password
       final result = await SupabaseConfig.client.auth.signInWithPassword(
         email: email,
         password: password,
@@ -18,12 +23,12 @@ import 'package:urs_beauty/features/auth/data/models/client_model.dart';
       if (result.session == null) {
         throw Exception('Failed to sign in: No session returned');
       }
-      return (result.session!);
+      return result.session!;
     } catch (e) {
-      return throw Exception('Failed to sign in: ${e.toString()}');
+      throw Exception('Failed to sign in: $e');
     }
   }
- 
+
   @override
   Future<void> signUp(
     String email,
@@ -31,52 +36,60 @@ import 'package:urs_beauty/features/auth/data/models/client_model.dart';
     String firstName,
     String lastName,
     String phone,
+    CustomerAddressInput address,
   ) async {
     try {
-      final result =  await SupabaseConfig.client.auth.signUp(
+      final result = await SupabaseConfig.client.auth.signUp(
         email: email,
         password: password,
-        data: {'first_name': firstName, 'last_name': lastName, 'phone': phone},
-        emailRedirectTo: 'ursbeauty://login/', // for deep linking
+        data: {
+          'first_name': firstName,
+          'last_name': lastName,
+          'phone_number': phone,
+          'signup_address': address.toJson(),
+        },
+        emailRedirectTo: 'ursbeauty://login/',
       );
       if (result.user == null) {
         throw Exception('Failed to sign up: No user returned');
       }
-      return;
+
+      await _ensureCustomerProfileFromUser(
+        result.user!,
+        fallbackEmail: email,
+        rethrowErrors: false,
+      );
     } catch (e) {
-       throw Exception('Failed to sign up: ${e.toString()}');
+      throw Exception('Failed to sign up: $e');
     }
   }
-  
+
   @override
-  Future< void> sendOtp(String email) async {
+  Future<void> sendOtp(String email) async {
     try {
-      // Try resend first (for existing users)
-   final result = await SupabaseConfig.client.auth.resend(
+      final result = await SupabaseConfig.client.auth.resend(
         type: OtpType.signup,
         email: email,
       );
       if (result.messageId == null) {
         throw Exception('Failed to resend OTP: No message ID returned');
       }
-      return;
-    } catch (e) {
-      // If resend fails, try signInWithOtp (for new users)
+    } catch (_) {
       try {
         await SupabaseConfig.client.auth.signInWithOtp(
           email: email,
           shouldCreateUser: true,
         );
-        return;
       } catch (otpError) {
-        throw Exception('Failed to send OTP: ${otpError.toString()}');
-      } 
+        throw Exception('Failed to send OTP: $otpError');
+      }
     }
   }
+
   @override
   Future<void> verifyOTP(String email, String otp) async {
     try {
-     final result =  await SupabaseConfig.client.auth.verifyOTP(
+      final result = await SupabaseConfig.client.auth.verifyOTP(
         email: email,
         token: otp,
         type: OtpType.email,
@@ -84,86 +97,289 @@ import 'package:urs_beauty/features/auth/data/models/client_model.dart';
       if (result.session == null) {
         throw Exception('Failed to verify OTP: No session returned');
       }
-      return ;
+
+      final verifiedUser =
+          result.user ?? SupabaseConfig.client.auth.currentUser;
+      if (verifiedUser == null) {
+        throw Exception('Failed to verify OTP: No user returned');
+      }
+
+      await _ensureCustomerProfileFromUser(
+        verifiedUser,
+        fallbackEmail: email,
+        rethrowErrors: true,
+      );
     } catch (e) {
-      throw Exception('Failed to verify OTP: ${e.toString()}');
+      throw Exception('Failed to verify OTP: $e');
     }
   }
+
   @override
   Future<void> signOut() async {
     try {
       await SupabaseConfig.client.auth.signOut();
-      return ;
     } catch (e) {
-      throw Exception('Failed to sign out: ${e.toString()}');
+      throw Exception('Failed to sign out: $e');
     }
   }
- @override
-  Future<ClientModel> getCurrentClient() async {
+
+  @override
+  Future<CustomerModel> getCurrentCustomer() async {
     try {
       final user = SupabaseConfig.client.auth.currentUser;
-      final client = ClientModel(
-        id: user!.id,
-        email: user.email!,
-        firstName: user.userMetadata?['first_name'] ?? '',
-        lastName: user.userMetadata?['last_name'] ?? '',
-        phone: int.parse(user.userMetadata?['phone'] ?? '0'),
-      );
-      if (client.id.isEmpty || client.email.isEmpty) {
-        throw Exception('User data is incomplete');
-      } 
-      return client;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
 
+      final response = await _fetchCustomerResponse(user.id);
+
+      if (response != null) {
+        final customer = CustomerModel.fromJson(
+          Map<String, dynamic>.from(response),
+        );
+        if (customer.id.isNotEmpty && customer.email.isNotEmpty) {
+          return customer;
+        }
+      }
+
+      final metadata = user.userMetadata ?? <String, dynamic>{};
+      final fallbackCustomer = CustomerModel(
+        id: user.id,
+        email: user.email ?? '',
+        firstName: (metadata['first_name'] ?? '').toString(),
+        lastName: (metadata['last_name'] ?? '').toString(),
+        phone: int.tryParse((metadata['phone_number'] ?? '0').toString()) ?? 0,
+      );
+
+      await _ensureCustomerRecord(fallbackCustomer);
+      await _ensureCustomerProfileFromUser(
+        user,
+        fallbackEmail: user.email ?? '',
+        rethrowErrors: false,
+      );
+
+      final refreshedResponse = await _fetchCustomerResponse(user.id);
+      if (refreshedResponse != null) {
+        return CustomerModel.fromJson(
+          Map<String, dynamic>.from(refreshedResponse),
+        );
+      }
+
+      return fallbackCustomer;
     } catch (e) {
-      throw Exception('Failed to retrieve client information');
+      if(kDebugMode) {
+        print('Error retrieving current customer: $e');
+      }
+      throw Exception('Failed to retrieve customer information: $e');
     }
   }
-  @override 
-  Future<ClientModel> updateClientProfile(ClientModel client) async {
+
+  @override
+  Future<CustomerModel> updateCustomerProfile(CustomerModel customer) async {
     try {
       await SupabaseConfig.client.auth.updateUser(
         UserAttributes(
-          email: client.email,
+          email: customer.email,
           data: {
-            'first_name': client.firstName,
-            'last_name': client.lastName,
-            'phone': client.phone.toString(),
+            'first_name': customer.firstName,
+            'last_name': customer.lastName,
+            'phone_number': customer.phone.toString(),
           },
         ),
       );
-      final clinet = ClientModel(
-        id: client.id,
-        email: client.email,
-        firstName: client.firstName,
-        lastName: client.lastName,
-        phone: client.phone,
-        );
-        if (clinet.id.isEmpty || clinet.email.isEmpty) {
-          throw Exception('Updated user data is incomplete');
-        }
-      return clinet;
+
+      await SupabaseConfig.client.from(_customerTable).upsert({
+        'id': customer.id,
+        'email': customer.email,
+        'first_name': customer.firstName,
+        'last_name': customer.lastName,
+        'phone_number': customer.phone,
+        'profile_image_url': customer.profileImage,
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'id');
+
+      return customer;
     } catch (e) {
-      return throw Exception('Failed to update client profile');
-    }
-  }
-  @override
-  Future<void> forgotPassword(String email) async {
-    try {
-       await SupabaseConfig.client.auth.resetPasswordForEmail(email, redirectTo: 'ursbeauty://reset-password/');
-   
-      return ;
-    } catch (e) {
-       throw Exception('Failed to send password reset email: ${e.toString()}');
-    }
-  }
-  @override
-   Future<void> resetPassword(String email, String password) async {
-    try {
-      await SupabaseConfig.client.auth.updateUser(UserAttributes(email: email, password: password));
-      return ;
-    } catch (e) {
-       throw Exception('Failed to reset password: ${e.toString()}');
+      throw Exception('Failed to update customer profile: $e');
     }
   }
 
+  Future<void> _ensureCustomerRecord(CustomerModel customer) async {
+    try {
+      await SupabaseConfig.client.from(_customerTable).upsert({
+        'id': customer.id,
+        'email': customer.email,
+        'first_name': customer.firstName,
+        'last_name': customer.lastName,
+        'phone_number': customer.phone,
+        'profile_image_url': customer.profileImage,
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'id');
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error ensuring customer record: $e');
+      }
+    }
+  }
+
+  Future<void> _ensureCustomerProfileFromUser(
+    User user, {
+    required String fallbackEmail,
+    required bool rethrowErrors,
+  }) async {
+    try {
+      final customer = _customerFromUser(
+        user,
+        fallbackEmail: fallbackEmail,
+      );
+      await _ensureCustomerRecord(customer);
+      await _ensureSignupAddress(
+        customerId: customer.id,
+        metadata: user.userMetadata ?? const <String, dynamic>{},
+      );
+    } catch (e) {
+      final isBookingsPolicyRecursionError =
+          _isBookingsPolicyRecursionError(e);
+      if (kDebugMode) {
+        print(
+          isBookingsPolicyRecursionError
+              ? 'Ignoring signup customer profile bootstrap error caused by bookings policy recursion: $e'
+              : 'Error ensuring signup customer profile: $e',
+        );
+      }
+      if (rethrowErrors && !isBookingsPolicyRecursionError) {
+        rethrow;
+      }
+    }
+  }
+
+  bool _isBookingsPolicyRecursionError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains(
+          'infinite recursion detected in policy for relation "bookings"',
+        ) ||
+        message.contains('"code":"42p17"') ||
+        message.contains('code: 42p17');
+  }
+
+  CustomerModel _customerFromUser(
+    User user, {
+    required String fallbackEmail,
+  }) {
+    final metadata = user.userMetadata ?? const <String, dynamic>{};
+
+    return CustomerModel(
+      id: user.id,
+      email: (user.email ?? fallbackEmail).trim(),
+      firstName: (metadata['first_name'] ?? '').toString(),
+      lastName: (metadata['last_name'] ?? '').toString(),
+      phone: int.tryParse((metadata['phone_number'] ?? '0').toString()) ?? 0,
+    );
+  }
+
+  Future<void> _ensureSignupAddress({
+    required String customerId,
+    required Map<String, dynamic> metadata,
+  }) async {
+    final signupAddress = metadata['signup_address'];
+    if (signupAddress is! Map) {
+      return;
+    }
+
+    final existingAddress = await SupabaseConfig.client
+        .from(_customerAddressTable)
+        .select('id')
+        .eq('customer_id', customerId)
+        .limit(1)
+        .maybeSingle();
+
+    if (existingAddress != null) {
+      return;
+    }
+
+    final payload = Map<String, dynamic>.from(signupAddress);
+    payload['customer_id'] = customerId;
+    payload['is_default'] = true;
+
+    await createCustomerAddress(payload);
+  }
+
+  Future<dynamic> _fetchCustomerResponse(String userId) async {
+    try {
+      return await SupabaseConfig.client
+          .from(_customerTable)
+          .select(_customerColumns)
+          .eq('id', userId)
+          .maybeSingle();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error retrieving current customer: $e');
+      }
+      return null;
+    }
+  }
+
+  @override
+  Future<void> forgotPassword(String email) async {
+    try {
+      await SupabaseConfig.client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'ursbeauty://reset-password/',
+      );
+    } catch (e) {
+      throw Exception('Failed to send password reset email: $e');
+    }
+  }
+
+  @override
+  Future<void> resetPassword(String email, String password) async {
+    try {
+      await SupabaseConfig.client.auth.updateUser(
+        UserAttributes(email: email, password: password),
+      );
+    } catch (e) {
+      throw Exception('Failed to reset password: $e');
+    }
+  }
+
+  @override
+  Future<CustomerAddressModel> createCustomerAddress(
+      Map<String, dynamic> payload) async {
+    try {
+      final currentUser = SupabaseConfig.client.auth.currentUser;
+      final payloadWithCustomer = Map<String, dynamic>.from(payload);
+      final resolvedCustomerId =
+          (payloadWithCustomer['customer_id'] ?? currentUser?.id ?? '')
+              .toString()
+              .trim();
+
+      if (resolvedCustomerId.isEmpty) {
+        throw Exception('No authenticated customer found for address creation');
+      }
+
+      payloadWithCustomer['customer_id'] = resolvedCustomerId;
+
+      if (payloadWithCustomer['is_default'] == null) {
+        final existingAddress = await SupabaseConfig.client
+            .from(_customerAddressTable)
+            .select('id')
+            .eq('customer_id', resolvedCustomerId)
+            .limit(1)
+            .maybeSingle();
+        payloadWithCustomer['is_default'] = existingAddress == null;
+      }
+
+      final response = await SupabaseConfig.client
+          .from(_customerAddressTable)
+          .insert(payloadWithCustomer)
+          .select()
+          .single();
+
+      return CustomerAddressModel.fromJson(
+        Map<String, dynamic>.from(response),
+      );
+    } catch (e) {
+      throw Exception('Failed to create customer address: $e');
+    }
+  }
 }

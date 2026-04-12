@@ -3,13 +3,13 @@ import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/auth/domain/repositories/auth_repository.dart';
 
-import '../entities/client.dart';
+import '../entities/customer_entity.dart';
 
-class UpdateClientProfile {
+class UpdateCustomerProfile {
   final AuthRepository repo;
-  UpdateClientProfile(this.repo);
+  UpdateCustomerProfile(this.repo);
 
-  Future<Either<Failures, void>> call(ClientEntity updatedData) {
-    return repo.updateClientProfile(updatedData);
+  Future<Either<Failures, void>> call(CustomerEntity updatedData) {
+    return repo.updateCustomerProfile(updatedData);
   }
 }

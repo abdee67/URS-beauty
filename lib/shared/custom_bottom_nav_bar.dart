@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
+import 'package:iconsax/iconsax.dart';
+
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -34,14 +36,29 @@ class CustomBottomNavBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
-              _buildNavItem(1, Icons.map_rounded, Icons.map_outlined, 'Location'),
-              
+              _buildNavItem(0, Iconsax.home_1, Iconsax.home, 'Home'),
+              _buildNavItem(
+                1,
+                Icons.room_service_rounded,
+                Icons.room_service_outlined,
+                'Services',
+              ),
+
               // Special center button for Booking
               _buildBookingButton(2),
 
-              _buildNavItem(3, Icons.chat_bubble_rounded, Icons.person_2_outlined, 'Stylist'),
-              _buildNavItem(5, Icons.chat_bubble_rounded, Icons.chat_bubble_outline, 'Chat'),
+              _buildNavItem(
+                3,
+                Icons.chat_bubble_rounded,
+                Icons.person_2_outlined,
+                'Stylist',
+              ),
+              _buildNavItem(
+                4,
+                Icons.settings_rounded,
+                Icons.settings_outlined,
+                'Setting',
+              ),
             ],
           ),
         ),
@@ -49,7 +66,12 @@ class CustomBottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
+  Widget _buildNavItem(
+    int index,
+    IconData activeIcon,
+    IconData inactiveIcon,
+    String label,
+  ) {
     final isSelected = currentIndex == index;
     return GestureDetector(
       onTap: () => onTap(index),

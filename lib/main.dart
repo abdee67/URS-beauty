@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
 import 'package:urs_beauty/injection_container.dart';
 import 'config/supabase_config.dart';
@@ -69,6 +70,9 @@ class _URSBEAUTYState extends State<URSBEAUTY> {
         ),
            BlocProvider(
           create: (context) => getit<HomeBloc>(),
+        ),
+        BlocProvider(
+          create: (context) => getit<BookingBloc>(),
         ),
   
       ],

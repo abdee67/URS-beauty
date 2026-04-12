@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/forgot_password.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/get_current_location_address.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/get_current_client.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/reset_password.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/send_otp.dart';
@@ -17,11 +18,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SignUp signUp;
   final SendOtp sendOtp;
   final VerifyOTP verifyOTP;
-  final GetCurrentClient getCurrentClient;
-  final UpdateClientProfile updateClientProfile;
+  final GetCurrentLocationAddress getCurrentLocationAddress;
+  final GetCurrentCustomer getCurrentCustomer;
+  final UpdateCustomerProfile updateCustomerProfile;
   final ForgotPassword forgotPassword;
   final ResetPassword resetPassword;
-  AuthBloc( this.signIn, this.signOut, this.signUp, this.sendOtp, this.verifyOTP, this.getCurrentClient, this.updateClientProfile, this.forgotPassword, this.resetPassword) : super(AuthInitial()) {
+  AuthBloc( this.signIn, this.signOut, this.signUp, this.sendOtp, this.verifyOTP, this.getCurrentLocationAddress, this.getCurrentCustomer, this.updateCustomerProfile, this.forgotPassword, this.resetPassword) : super(AuthInitial()) {
     on<SignInRequested>((event, emit) async {
       emit(AuthLoading());
       final result = await signIn(event.email, event.password,);
@@ -40,10 +42,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.firstName,
         event.lastName,
         event.phone,
+        event.address,
       );
       result.fold(
         (failure) => emit(AuthFailure(failure.message)),
         (_) => emit(EmailVerificationSent()),
+      );
+    });
+    on<SignOutRequested>((event, emit) async {
+      emit(AuthLoading());
+      final result = await signOut();
+      result.fold(
+        (failure) => emit(AuthFailure(failure.message)),
+        (_) => emit(AuthLoggedOut()),
+      );
+    });
+    on<AutoFillCurrentLocationAddressRequested>((event, emit) async {
+      emit(AuthAddressLoading());
+      final result = await getCurrentLocationAddress();
+      result.fold(
+        (failure) => emit(AuthFailure(failure.message)),
+        (address) => emit(AuthAddressAutofilled(address)),
       );
     });
     on<SendOtpRequested>((event, emit) async {
