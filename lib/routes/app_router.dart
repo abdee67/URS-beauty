@@ -9,7 +9,6 @@ import 'package:urs_beauty/features/auth/presentation/screens/login_screen.dart'
 import 'package:urs_beauty/features/auth/presentation/screens/signup_screen.dart';
 import 'package:urs_beauty/features/beauty_services/presentation/screens/service_list_screen.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_page.dart';
-import 'package:urs_beauty/features/chat/presentation/screens/chat_screen.dart';
 import 'package:urs_beauty/features/dashboard/dashboard_wrapper.dart';
 import 'package:urs_beauty/features/home/presentation/pages/home_screen.dart';
 import 'package:urs_beauty/features/payments/presentation/screens/payment_methods_screen.dart';

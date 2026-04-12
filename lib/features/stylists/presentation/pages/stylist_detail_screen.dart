@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:urs_beauty/core/constants/app_routes.dart';
+import 'package:urs_beauty/core/widgets/empty_state.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/stylists/presentation/pages/stylist_profile_screen.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/stylist_card.dart';
 
 class StylistDetailScreen extends StatefulWidget {
   const StylistDetailScreen({super.key, this.serviceId, this.serviceName});
@@ -109,15 +109,19 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
                           );
                         }
                         if (state.errorMessage.isNotEmpty) {
-                          return _EmptyState(message: state.errorMessage);
+                          return EmptyState(
+                            title: state.errorMessage,
+                            subtitle: 'Please try again later.',
+                          );
                         }
 
                         final stylists = _stylistsFromState(state);
                         if (stylists.isEmpty) {
-                          return _EmptyState(
-                            message: _hasSelectedService
+                          return EmptyState(
+                            title: _hasSelectedService
                                 ? 'No stylists found for this service.'
                                 : 'No stylists are available right now.',
+                            subtitle: 'Please try again later.',
                           );
                         }
 
@@ -129,7 +133,7 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
                               const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final stylist = stylists[index];
-                            return _StylistCard(
+                            return StylistCard(
                               stylist: stylist,
                               onTap: () =>
                                   _openStylistProfile(context, stylist),
@@ -175,139 +179,6 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
           stylist: stylist,
           serviceId: widget.serviceId,
           serviceName: widget.serviceName,
-        ),
-      ),
-    );
-  }
-}
-
-class _StylistCard extends StatelessWidget {
-  const _StylistCard({required this.stylist, required this.onTap});
-
-  final Stylist stylist;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withAlpha(230),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              _StylistAvatar(imageUrl: stylist.imageUrl),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      stylist.businessName,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF2F1C18),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      stylist.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.star,
-                          size: 16,
-                          color: Colors.amber.shade700,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          stylist.averageRating.toStringAsFixed(1),
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${stylist.totalReview} reviews',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Colors.grey.shade600),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tap to view profile, ratings, and recent reviews.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF8A6A5C),
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StylistAvatar extends StatelessWidget {
-  const _StylistAvatar({required this.imageUrl});
-
-  final String imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = imageUrl.trim().isNotEmpty;
-    return CircleAvatar(
-      radius: 28,
-      backgroundColor: const Color(0xFFF8F1EA),
-      backgroundImage: hasImage ? NetworkImage(imageUrl) : null,
-      child: hasImage
-          ? null
-          : const Icon(Icons.face_rounded, color: Color(0xFFC96A3D)),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.person_search_rounded,
-              size: 48,
-              color: Color(0xFFAA7355),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade700),
-            ),
-          ],
         ),
       ),
     );

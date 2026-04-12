@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:urs_beauty/core/constants/app_routes.dart';
-import 'package:urs_beauty/features/auth/domain/usecases/sign_out.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
 

@@ -4,7 +4,7 @@ import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_success_screen.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/address_option_card_widget.dart';
-import 'package:urs_beauty/features/bookings/presentation/widgets/booking_error_widget.dart';
+import 'package:urs_beauty/core/widgets/error_state.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/empty_address_state_widget.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/selected_address_preview_widget.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/summary_card_widget.dart';
@@ -103,7 +103,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
         if (_isInitialError(state)) {
           return _buildScaffold(
             context,
-            child: BookingErrorState(message: state.errorMessage),
+            child: ErrorState(message: state.errorMessage),
           );
         }
 

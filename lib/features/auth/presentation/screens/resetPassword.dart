@@ -44,9 +44,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     textFieldAlignment: MainAxisAlignment.spaceBetween,
                     fieldWidth: 50,
                     style: const TextStyle(fontSize: 20),
-                    onCompleted: (pin) {
-                      print("Completed: $pin");
-                    },
                   ),
                   TextField(
                     controller: widget._passwordCtrl,
