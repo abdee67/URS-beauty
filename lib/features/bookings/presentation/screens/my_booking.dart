@@ -3,12 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/core/widgets/retry_button.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
+import 'package:urs_beauty/features/bookings/presentation/screens/booking_reschedule_page.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/booking_list.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/booking_tab.dart';
 import 'package:urs_beauty/features/reviews/domain/entity/review_entity.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_bloc.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_state.dart';
 import 'package:urs_beauty/features/reviews/presentation/screens/write_review_screen.dart';
+import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/injection_container.dart';
 
 class MyBookingScreen extends StatefulWidget {
@@ -78,13 +80,19 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
             return BlocBuilder<ReviewBloc, ReviewState>(
               builder: (context, reviewState) {
                 final bookings = bookingState.customerBookings;
-                final upcomingBookings = _sortUpcoming(bookings);
-                final completedBookings = _sortCompleted(bookings);
-                final historyBookings = _sortHistory(bookings);
                 final reviewsByBookingId = {
                   for (final review in reviewState.customerReviews)
                     review.bookingId: review,
                 };
+                final upcomingBookings = _sortUpcoming(bookings);
+                final completedBookings = _sortCompleted(
+                  bookings,
+                  reviewsByBookingId,
+                );
+                final historyBookings = _sortHistory(
+                  bookings,
+                  reviewsByBookingId,
+                );
                 final isInitialLoading =
                     bookingState.status == BookingBlocStatus.loading &&
                     bookings.isEmpty;
@@ -161,17 +169,8 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
                                         BookingBlocStatus.cancelling,
                                     onCancel: () =>
                                         _confirmCancellation(booking),
-                                    onReschedule: () {
-                                      ScaffoldMessenger.of(context)
-                                        ..hideCurrentSnackBar()
-                                        ..showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Reschedule will be available soon.',
-                                            ),
-                                          ),
-                                        );
-                                    },
+                                    onReschedule: () =>
+                                        _openRescheduleFlow(booking),
                                   ),
                                 ),
                                 BookingTabContent(
@@ -194,14 +193,16 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
                                 BookingTabContent(
                                   bookings: historyBookings,
                                   emptyTitle:
-                                      'No Confirmed/Passed/Cancelled bookings yet',
+                                      'No Completed/Passed/Cancelled bookings yet',
                                   emptySubtitle:
-                                      'Confirmed,Cancelled or older unfinished appointments will appear here.',
+                                      'Completed,Cancelled or older unfinished appointments will appear here.',
                                   onRefresh: _reloadBookings,
                                   itemBuilder: (booking) => BookingListItem(
                                     booking: booking,
                                     isHistory: true,
                                     review: reviewsByBookingId[booking.id],
+                                    onReschedule: () =>
+                                        _openRescheduleFlow(booking),
                                     onReviewTap: () => _openReviewFlow(
                                       booking,
                                       existingReview:
@@ -299,6 +300,35 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
     }
   }
 
+  Future<void> _openRescheduleFlow(BookingEntity booking) async {
+    final rescheduled = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => getit<BookingBloc>()),
+            BlocProvider(create: (_) => getit<StylistsBloc>()),
+          ],
+          child: BookingReschedulePage(booking: booking),
+        ),
+      ),
+    );
+
+    if (rescheduled != true || !mounted) {
+      return;
+    }
+
+    await _reloadBookings();
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('Booking rescheduled successfully.')),
+      );
+  }
+
   List<BookingEntity> _sortUpcoming(List<BookingEntity> bookings) {
     final now = DateTime.now();
     final filtered = bookings.where((booking) {
@@ -309,27 +339,31 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
     return filtered;
   }
 
-  List<BookingEntity> _sortCompleted(List<BookingEntity> bookings) {
+  List<BookingEntity> _sortCompleted(
+    List<BookingEntity> bookings,
+    Map<String, ReviewEntity> reviewsByBookingId,
+  ) {
     final filtered = bookings
-        .where((booking) => booking.status == BookingStatus.completed)
+        .where(
+          (booking) =>
+              booking.status == BookingStatus.completed &&
+              !_hasReview(booking, reviewsByBookingId),
+        )
         .toList();
 
     filtered.sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
     return filtered;
   }
 
-  List<BookingEntity> _sortHistory(List<BookingEntity> bookings) {
-    final now = DateTime.now();
+  List<BookingEntity> _sortHistory(
+    List<BookingEntity> bookings,
+    Map<String, ReviewEntity> reviewsByBookingId,
+  ) {
     final filtered = bookings.where((booking) {
-      if (booking.status == BookingStatus.completed) {
-        return false;
-      }
-      if (booking.status == BookingStatus.cancelled ||
-          booking.status == BookingStatus.passed ||
-          booking.status == BookingStatus.confirmed) {
-        return true;
-      }
-      return booking.scheduledAt.isBefore(now);
+      return (booking.status == BookingStatus.completed &&
+              _hasReview(booking, reviewsByBookingId)) ||
+          booking.status == BookingStatus.cancelled ||
+          booking.status == BookingStatus.noShow;
     }).toList();
 
     filtered.sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
@@ -339,5 +373,11 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
   bool _isScheduled(BookingStatus status) {
     return status == BookingStatus.pending;
   }
-}
 
+  bool _hasReview(
+    BookingEntity booking,
+    Map<String, ReviewEntity> reviewsByBookingId,
+  ) {
+    return booking.isReviewed || reviewsByBookingId.containsKey(booking.id);
+  }
+}

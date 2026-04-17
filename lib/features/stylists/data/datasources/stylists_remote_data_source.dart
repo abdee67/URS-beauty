@@ -14,5 +14,10 @@ abstract class StylistsRemoteDataSource {
   Future<void> updateStylistsAvailability(StylistsAvailabilityModel availability);
   Future<List<StylistsAvailabilityModel>> getStylistsAvailability(String stylistId);
   Future<List<StylistsAvailabilityModel>> getStylistsAvailabilityByDay(String stylistId, String dayOfWeek);
-  Future<List<StylistAvailabilitySlotModel>> getStylistsAvailabilityByTime(String stylistId, String serviceId, DateTime selectedDate);
+  Future<List<StylistAvailabilitySlotModel>> getStylistsAvailabilityByTime(
+    String stylistId,
+    String serviceId,
+    DateTime selectedDate, {
+    String? ignoredBookingId,
+  });
 }

@@ -32,7 +32,7 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
       'min_price, created_at, updated_at, is_active, icon_url';
   static const String _bookingColumns =
       'id, customer, stylist, status, notes, address, total_amount, '
-      'scheduled_at, end_at, created_at, updated_at';
+      'scheduled_at, end_at, created_at, updated_at, is_reviewed';
 
   @override
   Future<List<StylistModel>> getStylists() {
@@ -194,7 +194,9 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
   Future<List<StylistAvailabilitySlotModel>> getStylistsAvailabilityByTime(
     String stylistId,
     String serviceId,
-    DateTime selectedDate,
+    DateTime selectedDate, {
+    String? ignoredBookingId,
+  }
   ) {
     return _run(() async {
       _requireValue(stylistId, 'Stylist id is required');
@@ -221,7 +223,11 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
         return const <StylistAvailabilitySlotModel>[];
       }
 
-      final bookings = await _getBookingsForDate(stylistId, selectedDate);
+      final bookings = await _getBookingsForDate(
+        stylistId,
+        selectedDate,
+        ignoredBookingId: ignoredBookingId,
+      );
       return _generateTimeSlots(
         selectedDate: selectedDate,
         durationMinutes: serviceDuration,
@@ -322,6 +328,9 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
   Future<List<BookingModel>> _getBookingsForDate(
     String stylistId,
     DateTime selectedDate,
+    {
+    String? ignoredBookingId,
+    }
   ) async {
     final startOfDayLocal = DateTime(
       selectedDate.year,
@@ -332,21 +341,23 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     final startOfDayUtc = startOfDayLocal.toUtc();
     final endOfDayUtc = endOfDayLocal.toUtc();
 
-    final response = await _client
+    final normalizedIgnoredBookingId = ignoredBookingId?.trim();
+    var query = _client
         .from('bookings')
         .select(_bookingColumns)
         .eq('stylist', stylistId)
         .lt('scheduled_at', endOfDayUtc.toIso8601String())
-        .gt('end_at', startOfDayUtc.toIso8601String())
-        .order('scheduled_at');
+        .gt('end_at', startOfDayUtc.toIso8601String());
 
-    return _mapBookingList(response)
-        .where(
-          (booking) =>
-              booking.status == BookingStatus.pending ||
-              booking.status == BookingStatus.completed,
-        )
-        .toList();
+    if (normalizedIgnoredBookingId != null && normalizedIgnoredBookingId.isNotEmpty) {
+      query = query.filter('id', 'neq', normalizedIgnoredBookingId);
+    }
+
+    final response = await query.order('scheduled_at');
+
+    return _mapBookingList(
+      response,
+    ).where((booking) => booking.status == BookingStatus.pending).toList();
   }
 
   List<StylistAvailabilitySlotModel> _generateTimeSlots({

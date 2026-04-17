@@ -81,15 +81,22 @@ class GetStylistsAvailabilityByTimeEvent extends StylistsEvent {
   const GetStylistsAvailabilityByTimeEvent(
     this.stylistId,
     this.serviceId,
-    this.selectedDate,
-  );
+    this.selectedDate, {
+    this.ignoredBookingId,
+  });
 
   final String stylistId;
   final String serviceId;
   final DateTime selectedDate;
+  final String? ignoredBookingId;
 
   @override
-  List<Object> get props => [stylistId, serviceId, selectedDate];
+  List<Object> get props => [
+    stylistId,
+    serviceId,
+    selectedDate,
+    ignoredBookingId ?? '',
+  ];
 }
 
 class GetStylistsServicesEvent extends StylistsEvent {

@@ -5,18 +5,19 @@ import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_dat
 import 'package:urs_beauty/features/bookings/data/models/booking_model.dart';
 import 'package:urs_beauty/features/bookings/data/models/booking_services_model.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
+import 'package:urs_beauty/features/bookings/data/models/reschedule_booking_request_model.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 
 class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   BookingRemoteDataSourceImpl({SupabaseClient? client})
-      : _client = client ?? SupabaseConfig.client;
+    : _client = client ?? SupabaseConfig.client;
 
   final SupabaseClient _client;
 
   static const String _bookingColumns =
-      'id, customer, stylist, status, notes, address, total_amount, '
-      'scheduled_at, end_at, created_at, updated_at, '
-      'stylist_profile:stylists(business_name), '
+      'id, customer, stylist, status, is_reviewed, rescheduled_from, '
+      'rescheduled_count, notes, address, total_amount, scheduled_at, end_at, '
+      'created_at, updated_at, stylist_profile:stylists(business_name), '
       'booked_services:booking_services(service_name)';
   static const String _bookingServicesColumns =
       'id, booking_id, service_name, service_id, stylist_service_id, '
@@ -170,13 +171,17 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<BookingModel> rescheduleBooking(
-    String bookingId,
-    DateTime newScheduledAt,
-  ) {
-    return _updateBookingFields(bookingId, {
-      'scheduled_at': newScheduledAt.toUtc().toIso8601String(),
-      'updated_at': DateTime.now().toUtc().toIso8601String(),
+  Future<BookingModel> rescheduleBooking(RescheduleBookingRequestModel request) {
+    return _run(() async {
+      _requireValue(request.bookingId, 'Booking id is required');
+      _requireValue(request.stylistId, 'Stylist id is required');
+
+      final response = await _client.rpc(
+        'reschedule_booking',
+        params: request.toRpcParams(),
+      );
+
+      return _mapRpcBooking(response);
     });
   }
 
@@ -246,7 +251,10 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   List<BookingModel> _mapBookingList(dynamic response) {
     return (response as List)
-        .map((item) => BookingModel.fromJson(Map<String, dynamic>.from(item as Map)))
+        .map(
+          (item) =>
+              BookingModel.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
         .toList();
   }
 
@@ -302,6 +310,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'total_amount': booking.totalAmount,
       'scheduled_at': booking.scheduledAt.toUtc().toIso8601String(),
       'end_at': booking.endAt.toUtc().toIso8601String(),
+      'is_reviewed': booking.isReviewed,
+      'rescheduled_from': booking.rescheduledFrom,
+      'rescheduled_count': booking.rescheduledCount,
     };
 
     if (booking.id.trim().isNotEmpty) {
@@ -322,6 +333,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'scheduled_at': booking.scheduledAt.toUtc().toIso8601String(),
       'end_at': booking.endAt.toUtc().toIso8601String(),
       'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'is_reviewed': booking.isReviewed,
+      'rescheduled_from': booking.rescheduledFrom,
+      'rescheduled_count': booking.rescheduledCount,
     };
   }
 

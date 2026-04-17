@@ -15,19 +15,25 @@ class BookingModel extends BookingEntity {
     required super.endAt,
     required super.createdAt,
     required super.updatedAt,
+    required super.isReviewed,
+    super.rescheduledFrom,
+    required super.rescheduledCount,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
     final stylistProfile = json['stylist_profile'];
     final bookedServices = json['booked_services'];
-    final resolvedServiceName = bookedServices is List && bookedServices.isNotEmpty
-        ? (Map<String, dynamic>.from(bookedServices.first as Map)['service_name'] ??
-                '')
-            .toString()
+    final resolvedServiceName =
+        bookedServices is List && bookedServices.isNotEmpty
+        ? (Map<String, dynamic>.from(
+                    bookedServices.first as Map,
+                  )['service_name'] ??
+                  '')
+              .toString()
         : '';
     final resolvedStylistName = stylistProfile is Map
         ? (Map<String, dynamic>.from(stylistProfile)['business_name'] ?? '')
-            .toString()
+              .toString()
         : '';
 
     return BookingModel(
@@ -36,7 +42,9 @@ class BookingModel extends BookingEntity {
       stylistId: (json['stylist'] ?? '').toString(),
       serviceName: resolvedServiceName,
       stylistName: resolvedStylistName,
-      status: _bookingStatusFromString((json['status'] ?? 'pending').toString()),
+      status: _bookingStatusFromString(
+        (json['status'] ?? 'pending').toString(),
+      ),
       notes: json['notes']?.toString(),
       addressId: (json['address'] ?? '').toString(),
       totalAmount: (json['total_amount'] as num?)?.toDouble() ?? 0.0,
@@ -44,6 +52,9 @@ class BookingModel extends BookingEntity {
       endAt: _asLocalDateTime(json['end_at']),
       createdAt: _asLocalDateTime(json['created_at']),
       updatedAt: _asLocalDateTime(json['updated_at']),
+      isReviewed: _isReviewedFromString(json['is_reviewed']),
+      rescheduledFrom: _nullableString(json['rescheduled_from']),
+      rescheduledCount: _asInt(json['rescheduled_count']),
     );
   }
 
@@ -62,6 +73,9 @@ class BookingModel extends BookingEntity {
       endAt: endAt,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      isReviewed: isReviewed,
+      rescheduledFrom: rescheduledFrom,
+      rescheduledCount: rescheduledCount,
     );
   }
 
@@ -69,14 +83,12 @@ class BookingModel extends BookingEntity {
     switch (status.toLowerCase()) {
       case 'pending':
         return BookingStatus.pending;
-      case 'confirmed':
-        return BookingStatus.confirmed;
       case 'completed':
         return BookingStatus.completed;
       case 'cancelled':
         return BookingStatus.cancelled;
-      case 'passed':
-        return BookingStatus.passed;
+      case 'no_show':
+        return BookingStatus.noShow;
       default:
         return BookingStatus.pending;
     }
@@ -85,5 +97,30 @@ class BookingModel extends BookingEntity {
   static DateTime _asLocalDateTime(dynamic value) {
     final parsed = DateTime.parse(value.toString());
     return parsed.isUtc ? parsed.toLocal() : parsed;
+  }
+
+  static bool _isReviewedFromString(dynamic value) {
+    return value.toString().toLowerCase() == 'true';
+  }
+
+  static String? _nullableString(dynamic value) {
+    final normalized = value?.toString().trim() ?? '';
+    if (normalized.isEmpty || normalized.toLowerCase() == 'null') {
+      return null;
+    }
+    return normalized;
+  }
+
+  static int _asInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    if (value is String && value.trim().isNotEmpty) {
+      return int.tryParse(value.trim()) ?? 0;
+    }
+    return 0;
   }
 }

@@ -80,7 +80,10 @@ class BookingListItem extends StatelessWidget {
                   ],
                 ),
               ),
-              BookingStatusBadge(status: booking.status),
+              BookingStatusBadge(
+                status: booking.status,
+                isReviewed: booking.isReviewed,
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -99,38 +102,43 @@ class BookingListItem extends StatelessWidget {
           ],
           if (isHistory) ...[
             const SizedBox(height: 18),
-            if (review != null && booking.status == BookingStatus.confirmed)
+            if (review != null &&
+                booking.status == BookingStatus.completed &&
+                booking.isReviewed == true)
               ReviewPreview(review: review!, onOpen: onReviewTap)
             else if (booking.status == BookingStatus.cancelled ||
-                booking.status == BookingStatus.passed)
-              //let user choose to reschedule or leave review
-              Row(
+                booking.status == BookingStatus.noShow)
+              Column(
                 children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: onReschedule,
-                      icon: const Icon(Icons.restart_alt_rounded),
-                      label: const Text('Reschedule'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6B3F32),
-                        foregroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8EFE7),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      booking.status == BookingStatus.noShow
+                          ? 'You missed this appointment.'
+                          : 'This booking was cancelled.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF7B6156),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: onReviewTap,
-                      icon: const Icon(Icons.star_rounded),
-                      label: const Text('Leave Review'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6B3F32),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: onReschedule,
+                      icon: const Icon(Icons.restart_alt_rounded),
+                      label: const Text('Reschedule'),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF8EFE7),
+                        foregroundColor: const Color(0xFF6B3F32),
+                        side: const BorderSide(color: Color(0xFFD8C0B5)),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -142,23 +150,26 @@ class BookingListItem extends StatelessWidget {
           ]
           //for completed and not history
           else if (isCompleted) ...[
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: onReviewTap,
-                icon: const Icon(Icons.star_rounded),
-                label: const Text('Leave Review'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6B3F32),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+            if (booking.status == BookingStatus.completed &&
+                booking.isReviewed == false) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onReviewTap,
+                  icon: const Icon(Icons.star_rounded),
+                  label: const Text('Leave Review'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6B3F32),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ] else if (!isCompleted && !isHistory) ...[
             const SizedBox(height: 18),
             Row(

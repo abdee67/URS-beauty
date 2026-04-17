@@ -7,7 +7,17 @@ class GetStylistsAvailabilityByTime {
   final StylistsRepository repository;
    const GetStylistsAvailabilityByTime(this.repository);
 
-   Future<Either<Failures, List<StylistAvailabilitySlotEntity>>> call(String stylistId, String serviceId, DateTime selectedDate) async {
-    return await repository.getStylistsAvailabilityByTime(stylistId, serviceId, selectedDate);
+   Future<Either<Failures, List<StylistAvailabilitySlotEntity>>> call(
+    String stylistId,
+    String serviceId,
+    DateTime selectedDate, {
+    String? ignoredBookingId,
+   }) async {
+    return await repository.getStylistsAvailabilityByTime(
+      stylistId,
+      serviceId,
+      selectedDate,
+      ignoredBookingId: ignoredBookingId,
+    );
    }
 }

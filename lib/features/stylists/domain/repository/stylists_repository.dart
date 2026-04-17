@@ -14,5 +14,10 @@ Future<Either<Failures, List<Stylist>>> getNearByStylists(double latitude, doubl
 Future<Either<Failures, void>> updateStylistsAvailability(StylistsAvailabilityModel availability);
 Future<Either<Failures, List<StylistsAvailabilityModel>>> getStylistsAvailability(String stylistId);
 Future<Either<Failures, List<StylistsAvailabilityModel>>> getStylistsAvailabilityByDay(String stylistId, String dayOfWeek);
-Future<Either<Failures, List<StylistAvailabilitySlotEntity>>> getStylistsAvailabilityByTime(String stylistId, String serviceId, DateTime selectedDate);
+Future<Either<Failures, List<StylistAvailabilitySlotEntity>>> getStylistsAvailabilityByTime(
+  String stylistId,
+  String serviceId,
+  DateTime selectedDate, {
+  String? ignoredBookingId,
+});
 }

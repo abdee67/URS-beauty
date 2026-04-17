@@ -2,27 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 
 class BookingStatusBadge extends StatelessWidget {
-  const BookingStatusBadge({super.key, required this.status});
+  const BookingStatusBadge({
+    super.key,
+    required this.status,
+    required this.isReviewed,
+  });
 
   final BookingStatus status;
+  final bool isReviewed;
 
   @override
   Widget build(BuildContext context) {
     final (label, background, foreground) = switch (status) {
-      BookingStatus.confirmed => (
-        'Confirmed',
+      BookingStatus.completed when isReviewed == true => (
+        'Reviewed',
         const Color(0xFFE6F5EB),
         const Color(0xFF287A4B),
       ),
-      BookingStatus.completed => (
+      BookingStatus.completed when isReviewed == false => (
         'Completed',
         const Color(0xFFE6F5EB),
-        const Color.fromARGB(255, 227, 131, 21),
+        const Color.fromARGB(255, 21, 117, 227),
       ),
-      BookingStatus.passed => (
-        'Passed',
+      BookingStatus.noShow => (
+        'No Show(Passed)',
         const Color(0xFFE6F5EB),
-        const Color.fromARGB(255, 227, 210, 21),
+        const Color.fromARGB(255, 227, 21, 21),
       ),
       BookingStatus.cancelled => (
         'Cancelled',
@@ -49,9 +54,3 @@ class BookingStatusBadge extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-

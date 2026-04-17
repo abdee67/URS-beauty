@@ -16,6 +16,7 @@ enum BookingBlocStatus {
   servicesLoaded,
   booking,
   rescheduling,
+  rescheduled,
   searching,
   searched,
   failure,
@@ -33,6 +34,7 @@ class BookingState extends Equatable {
     this.selectedDate,
     this.selectedTime = '',
     this.selectedBooking,
+    this.rescheduleSourceBooking,
     this.createdAddress,
     this.customer,
     this.stylistService,
@@ -51,6 +53,7 @@ class BookingState extends Equatable {
   final List<BookingEntity> searchedBookings;
   final List<BookingServicesEntity> bookingServices;
   final BookingEntity? selectedBooking;
+  final BookingEntity? rescheduleSourceBooking;
   final CustomerAddressEntity? createdAddress;
   final CustomerEntity? customer;
   final StylistsServiceEntity? stylistService;
@@ -112,6 +115,7 @@ class BookingState extends Equatable {
     List<BookingEntity>? searchedBookings,
     List<BookingServicesEntity>? bookingServices,
     BookingEntity? selectedBooking,
+    BookingEntity? rescheduleSourceBooking,
     CustomerAddressEntity? createdAddress,
     CustomerEntity? customer,
     StylistsServiceEntity? stylistService,
@@ -123,6 +127,7 @@ class BookingState extends Equatable {
     String? errorMessage,
     String? query,
     bool clearSelectedBooking = false,
+    bool clearRescheduleSourceBooking = false,
     bool clearMessage = false,
     bool clearError = false,
     bool clearQuery = false,
@@ -138,6 +143,9 @@ class BookingState extends Equatable {
       selectedBooking: clearSelectedBooking
           ? null
           : (selectedBooking ?? this.selectedBooking),
+      rescheduleSourceBooking: clearRescheduleSourceBooking
+          ? null
+          : (rescheduleSourceBooking ?? this.rescheduleSourceBooking),
       createdAddress: createdAddress ?? this.createdAddress,
       customer: customer ?? this.customer,
       stylistService: stylistService ?? this.stylistService,
@@ -161,6 +169,7 @@ class BookingState extends Equatable {
     searchedBookings,
     bookingServices,
     selectedBooking,
+    rescheduleSourceBooking,
     createdAddress,
     customer,
     stylistService,

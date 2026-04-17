@@ -248,6 +248,7 @@ class StylistsBloc extends Bloc<StylistsEvent, StylistsState> {
       event.stylistId,
       event.serviceId,
       event.selectedDate,
+      ignoredBookingId: event.ignoredBookingId,
     );
     result.fold(
       (failure) => emit(

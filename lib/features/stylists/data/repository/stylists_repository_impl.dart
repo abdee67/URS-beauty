@@ -118,9 +118,19 @@ import 'package:urs_beauty/features/stylists/domain/repository/stylists_reposito
       return Left(e);
     }
  } @override
-  Future<Either<Failures, List<StylistAvailabilitySlotEntity>>> getStylistsAvailabilityByTime(String stylistId, String serviceId, DateTime selectedDate) async {
+  Future<Either<Failures, List<StylistAvailabilitySlotEntity>>> getStylistsAvailabilityByTime(
+    String stylistId,
+    String serviceId,
+    DateTime selectedDate, {
+    String? ignoredBookingId,
+  }) async {
     try {
-      final availability = await remoteDataSource.getStylistsAvailabilityByTime(stylistId, serviceId, selectedDate);
+      final availability = await remoteDataSource.getStylistsAvailabilityByTime(
+        stylistId,
+        serviceId,
+        selectedDate,
+        ignoredBookingId: ignoredBookingId,
+      );
       return Right(availability);
     } on Failures catch (e) {
       return Left(e);

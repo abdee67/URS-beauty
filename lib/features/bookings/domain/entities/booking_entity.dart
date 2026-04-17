@@ -1,10 +1,4 @@
-enum BookingStatus {
-  pending,
-  confirmed,
-  completed,
-  cancelled,
-  passed,
-}
+enum BookingStatus { pending, completed, cancelled, noShow }
 
 class BookingEntity {
   final String id;
@@ -20,6 +14,9 @@ class BookingEntity {
   final DateTime endAt;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isReviewed;
+  final String? rescheduledFrom;
+  final int rescheduledCount;
 
   const BookingEntity({
     required this.id,
@@ -35,5 +32,8 @@ class BookingEntity {
     required this.endAt,
     required this.createdAt,
     required this.updatedAt,
+    this.isReviewed = false,
+    this.rescheduledFrom,
+    this.rescheduledCount = 0,
   });
 }

@@ -115,6 +115,7 @@ begin
     from public.bookings b
     where b.stylist = p_stylist_id
       and b.status in ('pending', 'completed')
+      and b.is_reviewed = false
       and p_scheduled_at < b.end_at
       and v_booking_end_at > b.scheduled_at
   ) then
