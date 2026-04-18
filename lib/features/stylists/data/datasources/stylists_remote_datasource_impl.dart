@@ -32,7 +32,7 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
       'min_price, created_at, updated_at, is_active, icon_url';
   static const String _bookingColumns =
       'id, customer, stylist, status, notes, address, total_amount, '
-      'scheduled_at, end_at, created_at, updated_at, is_reviewed';
+      'scheduled_at, end_at, created_at, updated_at, is_reviewed, payment_method, payment_status, paid_amount, refund_amount, currency';
 
   @override
   Future<List<StylistModel>> getStylists() {

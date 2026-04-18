@@ -1,5 +1,14 @@
 enum BookingStatus { pending, completed, cancelled, noShow }
 
+enum PaymentStatus {
+  pending,
+  paid,
+  refunded,
+  failed,
+  partialRefunded,
+  pendingVerification,
+}
+
 class BookingEntity {
   final String id;
   final String customerId;
@@ -17,6 +26,11 @@ class BookingEntity {
   final bool isReviewed;
   final String? rescheduledFrom;
   final int rescheduledCount;
+  final String paymentMethod;
+  final PaymentStatus paymentStatus;
+  final String? currency;
+  final double? paidAmount;
+  final double? refundAmount;
 
   const BookingEntity({
     required this.id,
@@ -35,5 +49,10 @@ class BookingEntity {
     this.isReviewed = false,
     this.rescheduledFrom,
     this.rescheduledCount = 0,
+    this.paymentMethod = '',
+    this.paymentStatus = PaymentStatus.pending,
+    this.currency = 'ETB',
+    this.paidAmount = 0,
+    this.refundAmount = 0,
   });
 }

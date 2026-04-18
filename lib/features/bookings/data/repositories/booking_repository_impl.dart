@@ -227,6 +227,11 @@ class BookingRepositoryImpl implements BookingRepository {
       isReviewed: booking.isReviewed,
       rescheduledFrom: booking.rescheduledFrom,
       rescheduledCount: booking.rescheduledCount,
+      paymentMethod: booking.paymentMethod,
+      paymentStatus: booking.paymentStatus,
+      currency: booking.currency,
+      paidAmount: booking.paidAmount,
+      refundAmount: booking.refundAmount,
     );
   }
 

@@ -169,7 +169,12 @@ begin
     rescheduled_from,
     rescheduled_count,
     created_at,
-    updated_at
+    updated_at,
+    payment_method,
+    payment_status,
+    paid_amount,
+    refund_amount,
+    currency
   )
   values (
     v_source.customer,

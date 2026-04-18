@@ -160,7 +160,12 @@ begin
     scheduled_at,
     end_at,
     created_at,
-    updated_at
+    updated_at,
+    payment_method,
+    payment_status,
+    paid_amount,
+    refund_amount,
+    currency
   )
   values (
     p_customer_id,

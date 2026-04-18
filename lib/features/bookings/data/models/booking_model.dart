@@ -18,6 +18,11 @@ class BookingModel extends BookingEntity {
     required super.isReviewed,
     super.rescheduledFrom,
     required super.rescheduledCount,
+    required super.paymentMethod,
+    required super.paymentStatus,
+    required super.currency,
+    required super.paidAmount,
+    required super.refundAmount,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -55,6 +60,13 @@ class BookingModel extends BookingEntity {
       isReviewed: _isReviewedFromString(json['is_reviewed']),
       rescheduledFrom: _nullableString(json['rescheduled_from']),
       rescheduledCount: _asInt(json['rescheduled_count']),
+      paymentMethod: json['payment_method']?.toString() ?? '',
+      paymentStatus: _paymentStatusFromString(
+        json['payment_status']?.toString() ?? '',
+      ),
+      currency: json['currency']?.toString() ?? 'ETB',
+      paidAmount: (json['paid_amount'] as num?)?.toDouble() ?? 0.0,
+      refundAmount: (json['refund_amount'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -76,6 +88,11 @@ class BookingModel extends BookingEntity {
       isReviewed: isReviewed,
       rescheduledFrom: rescheduledFrom,
       rescheduledCount: rescheduledCount,
+      paymentMethod: paymentMethod,
+      paymentStatus: paymentStatus,
+      currency: currency,
+      paidAmount: paidAmount,
+      refundAmount: refundAmount,
     );
   }
 
@@ -91,6 +108,25 @@ class BookingModel extends BookingEntity {
         return BookingStatus.noShow;
       default:
         return BookingStatus.pending;
+    }
+  }
+
+  static PaymentStatus _paymentStatusFromString(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return PaymentStatus.pending;
+      case 'paid':
+        return PaymentStatus.paid;
+      case 'refunded':
+        return PaymentStatus.refunded;
+      case 'failed':
+        return PaymentStatus.failed;
+      case 'partial_refunded':
+        return PaymentStatus.partialRefunded;
+      case 'pending_verification':
+        return PaymentStatus.pendingVerification;
+      default:
+        return PaymentStatus.pending;
     }
   }
 

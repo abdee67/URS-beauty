@@ -1,0 +1,31 @@
+abstract class PaymentRepository {
+  Future<PaymentModel> createPayment(
+    String bookingId,
+    String paymentMethod,
+    String currency,
+    double amount,
+  );
+  Future<PaymentModel> getPayment(String paymentId);
+  Future<PaymentModel> updatePayment(
+    String paymentId,
+    String bookingId,
+    String paymentMethod,
+    String currency,
+    double amount,
+  );
+  Future<PaymentModel> calculateRefund(
+    String paymentId,
+  );
+  Future<PaymentModel> processRefundPayment(
+    String paymentId,
+  );
+  Future<PaymentModel> calculateRescheduleCost(
+    String bookingId,
+    String newServiceId,
+  );
+  Future<PaymentModel> processReschedulePayment(
+    String bookingId,
+    DateTime newDateTime,
+    String newServiceId,
+  );
+}
