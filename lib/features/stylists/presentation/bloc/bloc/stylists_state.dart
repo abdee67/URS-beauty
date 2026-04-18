@@ -5,60 +5,36 @@ enum StylistsStatus {
   stylistsLoading,
   stylisstsLoaded,
   stylistsError,
-
   stylistDetailLoading,
   stylistDetailLoaded,
   stylistDetailError,
-
   stylistsByServiceLoading,
   stylistsByServiceLoaded,
   stylistsByServiceError,
-
   nearbyStylistsLoading,
   nearbyStylistsLoaded,
   nearbyStylistsError,
-
   stylistsAvailabilityLoading,
   stylistsAvailabilityLoaded,
   stylistsAvailabilityError,
-
   stylistsAvailabilityByDayLoading,
   stylistsAvailabilityByDayLoaded,
   stylistsAvailabilityByDayError,
-
   stylistsAvailabilityByTimeLoading,
   stylistsAvailabilityByTimeLoaded,
   stylistsAvailabilityByTimeError,
-
   updateStylistsAvailabilityLoading,
   updateStylistsAvailabilityLoaded,
   updateStylistsAvailabilityError,
-
   stylistsServiceLoading,
   stylistsServiceLoaded,
   stylistsServiceError,
-
   stylistSearching,
   success,
   failure,
 }
 
 class StylistsState extends Equatable {
-  final StylistsStatus status;
-  final List<Stylist> stylists;
-  final Stylist? stylistDetail;
-  final List<Stylist> searchedStylists;
-  final List<Stylist> stylistsByService;
-  final List<Stylist> nearbyStylists;
-  final List<StylistsAvailability> stylistsAvailability;
-  final List<StylistsAvailability> stylistsAvailabilityByDay;
-  final List<StylistsAvailability> stylistsAvailabilityByTime;
-  final List<StylistsAvailability> updatedStylistsAvailability;
-  final List<Stylist> stylsitService;
-  final String? message;
-  final String errorMessage;
-  final String? query;
-
   const StylistsState({
     this.status = StylistsStatus.initial,
     this.stylists = const [],
@@ -76,17 +52,36 @@ class StylistsState extends Equatable {
     this.query,
   });
 
+  final StylistsStatus status;
+  final List<Stylist> stylists;
+  final Stylist? stylistDetail;
+  final List<Stylist> searchedStylists;
+  final List<Stylist> stylistsByService;
+  final List<Stylist> nearbyStylists;
+  final List<StylistsAvailability> stylistsAvailability;
+  final List<StylistsAvailability> stylistsAvailabilityByDay;
+  final List<StylistAvailabilitySlotEntity> stylistsAvailabilityByTime;
+  final List<StylistsAvailability> updatedStylistsAvailability;
+  final List<Stylist> stylsitService;
+  final String? message;
+  final String errorMessage;
+  final String? query;
+
   StylistsState stylistsLoading() =>
       copyWith(status: StylistsStatus.stylistsLoading);
+
   StylistsState stylistsLoaded() =>
       copyWith(status: StylistsStatus.stylisstsLoaded);
+
   StylistsState stylistsError(String message) =>
       copyWith(status: StylistsStatus.stylistsError, errorMessage: message);
 
   StylistsState stylistDetailLoading() =>
       copyWith(status: StylistsStatus.stylistDetailLoading);
+
   StylistsState stylistDetailLoaded() =>
       copyWith(status: StylistsStatus.stylistDetailLoaded);
+
   StylistsState stylistDetailError(String message) => copyWith(
     status: StylistsStatus.stylistDetailError,
     errorMessage: message,
@@ -94,8 +89,10 @@ class StylistsState extends Equatable {
 
   StylistsState stylistsByServiceLoading() =>
       copyWith(status: StylistsStatus.stylistsByServiceLoading);
+
   StylistsState stylistsByServiceLoaded() =>
       copyWith(status: StylistsStatus.stylistsByServiceLoaded);
+
   StylistsState stylistsByServiceError(String message) => copyWith(
     status: StylistsStatus.stylistsByServiceError,
     errorMessage: message,
@@ -103,8 +100,10 @@ class StylistsState extends Equatable {
 
   StylistsState nearbyStylistsLoading() =>
       copyWith(status: StylistsStatus.nearbyStylistsLoading);
+
   StylistsState nearbyStylistsLoaded() =>
       copyWith(status: StylistsStatus.nearbyStylistsLoaded);
+
   StylistsState nearbyStylistsError(String message) => copyWith(
     status: StylistsStatus.nearbyStylistsError,
     errorMessage: message,
@@ -112,8 +111,10 @@ class StylistsState extends Equatable {
 
   StylistsState stylistsAvailabilityLoading() =>
       copyWith(status: StylistsStatus.stylistsAvailabilityLoading);
+
   StylistsState stylistsAvailabilityLoaded() =>
       copyWith(status: StylistsStatus.stylistsAvailabilityLoaded);
+
   StylistsState stylistsAvailabilityError(String message) => copyWith(
     status: StylistsStatus.stylistsAvailabilityError,
     errorMessage: message,
@@ -121,17 +122,23 @@ class StylistsState extends Equatable {
 
   StylistsState stylistsAvailabilityByDayLoading() =>
       copyWith(status: StylistsStatus.stylistsAvailabilityByDayLoading);
+
   StylistsState stylistsAvailabilityByDayLoaded() =>
       copyWith(status: StylistsStatus.stylistsAvailabilityByDayLoaded);
+
   StylistsState stylistsAvailabilityByDayError(String message) => copyWith(
     status: StylistsStatus.stylistsAvailabilityByDayError,
     errorMessage: message,
   );
 
-  StylistsState stylistsAvailabilityByTimeLoading() =>
-      copyWith(status: StylistsStatus.stylistsAvailabilityByTimeLoading);
+  StylistsState stylistsAvailabilityByTimeLoading() => copyWith(
+    status: StylistsStatus.stylistsAvailabilityByTimeLoading,
+    stylistsAvailabilityByTime: const [],
+  );
+
   StylistsState stylistsAvailabilityByTimeLoaded() =>
       copyWith(status: StylistsStatus.stylistsAvailabilityByTimeLoaded);
+
   StylistsState stylistsAvailabilityByTimeError(String message) => copyWith(
     status: StylistsStatus.stylistsAvailabilityByTimeError,
     errorMessage: message,
@@ -139,8 +146,10 @@ class StylistsState extends Equatable {
 
   StylistsState updateStylistsAvailabilityLoading() =>
       copyWith(status: StylistsStatus.updateStylistsAvailabilityLoading);
+
   StylistsState updateStylistsAvailabilityLoaded() =>
       copyWith(status: StylistsStatus.updateStylistsAvailabilityLoaded);
+
   StylistsState updateStylistsAvailabilityError(String message) => copyWith(
     status: StylistsStatus.updateStylistsAvailabilityError,
     errorMessage: message,
@@ -148,8 +157,10 @@ class StylistsState extends Equatable {
 
   StylistsState stylistsServiceLoading() =>
       copyWith(status: StylistsStatus.stylistsServiceLoading);
+
   StylistsState stylistsServiceLoaded() =>
       copyWith(status: StylistsStatus.stylistsServiceLoaded);
+
   StylistsState stylistsServiceError(String message) => copyWith(
     status: StylistsStatus.stylistsServiceError,
     errorMessage: message,
@@ -157,7 +168,9 @@ class StylistsState extends Equatable {
 
   StylistsState stylistSearching() =>
       copyWith(status: StylistsStatus.stylistSearching);
+
   StylistsState success() => copyWith(status: StylistsStatus.success);
+
   StylistsState failure(String message) =>
       copyWith(status: StylistsStatus.failure, errorMessage: message);
 
@@ -170,7 +183,7 @@ class StylistsState extends Equatable {
     List<Stylist>? nearbyStylists,
     List<StylistsAvailability>? stylistsAvailability,
     List<StylistsAvailability>? stylistsAvailabilityByDay,
-    List<StylistsAvailability>? stylistsAvailabilityByTime,
+    List<StylistAvailabilitySlotEntity>? stylistsAvailabilityByTime,
     List<StylistsAvailability>? updatedStylistsAvailability,
     List<Stylist>? stylsitService,
     String? message,

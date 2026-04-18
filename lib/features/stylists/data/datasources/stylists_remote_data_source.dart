@@ -1,3 +1,4 @@
+import 'package:urs_beauty/features/stylists/data/models/stylist_availability_slot_model.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_availability_model.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_model.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_service_model.dart';
@@ -13,5 +14,10 @@ abstract class StylistsRemoteDataSource {
   Future<void> updateStylistsAvailability(StylistsAvailabilityModel availability);
   Future<List<StylistsAvailabilityModel>> getStylistsAvailability(String stylistId);
   Future<List<StylistsAvailabilityModel>> getStylistsAvailabilityByDay(String stylistId, String dayOfWeek);
-  Future<List<StylistsAvailabilityModel>> getStylistsAvailabilityByTime(String stylistId, String dayOfWeek, String time);
+  Future<List<StylistAvailabilitySlotModel>> getStylistsAvailabilityByTime(
+    String stylistId,
+    String serviceId,
+    DateTime selectedDate, {
+    String? ignoredBookingId,
+  });
 }

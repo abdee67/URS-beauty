@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:urs_beauty/core/widgets/custom_textField.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
@@ -166,7 +167,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               child: Column(
                                 children: [
                                   const SizedBox(height: 10),
-                                  _buildTextField(
+                                  CustomTextField(
                                     controller: firstNameController,
                                     label: 'First Name',
                                     icon: Icons.person,
@@ -178,7 +179,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 15),
-                                  _buildTextField(
+                                  CustomTextField(
                                     controller: lastNameController,
                                     label: 'Last Name',
                                     icon: Icons.person_outline,
@@ -190,7 +191,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 15),
-                                  _buildTextField(
+                                  CustomTextField(
                                     controller: phoneController,
                                     label: 'Phone Number',
                                     icon: Icons.phone,
@@ -203,7 +204,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 15),
-                                  _buildTextField(
+                                  CustomTextField(
                                     controller: emailController,
                                     label: 'Email',
                                     icon: Icons.email,
@@ -219,26 +220,24 @@ class _SignupScreenState extends State<SignupScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 15),
-                                  TextFormField(
+                                  CustomTextField(
                                     controller: passwordController,
-                                    decoration: _inputDecoration(
-                                      label: 'Password',
-                                      icon: Icons.lock,
-                                    ).copyWith(
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _obscurePassword
-                                              ? Icons.visibility_off
-                                              : Icons.visibility,
-                                          color: Colors.purple[300],
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            _obscurePassword = !_obscurePassword;
-                                          });
-                                        },
+                                    label: 'Password',
+                                    icon: Icons.lock,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: Colors.purple[300],
                                       ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscurePassword = !_obscurePassword;
+                                        });
+                                      },
                                     ),
+
                                     obscureText: _obscurePassword,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -252,30 +251,28 @@ class _SignupScreenState extends State<SignupScreen> {
                                     onChanged: (_) => _validatePasswords(),
                                   ),
                                   const SizedBox(height: 15),
-                                  TextFormField(
+                                  CustomTextField(
                                     controller: confirmPasswordController,
-                                    decoration: _inputDecoration(
-                                      label: 'Confirm Password',
-                                      icon: Icons.lock_outline,
-                                    ).copyWith(
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _obscureConfirmPassword
-                                              ? Icons.visibility_off
-                                              : Icons.visibility,
-                                          color: Colors.purple[300],
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            _obscureConfirmPassword =
-                                                !_obscureConfirmPassword;
-                                          });
-                                        },
+                                    label: 'Confirm Password',
+                                    icon: Icons.lock_outline,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscureConfirmPassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: Colors.purple[300],
                                       ),
-                                      errorText: _passwordsMatch
-                                          ? null
-                                          : 'Passwords do not match',
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscureConfirmPassword =
+                                              !_obscureConfirmPassword;
+                                        });
+                                      },
                                     ),
+                                    errorText: _passwordsMatch
+                                        ? null
+                                        : 'Passwords do not match',
+
                                     obscureText: _obscureConfirmPassword,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -325,7 +322,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 15),
-                                  _buildTextField(
+                                  CustomTextField(
                                     controller: addressLine1Controller,
                                     label: 'Address Line 1',
                                     icon: Icons.home_outlined,
@@ -337,13 +334,13 @@ class _SignupScreenState extends State<SignupScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 15),
-                                  _buildTextField(
+                                  CustomTextField(
                                     controller: addressLine2Controller,
                                     label: 'Address Line 2',
                                     icon: Icons.location_on_outlined,
                                   ),
                                   const SizedBox(height: 15),
-                                  _buildTextField(
+                                  CustomTextField(
                                     controller: cityController,
                                     label: 'City',
                                     icon: Icons.location_city,
@@ -355,19 +352,19 @@ class _SignupScreenState extends State<SignupScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 15),
-                                  _buildTextField(
+                                  CustomTextField(
                                     controller: stateController,
                                     label: 'State / Region',
                                     icon: Icons.map_outlined,
                                   ),
                                   const SizedBox(height: 15),
-                                  _buildTextField(
+                                  CustomTextField(
                                     controller: postalCodeController,
                                     label: 'Postal Code',
                                     icon: Icons.markunread_mailbox_outlined,
                                   ),
                                   const SizedBox(height: 15),
-                                  _buildTextField(
+                                  CustomTextField(
                                     controller: countryController,
                                     label: 'Country',
                                     icon: Icons.public,
@@ -387,8 +384,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.purple[600],
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(25),
+                                          borderRadius: BorderRadius.circular(
+                                            25,
+                                          ),
                                         ),
                                         elevation: 5,
                                       ),
@@ -492,37 +490,6 @@ class _SignupScreenState extends State<SignupScreen> {
           latitude: _latitude,
           longitude: _longitude,
         ),
-      ),
-    );
-  }
-
-  TextFormField _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: _inputDecoration(label: label, icon: icon),
-      validator: validator,
-    );
-  }
-
-  InputDecoration _inputDecoration({
-    required String label,
-    required IconData icon,
-  }) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: Colors.purple[300]),
-      filled: true,
-      fillColor: Colors.pink[50],
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide.none,
       ),
     );
   }

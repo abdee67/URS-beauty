@@ -9,77 +9,101 @@ abstract class StylistsEvent extends Equatable {
 
 class GetStylistsEvent extends StylistsEvent {
   const GetStylistsEvent();
-
-  @override
-  List<Object> get props => [];
 }
 
 class SearchStylistsEvent extends StylistsEvent {
-  final String query;
   const SearchStylistsEvent(this.query);
+
+  final String query;
+
   @override
   List<Object> get props => [query];
 }
 
 class GetStylistsByServiceEvent extends StylistsEvent {
-  final String serviceId;
   const GetStylistsByServiceEvent(this.serviceId);
+
+  final String serviceId;
+
   @override
   List<Object> get props => [serviceId];
 }
 
 class GetStylistDetailEvent extends StylistsEvent {
-  final String stylistId;
   const GetStylistDetailEvent(this.stylistId);
+
+  final String stylistId;
+
   @override
   List<Object> get props => [stylistId];
 }
 
 class GetNearbyStylistsEvent extends StylistsEvent {
+  const GetNearbyStylistsEvent(this.latitude, this.longitude, this.radius);
+
   final double latitude;
   final double longitude;
   final double radius;
-  const GetNearbyStylistsEvent(this.latitude, this.longitude, this.radius);
+
   @override
   List<Object> get props => [latitude, longitude, radius];
 }
 
 class GetStylistsAvailabilityEvent extends StylistsEvent {
-  final String stylistId;
   const GetStylistsAvailabilityEvent(this.stylistId);
+
+  final String stylistId;
+
   @override
   List<Object> get props => [stylistId];
 }
 
 class UpdateStylistsAvailabilityEvent extends StylistsEvent {
-  final StylistsAvailabilityModel availability;
   const UpdateStylistsAvailabilityEvent(this.availability);
+
+  final StylistsAvailabilityModel availability;
+
   @override
   List<Object> get props => [availability];
 }
 
 class GetStylistsAvailabilityByDayEvent extends StylistsEvent {
+  const GetStylistsAvailabilityByDayEvent(this.stylistId, this.dayOfWeek);
+
   final String stylistId;
   final String dayOfWeek;
-  const GetStylistsAvailabilityByDayEvent(this.stylistId, this.dayOfWeek);
+
   @override
   List<Object> get props => [stylistId, dayOfWeek];
 }
 
 class GetStylistsAvailabilityByTimeEvent extends StylistsEvent {
+  const GetStylistsAvailabilityByTimeEvent(
+    this.stylistId,
+    this.serviceId,
+    this.selectedDate, {
+    this.ignoredBookingId,
+  });
+
   final String stylistId;
-  final String dayOfWeek;
-  final String time;
-  const GetStylistsAvailabilityByTimeEvent(this.stylistId, this.dayOfWeek, this.time);
+  final String serviceId;
+  final DateTime selectedDate;
+  final String? ignoredBookingId;
+
   @override
-  List<Object> get props => [stylistId, dayOfWeek, time];
+  List<Object> get props => [
+    stylistId,
+    serviceId,
+    selectedDate,
+    ignoredBookingId ?? '',
+  ];
 }
 
 class GetStylistsServicesEvent extends StylistsEvent {
-  final String stylistId;
   const GetStylistsServicesEvent(this.stylistId);
+
+  final String stylistId;
+
   @override
   List<Object> get props => [stylistId];
 }
-
-

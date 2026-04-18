@@ -5,10 +5,12 @@ import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source.dart';
 import 'package:urs_beauty/features/bookings/data/models/booking_model.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
+import 'package:urs_beauty/features/bookings/data/models/reschedule_booking_request_model.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_services.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/create_booking_request.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_service_item_model.dart';
+import 'package:urs_beauty/features/bookings/domain/entities/reschedule_booking_request.dart';
 import 'package:urs_beauty/features/bookings/domain/repositories/booking_repository.dart';
 
 class BookingRepositoryImpl implements BookingRepository {
@@ -133,13 +135,15 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failures, BookingEntity>> rescheduleBooking(
-    String bookingId,
-    DateTime newScheduledAt,
+    RescheduleBookingRequestEntity request,
   ) async {
     return _runBookingOperation(() async {
       final result = await remoteDataSource.rescheduleBooking(
-        bookingId,
-        newScheduledAt,
+        RescheduleBookingRequestModel(
+          bookingId: request.bookingId,
+          stylistId: request.stylistId,
+          scheduledAt: request.scheduledAt,
+        ),
       );
       return result.toEntity();
     });
@@ -220,6 +224,9 @@ class BookingRepositoryImpl implements BookingRepository {
       endAt: booking.endAt,
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
+      isReviewed: booking.isReviewed,
+      rescheduledFrom: booking.rescheduledFrom,
+      rescheduledCount: booking.rescheduledCount,
     );
   }
 

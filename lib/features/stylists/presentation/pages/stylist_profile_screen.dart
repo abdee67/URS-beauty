@@ -6,6 +6,7 @@ import 'package:urs_beauty/features/reviews/domain/entity/review_entity.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_bloc.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_state.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
+import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/injection_container.dart';
 
 class StylistProfileScreen extends StatefulWidget {
@@ -217,8 +218,11 @@ class _StylistProfileView extends StatelessWidget {
 
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => BlocProvider(
-          create: (_) => getit<BookingBloc>(),
+        builder: (_) => MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => getit<BookingBloc>()),
+            BlocProvider(create: (_) => getit<StylistsBloc>()),
+          ],
           child: BookingScheduleScreen(
             serviceId: resolvedServiceId,
             serviceName: _resolvedServiceName,

@@ -50,7 +50,8 @@ class ReviewRemoteDataSourceImpl implements ReviewRemoteDataSource {
       await _client
           .from(_bookingTable)
           .update({
-            'status': BookingStatus.confirmed.name,
+            'status': BookingStatus.completed.name,
+            'is_reviewed': true,
             'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', review.bookingId);

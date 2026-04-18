@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:urs_beauty/core/constants/app_routes.dart';
+import 'package:urs_beauty/features/beauty_services/presentation/screens/service_list_screen.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 
 class BookingSuccessScreen extends StatelessWidget {
@@ -19,13 +20,16 @@ class BookingSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final localizations = MaterialLocalizations.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBF6),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF6EF), Color(0xFFFFDFC6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.purple.shade400,
+              Colors.pink.shade400,
+              Colors.orange.shade300,
+            ],
           ),
         ),
         child: SafeArea(
@@ -35,45 +39,59 @@ class BookingSuccessScreen extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 constraints: const BoxConstraints(maxWidth: 460),
-                padding: const EdgeInsets.all(28),
+                padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(230),
-                  borderRadius: BorderRadius.circular(28),
+                  color: Colors.white.withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 86,
-                      height: 86,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE7F6EC),
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.green.shade100,
+                          width: 2,
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.check_rounded,
-                        size: 52,
-                        color: Color(0xFF2E8B57),
+                      child: Icon(
+                        Icons.check_circle_rounded,
+                        size: 60,
+                        color: Colors.green.shade600,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                     Text(
-                      'Booking confirmed',
+                      'Booking Confirmed!',
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF43261D),
+                            fontWeight: FontWeight.w800,
+                            color: Colors.purple.shade900,
+                            letterSpacing: -0.5,
                           ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Text(
-                      'Your appointment for $serviceName with $stylistName is saved.',
+                      'Your appointment for $serviceName with $stylistName has been successfully scheduled.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: const Color(0xFF7C5342),
-                        height: 1.4,
+                        color: Colors.grey.shade700,
+                        height: 1.5,
                       ),
                     ),
+                    const SizedBox(height: 32),
+                    Divider(color: Colors.grey.shade200),
                     const SizedBox(height: 20),
                     _SuccessRow(
                       label: 'Date',
@@ -87,18 +105,38 @@ class BookingSuccessScreen extends StatelessWidget {
                         TimeOfDay.fromDateTime(booking.scheduledAt),
                       ),
                     ),
-                    _SuccessRow(label: 'Status', value: booking.status.name),
-                    const SizedBox(height: 24),
+                    _SuccessRow(
+                      label: 'Status',
+                      value: booking.status.name.toUpperCase(),
+                    ),
+                    const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
+                      height: 56,
                       child: ElevatedButton(
-                        onPressed: () => context.go(AppRoutes.serviceScreen),
-                        child: const Text('Book another service'),
+                        onPressed: () {
+                          // Correctly navigating to the service selection page via GoRouter
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple.shade600,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Book Another Service',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () => context.go(AppRoutes.homeScreen),
-                      child: const Text('Back to home'),
                     ),
                   ],
                 ),
@@ -120,25 +158,23 @@ class _SuccessRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF7C5342)),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF43261D),
-              ),
+          Text(
+            value,
+            textAlign: TextAlign.right,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.purple.shade900,
             ),
           ),
         ],

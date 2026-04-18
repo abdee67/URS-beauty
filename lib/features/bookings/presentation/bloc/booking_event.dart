@@ -96,14 +96,22 @@ class GetBookingsByStatusEvent extends BookingEvent {
   List<Object?> get props => [status];
 }
 
-class RescheduleBookingEvent extends BookingEvent {
-  const RescheduleBookingEvent(this.bookingId, this.newScheduledAt);
+class StartRescheduleFlowEvent extends BookingEvent {
+  const StartRescheduleFlowEvent(this.booking);
 
-  final String bookingId;
-  final DateTime newScheduledAt;
+  final BookingEntity booking;
 
   @override
-  List<Object?> get props => [bookingId, newScheduledAt];
+  List<Object?> get props => [booking];
+}
+
+class RescheduleBookingEvent extends BookingEvent {
+  const RescheduleBookingEvent(this.request);
+
+  final RescheduleBookingRequestEntity request;
+
+  @override
+  List<Object?> get props => [request];
 }
 
 class AddNotesToBookingEvent extends BookingEvent {

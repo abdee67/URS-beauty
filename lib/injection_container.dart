@@ -34,7 +34,6 @@ import 'package:urs_beauty/features/beauty_services/domain/usecases/get_services
 import 'package:urs_beauty/features/beauty_services/domain/usecases/search_services.dart';
 import 'package:urs_beauty/features/beauty_services/presentation/bloc/service_bloc.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source.dart';
-import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source_impl.dart';
 import 'package:urs_beauty/features/bookings/data/repositories/booking_repository_impl.dart';
 import 'package:urs_beauty/features/bookings/domain/repositories/booking_repository.dart';

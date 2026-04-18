@@ -1,8 +1,7 @@
-
 import 'package:flutter/material.dart';
 
-class BookingErrorState extends StatelessWidget {
-  const BookingErrorState({super.key, required this.message});
+class ErrorState extends StatelessWidget {
+  const ErrorState({super.key, required this.message});
 
   final String message;
 
