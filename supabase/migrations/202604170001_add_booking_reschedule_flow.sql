@@ -57,8 +57,13 @@ begin
   if p_new_scheduled_at <= timezone('utc', now()) then
     raise exception 'Scheduled time must be in the future';
   end if;
+  --if the scheduled date and time is the same with the new rescheduled date and time do not reschdule,
+  if v_source.scheduled_at = p_new_scheduled_at then
+    raise exception 'Scheduled date and time is the same with the new rescheduled date and time';
+  end if;
 
-  if v_source.status = 'pending'
+  if v_source.status = 'pending' --not for pending bookings
+  and v_source.status = 'no_show' --not for no-show bookings
      and v_source.scheduled_at <= timezone('utc', now()) + interval '5 hours' then
     raise exception 'Bookings can only be rescheduled at least 5 hours before the appointment';
   end if;
