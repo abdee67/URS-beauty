@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:urs_beauty/api/stripe/stripe_api_service.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source_impl.dart';
@@ -78,6 +79,16 @@ import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_detail.
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
+import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source';
+import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source_impl.dart';
+import 'package:urs_beauty/features/payments/data/repository/payment_repository_impl.dart';
+import 'package:urs_beauty/features/payments/domain/repository/payment_repostiory';
+import 'package:urs_beauty/features/payments/domain/usecases/cancel_pending_card_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/confirm_card_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/create_card_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/get_card_payment_status.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/handle_card_payment_faillure.dart';
+import 'package:urs_beauty/features/payments/presentation/bloc/payment_bloc.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability_by_day.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability_by_time.dart';
@@ -113,6 +124,10 @@ void initDependency() {
   getit.registerLazySingleton<ReviewRemoteDataSource>(
     () => ReviewRemoteDataSourceImpl(),
   );
+  getit.registerLazySingleton(() => StripeApiService());
+  getit.registerLazySingleton<PaymentRemoteDataSource>(
+    () => PaymentRemoteDataSourceImpl(apiService: getit()),
+  );
 
   //================== injecting  repository===================
   getit.registerLazySingleton<AuthRepository>(
@@ -138,6 +153,9 @@ void initDependency() {
   );
   getit.registerLazySingleton<ReviewRepository>(
     () => ReviewRepositoryImpl(remoteDataSource: getit()),
+  );
+  getit.registerLazySingleton<PaymentRepository>(
+    () => PaymentRepositoryImpl(paymentRemoteDataSource: getit()),
   );
 
   // ===============injectin use case=================
@@ -196,6 +214,23 @@ void initDependency() {
   getit.registerLazySingleton(() => GetBookingsByStylistId(getit()));
   getit.registerLazySingleton(() => GetBookingsByStatus(getit()));
   getit.registerLazySingleton(() => GetBookingServices(getit()));
+
+  // Payment use cases
+  getit.registerLazySingleton(
+    () => CreateCardPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => ConfirmCardPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => HandleCardPaymentFailureUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => GetCardPaymentStatusUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => CancelPendingCardPaymentUseCase(paymentRepository: getit()),
+  );
 
   // Review use cases
   getit.registerLazySingleton(() => SubmitReviewUsecase(getit()));
@@ -275,6 +310,15 @@ void initDependency() {
       getReviewsByCustomerId: getit(),
       getReviewByBookingId: getit(),
       getRatingSummary: getit(),
+    ),
+  );
+  getit.registerFactory(
+    () => PaymentBloc(
+      createCardPayment: getit(),
+      confirmCardPayment: getit(),
+      handleCardPaymentFailure: getit(),
+      getCardPaymentStatus: getit(),
+      cancelPendingCardPayment: getit(),
     ),
   );
 

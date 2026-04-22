@@ -35,6 +35,8 @@ dependencies:
   geolocator: ^14.0.2
   geocoding: ^4.0.0
   location: ^8.0.1
+  http: ^1.6.0
+  flutter_stripe: ^12.6.0
 
 dev_dependencies:
   flutter_test:
@@ -56,7 +58,7 @@ flutter:
     - assets/images/onboarding3.png
     - assets/images/onboarding4.png
     - assets/images/onboarding3.jpeg
-    - .env
+    - assets/.env
   fonts:
     - family: BitcountPropSingle
       fonts:

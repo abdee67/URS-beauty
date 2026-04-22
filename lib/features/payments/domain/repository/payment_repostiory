@@ -1,29 +1,51 @@
+import 'package:dartz/dartz.dart';
+import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/features/payments/domain/entity/payment_entity.dart';
+
 abstract class PaymentRepository {
-  Future<PaymentModel> createPayment(
+  Future<Either<Failures, PaymentEntity>> createCardPayment(
     String bookingId,
-    String paymentMethod,
-    String currency,
-    double amount,
+    PaymentEntity payment,
   );
-  Future<PaymentModel> getPayment(String paymentId);
-  Future<PaymentModel> updatePayment(
+
+  Future<Either<Failures, PaymentEntity>> confirmCardPayment(
+    String transactionReference,
+  );
+
+  Future<Either<Failures, PaymentEntity>> handleCardPaymentFailure(
+    String transactionReference,
+  );
+
+  Future<Either<Failures, PaymentEntity>> getCardPaymentStatus(
     String paymentId,
     String bookingId,
-    String paymentMethod,
-    String currency,
-    double amount,
   );
-  Future<PaymentModel> calculateRefund(
+
+  Future<Either<Failures, PaymentEntity>> canclePendingCardPayment(
     String paymentId,
   );
-  Future<PaymentModel> processRefundPayment(
-    String paymentId,
+
+  Future<Either<Failures, PaymentEntity>> createBankTransferPayment(
+    String bookingId,
+    String proofUrl,
+    String reference,
   );
-  Future<PaymentModel> calculateRescheduleCost(
+
+  Future<Either<Failures, PaymentEntity>> verfiyBankTransferPayment(
+    String paymentId,
+    bool isVerified,
+  );
+
+  Future<Either<Failures, PaymentEntity>> calculateRefund(String paymentId);
+
+  Future<Either<Failures, PaymentEntity>> processRefundPayment(String paymentId);
+
+  Future<Either<Failures, PaymentEntity>> calculateRescheduleCost(
     String bookingId,
     String newServiceId,
   );
-  Future<PaymentModel> processReschedulePayment(
+
+  Future<Either<Failures, PaymentEntity>> processReschedulePayment(
     String bookingId,
     DateTime newDateTime,
     String newServiceId,

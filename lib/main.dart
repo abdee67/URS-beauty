@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,8 +14,15 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: "assets/.env");
   await SupabaseConfig.init();
+  Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY']!;
+  Stripe.urlScheme = 'ursbeauty';
+  final merchantIdentifier = dotenv.env['STRIPE_MERCHANT_IDENTIFIER'];
+  if (merchantIdentifier != null && merchantIdentifier.trim().isNotEmpty) {
+    Stripe.merchantIdentifier = merchantIdentifier.trim();
+  }
+  await Stripe.instance.applySettings();
   initDependency(); //initializing getit for dependency injection
   runApp(const URSBEAUTY());
 }

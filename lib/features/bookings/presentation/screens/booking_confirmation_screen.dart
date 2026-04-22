@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
-import 'package:urs_beauty/features/bookings/presentation/screens/booking_success_screen.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/address_option_card_widget.dart';
 import 'package:urs_beauty/core/widgets/error_state.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/empty_address_state_widget.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/selected_address_preview_widget.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/summary_card_widget.dart';
+import 'package:urs_beauty/features/payments/presentation/bloc/payment_bloc.dart';
+import 'package:urs_beauty/features/payments/presentation/screens/payment_methods_screen.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
+import 'package:urs_beauty/injection_container.dart';
 
 class BookingConfirmationScreen extends StatefulWidget {
   const BookingConfirmationScreen({
@@ -89,10 +91,13 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             state.selectedBooking != null) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute<void>(
-              builder: (_) => BookingSuccessScreen(
-                booking: state.selectedBooking!,
-                serviceName: widget.serviceName,
-                stylistName: widget.stylist.businessName,
+              builder: (_) => BlocProvider(
+                create: (_) => getit<PaymentBloc>(),
+                child: PaymentMethodsScreen(
+                  booking: state.selectedBooking!,
+                  serviceName: widget.serviceName,
+                  stylistName: widget.stylist.businessName,
+                ),
               ),
             ),
           );
@@ -266,7 +271,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                       ),
                     ),
                     child: Text(
-                      isSubmitting ? 'Confirming...' : 'Confirm booking',
+                      isSubmitting
+                          ? 'Preparing payment...'
+                          : 'Continue to payment',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,

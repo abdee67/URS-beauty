@@ -11,6 +11,7 @@ import 'package:urs_beauty/features/beauty_services/presentation/screens/service
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_page.dart';
 import 'package:urs_beauty/features/dashboard/dashboard_wrapper.dart';
 import 'package:urs_beauty/features/home/presentation/pages/home_screen.dart';
+import 'package:urs_beauty/features/payments/presentation/bloc/payment_bloc.dart';
 import 'package:urs_beauty/features/payments/presentation/screens/payment_methods_screen.dart';
 import 'package:urs_beauty/features/profile/presentation/screens/settings_screen.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
@@ -114,7 +115,10 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: AppRoutes.payment,
-                builder: (_, __) => const PaymentMethodsScreen(),
+                builder: (_, __) => BlocProvider(
+                  create: (_) => getit<PaymentBloc>(),
+                  child: const PaymentMethodsScreen(),
+                ),
               ),
             ],
           ),
