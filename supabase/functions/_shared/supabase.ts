@@ -25,5 +25,8 @@ export function createUserClient(authHeader: string) {
 }
 
 export function createAdminClient() {
+  if (!supabaseServiceRoleKey) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+  }
   return createClient(supabaseUrl, supabaseServiceRoleKey);
 }

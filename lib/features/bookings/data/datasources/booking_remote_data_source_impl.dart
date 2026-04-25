@@ -172,7 +172,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<BookingModel> rescheduleBooking(RescheduleBookingRequestModel request) {
+  Future<BookingModel> rescheduleBooking(
+    RescheduleBookingRequestModel request,
+  ) {
     return _run(() async {
       _requireValue(request.bookingId, 'Booking id is required');
       _requireValue(request.stylistId, 'Stylist id is required');
