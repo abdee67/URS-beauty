@@ -12,7 +12,7 @@ abstract class BookingRepository {
     CreateBookingRequestEntity request,
   );
   Future<Either<Failures, BookingEntity>> updateBooking(BookingEntity booking);
-  Future<Either<Failures, void>> cancelBooking(String bookingId);
+  Future<Either<Failures, BookingEntity>> cancelBooking(String bookingId);
   Future<Either<Failures, List<BookingEntity>>> getBookings();
   Future<Either<Failures, BookingEntity>> getBookingById(String bookingId);
   Future<Either<Failures, List<BookingEntity>>> getBookingsByCustomerId(String customerId);

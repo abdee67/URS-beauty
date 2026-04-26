@@ -185,12 +185,17 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     final result = await cancelBooking(event.bookingId);
     result.fold(
       (failure) => emit(state.failure(failure.message)),
-      (_) => emit(
+      (booking) => emit(
         state.copyWith(
           status: BookingBlocStatus.cancelled,
-          customerBookings: _markBookingCancelled(
-            state.customerBookings,
-            event.bookingId,
+          selectedBooking: booking,
+          customerBookings: _mergeUpdatedBooking(state.customerBookings, booking),
+          bookings: _mergeUpdatedBooking(state.bookings, booking),
+          stylistBookings: _mergeUpdatedBooking(state.stylistBookings, booking),
+          statusBookings: _mergeUpdatedBooking(state.statusBookings, booking),
+          searchedBookings: _mergeUpdatedBooking(
+            state.searchedBookings,
+            booking,
           ),
           message: 'Booking cancelled successfully.',
           clearError: true,
@@ -722,41 +727,6 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     final mergedBookings = <BookingEntity>[...bookings];
     mergedBookings[bookingIndex] = updatedBooking;
     return mergedBookings;
-  }
-
-  List<BookingEntity> _markBookingCancelled(
-    List<BookingEntity> bookings,
-    String bookingId,
-  ) {
-    return bookings
-        .map(
-          (booking) => booking.id != bookingId
-              ? booking
-              : BookingEntity(
-                  id: booking.id,
-                  customerId: booking.customerId,
-                  stylistId: booking.stylistId,
-                  serviceName: booking.serviceName,
-                  stylistName: booking.stylistName,
-                  status: BookingStatus.cancelled,
-                  notes: booking.notes,
-                  addressId: booking.addressId,
-                  totalAmount: booking.totalAmount,
-                  scheduledAt: booking.scheduledAt,
-                  endAt: booking.endAt,
-                  createdAt: booking.createdAt,
-                  updatedAt: DateTime.now(),
-                  isReviewed: booking.isReviewed,
-                  rescheduledFrom: booking.rescheduledFrom,
-                  rescheduledCount: booking.rescheduledCount,
-                  currency: booking.currency,
-                  paymentMethod: booking.paymentMethod,
-                  paymentStatus: booking.paymentStatus,
-                  paidAmount: booking.paidAmount,
-                  refundAmount: booking.refundAmount,
-                ),
-        )
-        .toList();
   }
 
   List<BookingEntity> _mergeRescheduledBooking(

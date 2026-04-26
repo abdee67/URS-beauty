@@ -59,9 +59,10 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
-  Future<Either<Failures, void>> cancelBooking(String bookingId) async {
+  Future<Either<Failures, BookingEntity>> cancelBooking(String bookingId) async {
     return _runOperation(() async {
-      await remoteDataSource.cancelBooking(bookingId);
+      final result = await remoteDataSource.cancelBooking(bookingId);
+      return result.toEntity();
     });
   }
 

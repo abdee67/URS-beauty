@@ -70,17 +70,31 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<void> cancelBooking(String bookingId) {
+  Future<BookingModel> cancelBooking(String bookingId) {
     return _run(() async {
       _requireValue(bookingId, 'Booking id is required to cancel a booking');
 
-      await _client
-          .from('bookings')
-          .update({
-            'status': BookingStatus.cancelled.name,
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', bookingId);
+      final response = await _client.functions.invoke(
+        'cancel-booking',
+        body: {'booking_id': bookingId},
+      );
+
+      final data = response.data;
+      if (data is! Map && data is! Map<String, dynamic>) {
+        throw Failures(
+          message: 'Unexpected response from cancel-booking function.',
+        );
+      }
+
+      final payload = Map<String, dynamic>.from(data as Map);
+      final booking = payload['booking'];
+      if (booking is! Map && booking is! Map<String, dynamic>) {
+        throw Failures(
+          message: 'cancel-booking did not return an updated booking.',
+        );
+      }
+
+      return _mapBooking(booking);
     });
   }
 
@@ -245,6 +259,12 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       return await operation();
     } on Failures {
       rethrow;
+    } on FunctionException catch (e) {
+      final details = e.details;
+      if (details is Map && details['message'] != null) {
+        throw Failures(message: details['message'].toString());
+      }
+      throw Failures(message: e.reasonPhrase ?? 'Function invocation failed');
     } on PostgrestException catch (e) {
       throw Failures(message: e.message);
     } catch (e) {

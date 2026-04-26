@@ -120,8 +120,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               builder: (_) => PaymentSuccessScreen(
                 booking: booking,
                 payment: state.activePayment!,
-                serviceName:
-                    serviceLabel.isEmpty ? 'Beauty service' : serviceLabel,
+                serviceName: serviceLabel.isEmpty
+                    ? 'Beauty service'
+                    : serviceLabel,
                 stylistName: stylistLabel,
               ),
             ),
@@ -143,8 +144,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _HeroCard(
-                  serviceName:
-                      serviceLabel.isEmpty ? 'Beauty service' : serviceLabel,
+                  serviceName: serviceLabel.isEmpty
+                      ? 'Beauty service'
+                      : serviceLabel,
                   stylistName: stylistLabel,
                   amountLabel:
                       '${booking.currency ?? 'ETB'} ${booking.totalAmount.toStringAsFixed(2)}',
@@ -153,7 +155,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 _SummaryCard(
                   title: serviceLabel.isEmpty ? 'Beauty service' : serviceLabel,
                   stylistName: stylistLabel,
-                  dateLabel: localizations.formatMediumDate(booking.scheduledAt),
+                  dateLabel: localizations.formatMediumDate(
+                    booking.scheduledAt,
+                  ),
                   timeLabel: localizations.formatTimeOfDay(
                     TimeOfDay.fromDateTime(booking.scheduledAt),
                   ),
@@ -170,8 +174,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       _PaymentMethodTile(
                         title: 'Card Payment',
                         subtitle: 'Instant confirmation with Stripe',
-                        isSelected: selectedMethod ==
-                            payment_domain.PaymentMethod.card,
+                        isSelected:
+                            selectedMethod == payment_domain.PaymentMethod.card,
                         enabled: true,
                         onTap: () {
                           context.read<PaymentBloc>().add(
@@ -185,7 +189,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       _PaymentMethodTile(
                         title: 'Bank Transfer',
                         subtitle: 'Manual verification coming soon',
-                        isSelected: selectedMethod ==
+                        isSelected:
+                            selectedMethod ==
                             payment_domain.PaymentMethod.bankTransfer,
                         enabled: false,
                         onTap: () {
@@ -208,8 +213,12 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     children: [
                       _ChecklistItem('Amount is validated on the server'),
                       _ChecklistItem('Duplicate payment attempts are blocked'),
-                      _ChecklistItem('Stripe confirmation is re-checked before success'),
-                      _ChecklistItem('Pending slot holds are released on cancellation'),
+                      _ChecklistItem(
+                        'Stripe confirmation is re-checked before success',
+                      ),
+                      _ChecklistItem(
+                        'Pending slot holds are released on cancellation',
+                      ),
                     ],
                   ),
                 ),
@@ -283,7 +292,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     );
   }
 
-  Future<void> _presentPaymentSheet(payment_domain.PaymentEntity payment) async {
+  Future<void> _presentPaymentSheet(
+    payment_domain.PaymentEntity payment,
+  ) async {
     if (_isPresentingSheet) {
       return;
     }
@@ -370,14 +381,6 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   Scaffold _buildScaffold(BuildContext context, {required Widget child}) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBF6),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'Payment',
-          style: TextStyle(color: Color(0xFF5C2E1F)),
-        ),
-      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -438,10 +441,7 @@ class _HeroCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'with $stylistName',
-              style: const TextStyle(
-                color: Color(0xFFFFE9DC),
-                fontSize: 15,
-              ),
+              style: const TextStyle(color: Color(0xFFFFE9DC), fontSize: 15),
             ),
           ],
           const SizedBox(height: 18),
@@ -535,9 +535,9 @@ class _SectionCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             subtitle,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF7B6156),
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF7B6156)),
           ),
           const SizedBox(height: 16),
           child,
@@ -584,7 +584,9 @@ class _PaymentMethodTile extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                isSelected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_off,
                 color: enabled
                     ? const Color(0xFF7A4A39)
                     : const Color(0xFFB9A398),
@@ -643,9 +645,9 @@ class _ChecklistItem extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF5F463C),
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF5F463C)),
             ),
           ),
         ],
@@ -674,9 +676,9 @@ class _SummaryRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF7B6156),
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF7B6156)),
           ),
           Flexible(
             child: Text(
