@@ -1,3 +1,4 @@
+import 'package:urs_beauty/core/constants/app_strings.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 
 class BookingModel extends BookingEntity {
@@ -23,6 +24,8 @@ class BookingModel extends BookingEntity {
     required super.currency,
     required super.paidAmount,
     required super.refundAmount,
+    required super.commissionAmount,
+    required super.stylistEarning,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -53,13 +56,13 @@ class BookingModel extends BookingEntity {
       notes: json['notes']?.toString(),
       addressId: (json['address'] ?? '').toString(),
       totalAmount: (json['total_amount'] as num?)?.toDouble() ?? 0.0,
-      scheduledAt: _asLocalDateTime(json['scheduled_at']),
-      endAt: _asLocalDateTime(json['end_at']),
-      createdAt: _asLocalDateTime(json['created_at']),
-      updatedAt: _asLocalDateTime(json['updated_at']),
-      isReviewed: _isReviewedFromString(json['is_reviewed']),
-      rescheduledFrom: _nullableString(json['rescheduled_from']),
-      rescheduledCount: _asInt(json['rescheduled_count']),
+      scheduledAt: AppStrings.asLocalDateTime(json['scheduled_at']),
+      endAt: AppStrings.asLocalDateTime(json['end_at']),
+      createdAt: AppStrings.asLocalDateTime(json['created_at']),
+      updatedAt: AppStrings.asLocalDateTime(json['updated_at']),
+      isReviewed: AppStrings.isReviewedFromString(json['is_reviewed']),
+      rescheduledFrom: AppStrings.nullableString(json['rescheduled_from']),
+      rescheduledCount: AppStrings.asInt(json['rescheduled_count']),
       paymentMethod: json['payment_method']?.toString() ?? '',
       paymentStatus: _paymentStatusFromString(
         json['payment_status']?.toString() ?? '',
@@ -67,6 +70,8 @@ class BookingModel extends BookingEntity {
       currency: json['currency']?.toString() ?? 'ETB',
       paidAmount: (json['paid_amount'] as num?)?.toDouble() ?? 0.0,
       refundAmount: (json['refund_amount'] as num?)?.toDouble() ?? 0.0,
+      commissionAmount: (json['commission_amount'] as num?)?.toDouble() ?? 0.0,
+      stylistEarning: (json['stylist_earning'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -93,6 +98,8 @@ class BookingModel extends BookingEntity {
       currency: currency,
       paidAmount: paidAmount,
       refundAmount: refundAmount,
+      commissionAmount: commissionAmount,
+      stylistEarning: stylistEarning,
     );
   }
 
@@ -128,35 +135,5 @@ class BookingModel extends BookingEntity {
       default:
         return PaymentStatus.pending;
     }
-  }
-
-  static DateTime _asLocalDateTime(dynamic value) {
-    final parsed = DateTime.parse(value.toString());
-    return parsed.isUtc ? parsed.toLocal() : parsed;
-  }
-
-  static bool _isReviewedFromString(dynamic value) {
-    return value.toString().toLowerCase() == 'true';
-  }
-
-  static String? _nullableString(dynamic value) {
-    final normalized = value?.toString().trim() ?? '';
-    if (normalized.isEmpty || normalized.toLowerCase() == 'null') {
-      return null;
-    }
-    return normalized;
-  }
-
-  static int _asInt(dynamic value) {
-    if (value is int) {
-      return value;
-    }
-    if (value is num) {
-      return value.toInt();
-    }
-    if (value is String && value.trim().isNotEmpty) {
-      return int.tryParse(value.trim()) ?? 0;
-    }
-    return 0;
   }
 }

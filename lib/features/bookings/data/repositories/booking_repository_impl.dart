@@ -227,6 +227,8 @@ class BookingRepositoryImpl implements BookingRepository {
       currency: booking.currency,
       paidAmount: booking.paidAmount,
       refundAmount: booking.refundAmount,
+      commissionAmount: booking.commissionAmount,
+      stylistEarning: booking.stylistEarning,
     );
   }
 

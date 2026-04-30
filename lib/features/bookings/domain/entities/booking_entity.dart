@@ -31,6 +31,8 @@ class BookingEntity {
   final String? currency;
   final double? paidAmount;
   final double? refundAmount;
+  final double? commissionAmount;
+  final double? stylistEarning;
 
   const BookingEntity({
     required this.id,
@@ -54,5 +56,7 @@ class BookingEntity {
     this.currency = 'ETB',
     this.paidAmount = 0,
     this.refundAmount = 0,
+    this.commissionAmount = 0,
+    this.stylistEarning = 0,
   });
 }
