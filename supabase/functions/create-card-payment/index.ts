@@ -3,6 +3,7 @@ import { jsonResponse, errorResponse } from "../_shared/http.ts";
 import {
   logPaymentEvent,
   resolveIntentPaymentStatus,
+  settleCompletedBookingPayment,
   toMinorUnits,
 } from "../_shared/payments.ts";
 import { getStripe } from "../_shared/stripe.ts";
@@ -39,7 +40,7 @@ Deno.serve(async (request) => {
     const { data: booking, error: bookingError } = await userClient
       .from("bookings")
       .select(
-        "id, customer, status, total_amount, currency, payment_status, payment_method",
+        "id, customer, status, total_amount, currency, payment_status, payment_method, paid_amount, commission_amount, stylist_earning",
       )
       .eq("id", bookingId)
       .single();
@@ -52,8 +53,15 @@ Deno.serve(async (request) => {
       return errorResponse("Booking does not belong to the current user.", 403);
     }
 
-    if (booking.status !== "pending") {
-      return errorResponse("Only pending bookings can be paid.", 400);
+    if (booking.status !== "completed") {
+      return errorResponse(
+        "Only completed bookings can be charged after service.",
+        400,
+      );
+    }
+
+    if (booking.payment_status === "paid") {
+      return errorResponse("This booking has already been paid.", 409);
     }
 
     const amount = Number(booking.total_amount ?? 0);
@@ -112,12 +120,15 @@ Deno.serve(async (request) => {
       }
 
       if (paymentStatus === "succeeded") {
-        await adminClient.from("bookings").update({
-          payment_method: "card",
-          payment_status: "paid",
-          paid_amount: amount,
-          updated_at: new Date().toISOString(),
-        }).eq("id", bookingId);
+        await settleCompletedBookingPayment(adminClient, {
+          paymentId: refreshedPayment.id,
+          bookingId: booking.id,
+          customerId: user.id,
+          paymentAmount: amount,
+          currency: String(booking.currency ?? "etb"),
+          transactionReference: intent.id,
+          paymentMethod: "card",
+        });
       }
 
       if (!["failed", "cancelled", "refunded", "partially_refunded"].includes(

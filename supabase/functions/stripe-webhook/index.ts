@@ -6,6 +6,7 @@ import {
   logPaymentEvent,
   mapPaymentStatusToBookingStatus,
   resolveIntentPaymentStatus,
+  settleCompletedBookingPayment,
 } from "../_shared/payments.ts";
 import { getStripe } from "../_shared/stripe.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
@@ -65,6 +66,16 @@ Deno.serve(async (request) => {
       const paidAmount = paymentStatus === "succeeded"
         ? Number(payment.amount ?? 0)
         : 0;
+      let settlement:
+        | {
+            commissionAmount: number;
+            stylistEarning: number;
+            walletId: string | null;
+            walletTransactionId: string | null;
+            walletBalance: number | null;
+            settlementApplied: boolean;
+          }
+        | null = null;
 
       await adminClient.from("payments").update({
         status: paymentStatus,
@@ -79,12 +90,24 @@ Deno.serve(async (request) => {
         },
       }).eq("id", payment.id);
 
-      await adminClient.from("bookings").update({
-        payment_method: "card",
-        payment_status: bookingPaymentStatus,
-        paid_amount: paidAmount,
-        updated_at: new Date().toISOString(),
-      }).eq("id", payment.booking_id);
+      if (paymentStatus === "succeeded") {
+        settlement = await settleCompletedBookingPayment(adminClient, {
+          paymentId: payment.id,
+          bookingId: payment.booking_id,
+          customerId: payment.customer_id,
+          paymentAmount: Number(payment.amount ?? paidAmount),
+          currency: String(payment.currency ?? "etb"),
+          transactionReference: intent.id,
+          paymentMethod: "card",
+        });
+      } else {
+        await adminClient.from("bookings").update({
+          payment_method: "card",
+          payment_status: bookingPaymentStatus,
+          paid_amount: paidAmount,
+          updated_at: new Date().toISOString(),
+        }).eq("id", payment.booking_id);
+      }
 
       await logPaymentEvent(adminClient, {
         paymentId: payment.id,
@@ -95,6 +118,10 @@ Deno.serve(async (request) => {
           stripe_event_id: event.id,
           stripe_payment_intent_id: intent.id,
           payment_status: paymentStatus,
+          commission_amount: settlement?.commissionAmount ?? null,
+          stylist_earning: settlement?.stylistEarning ?? null,
+          wallet_transaction_id: settlement?.walletTransactionId ?? null,
+          settlement_applied: settlement?.settlementApplied ?? false,
         },
       });
 

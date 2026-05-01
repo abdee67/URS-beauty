@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart' hide PaymentStatus;
+import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart'
+    hide PaymentStatus;
 import 'package:urs_beauty/features/payments/domain/entity/payment_entity.dart';
 import 'package:urs_beauty/features/payments/domain/usecases/cancel_pending_card_payment.dart';
 import 'package:urs_beauty/features/payments/domain/usecases/confirm_card_payment.dart';
@@ -43,9 +44,12 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     emit(
       state.copyWith(
         selectedMethod: event.method,
-        message: event.method == PaymentMethod.bankTransfer
-            ? 'Manual bank transfer verification is coming soon.'
-            : null,
+        message: switch (event.method) {
+          PaymentMethod.bankTransfer =>
+            'Manual bank transfer verification is coming soon.',
+          PaymentMethod.cash => 'Cash payment support is coming soon.',
+          PaymentMethod.card => null,
+        },
         clearError: true,
       ),
     );
@@ -55,9 +59,22 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     CreateCardPaymentEvent event,
     Emitter<PaymentState> emit,
   ) async {
+    final booking = event.booking;
+    if (!booking.canCollectPostServicePayment) {
+      final message = booking.status != BookingStatus.completed
+          ? 'Card payment is only available after the stylist marks the service as completed.'
+          : booking.isPaid
+          ? 'This booking has already been paid. There is nothing left to charge.'
+          : booking.isPaymentAwaitingVerification
+          ? 'This payment is already being verified. Please refresh your bookings shortly.'
+          : 'This booking is not ready for card payment yet.';
+
+      emit(state.failure(message));
+      return;
+    }
+
     emit(state.creatingIntent());
 
-    final booking = event.booking;
     final now = DateTime.now();
     final paymentSeed = PaymentEntity(
       id: '',
@@ -73,40 +90,37 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     );
 
     final result = await createCardPayment(booking.id, paymentSeed);
-    result.fold(
-      (failure) => emit(state.failure(failure.message)),
-      (payment) {
-        if (payment.isSuccessful) {
-          emit(
-            state.copyWith(
-              status: PaymentBlocStatus.success,
-              activePayment: payment,
-              message: 'Payment has already been confirmed.',
-              clearError: true,
-            ),
-          );
-          return;
-        }
-
-        if ((payment.paymentIntentClientSecret ?? '').trim().isEmpty) {
-          emit(
-            state.failure(
-              'Unable to prepare secure card payment. Please try again.',
-            ),
-          );
-          return;
-        }
-
+    result.fold((failure) => emit(state.failure(failure.message)), (payment) {
+      if (payment.isSuccessful) {
         emit(
           state.copyWith(
-            status: PaymentBlocStatus.paymentSheetReady,
+            status: PaymentBlocStatus.success,
             activePayment: payment,
-            message: 'Secure card payment is ready.',
+            message: 'Payment has already been confirmed.',
             clearError: true,
           ),
         );
-      },
-    );
+        return;
+      }
+
+      if ((payment.paymentIntentClientSecret ?? '').trim().isEmpty) {
+        emit(
+          state.failure(
+            'Unable to prepare secure card payment. Please try again.',
+          ),
+        );
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          status: PaymentBlocStatus.paymentSheetReady,
+          activePayment: payment,
+          message: 'Secure card payment is ready.',
+          clearError: true,
+        ),
+      );
+    });
   }
 
   Future<void> _onConfirmCardPayment(
@@ -162,7 +176,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
           message:
               event.failureReason ??
               payment.failureReason ??
-              'Payment was cancelled. The pending slot hold was released.',
+              'Payment was cancelled before it was completed.',
           clearError: true,
         ),
       ),

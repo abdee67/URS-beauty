@@ -18,7 +18,8 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'id, customer, stylist, status, is_reviewed, rescheduled_from, '
       'rescheduled_count, notes, address, total_amount, scheduled_at, end_at, '
       'created_at, updated_at, payment_method, payment_status, currency, '
-      'paid_amount, refund_amount, stylist_profile:stylists(business_name), '
+      'paid_amount, refund_amount, commission_amount, stylist_earning, '
+      'stylist_profile:stylists(business_name), '
       'booked_services:booking_services(service_name)';
   static const String _bookingServicesColumns =
       'id, booking_id, service_name, service_id, stylist_service_id, '
@@ -341,6 +342,8 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'currency': booking.currency,
       'paid_amount': booking.paidAmount,
       'refund_amount': booking.refundAmount,
+      'commission_amount': booking.commissionAmount,
+      'stylist_earning': booking.stylistEarning,
     };
 
     if (booking.id.trim().isNotEmpty) {
@@ -369,6 +372,8 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'currency': booking.currency,
       'paid_amount': booking.paidAmount,
       'refund_amount': booking.refundAmount,
+      'commission_amount': booking.commissionAmount,
+      'stylist_earning': booking.stylistEarning,
     };
   }
 

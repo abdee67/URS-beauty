@@ -12,7 +12,7 @@ enum PaymentStatus {
   pendingVerification,
 }
 
-enum PaymentMethod { card, bankTransfer }
+enum PaymentMethod { card, bankTransfer, cash }
 
 enum PaymentType { payment, adjustment, refund }
 
@@ -56,6 +56,8 @@ extension PaymentMethodX on PaymentMethod {
         return 'card';
       case PaymentMethod.bankTransfer:
         return 'bank_transfer';
+      case PaymentMethod.cash:
+        return 'cash';
     }
   }
 
@@ -65,6 +67,8 @@ extension PaymentMethodX on PaymentMethod {
         return 'Card Payment';
       case PaymentMethod.bankTransfer:
         return 'Bank Transfer';
+      case PaymentMethod.cash:
+        return 'Cash Payment';
     }
   }
 }

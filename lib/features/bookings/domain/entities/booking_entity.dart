@@ -34,6 +34,19 @@ class BookingEntity {
   final double? commissionAmount;
   final double? stylistEarning;
 
+  bool get isPaid => paymentStatus == PaymentStatus.paid;
+
+  bool get isPaymentAwaitingVerification =>
+      paymentStatus == PaymentStatus.pendingVerification;
+
+  bool get canReviewCompletedService =>
+      status == BookingStatus.completed && isPaid && !isReviewed;
+
+  bool get canCollectPostServicePayment =>
+      status == BookingStatus.completed &&
+      (paymentStatus == PaymentStatus.pending ||
+          paymentStatus == PaymentStatus.failed);
+
   const BookingEntity({
     required this.id,
     required this.customerId,

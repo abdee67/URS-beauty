@@ -703,6 +703,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
             paymentStatus: booking.paymentStatus,
             paidAmount: booking.paidAmount,
             refundAmount: booking.refundAmount,
+            commissionAmount: booking.commissionAmount,
+            stylistEarning: booking.stylistEarning,
           ),
         ),
         (updatedBooking) => syncedBookings.add(updatedBooking),
@@ -780,6 +782,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
           paymentStatus: booking.paymentStatus,
           paidAmount: booking.paidAmount,
           refundAmount: booking.refundAmount,
+          commissionAmount: booking.commissionAmount,
+          stylistEarning: booking.stylistEarning,
         ),
       );
     }

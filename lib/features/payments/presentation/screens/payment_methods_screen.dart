@@ -81,6 +81,47 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       );
     }
 
+    if (booking.status != BookingStatus.completed) {
+      return _buildScaffold(
+        context,
+        child: _PaymentUnavailableState(
+          icon: Icons.event_available_rounded,
+          title: 'Payment opens after service',
+          message:
+              'You will be able to pay once your stylist marks this appointment as completed.',
+          actionLabel: 'Back to bookings',
+          onAction: () => Navigator.of(context).pop(false),
+        ),
+      );
+    }
+
+    if (booking.isPaid) {
+      return _buildScaffold(
+        context,
+        child: _PaymentUnavailableState(
+          icon: Icons.check_circle_rounded,
+          title: 'Already paid',
+          message: 'This booking is already paid. You can now leave a review.',
+          actionLabel: 'Back to bookings',
+          onAction: () => Navigator.of(context).pop(true),
+        ),
+      );
+    }
+
+    if (booking.isPaymentAwaitingVerification) {
+      return _buildScaffold(
+        context,
+        child: _PaymentUnavailableState(
+          icon: Icons.hourglass_top_rounded,
+          title: 'Payment is being verified',
+          message:
+              'Stripe is still confirming this payment. Return to bookings and refresh shortly.',
+          actionLabel: 'Back to bookings',
+          onAction: () => Navigator.of(context).pop(true),
+        ),
+      );
+    }
+
     final localizations = MaterialLocalizations.of(context);
     final serviceLabel = widget.serviceName.isNotEmpty
         ? widget.serviceName
@@ -115,8 +156,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
 
         if (state.status == PaymentBlocStatus.success &&
             state.activePayment != null) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute<void>(
+          final didFinish = await Navigator.of(context).push<bool>(
+            MaterialPageRoute<bool>(
               builder: (_) => PaymentSuccessScreen(
                 booking: booking,
                 payment: state.activePayment!,
@@ -127,6 +168,12 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               ),
             ),
           );
+
+          if (!context.mounted) {
+            return;
+          }
+
+          Navigator.of(context).pop(didFinish ?? true);
         }
       },
       builder: (context, state) {
@@ -168,12 +215,13 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 _SectionCard(
                   title: 'Payment method',
                   subtitle:
-                      'Pay now to secure the appointment. Card payments are verified server-side before we treat the booking as paid.',
+                      'This payment is collected after the service is completed. Card payments are verified securely before the booking is marked paid.',
                   child: Column(
                     children: [
                       _PaymentMethodTile(
                         title: 'Card Payment',
-                        subtitle: 'Instant confirmation with Stripe',
+                        subtitle:
+                            'Pay now with Stripe after service completion',
                         isSelected:
                             selectedMethod == payment_domain.PaymentMethod.card,
                         enabled: true,
@@ -201,6 +249,21 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                           );
                         },
                       ),
+                      const SizedBox(height: 12),
+                      _PaymentMethodTile(
+                        title: 'Cash Payment',
+                        subtitle: 'Cash collection support is coming soon',
+                        isSelected:
+                            selectedMethod == payment_domain.PaymentMethod.cash,
+                        enabled: false,
+                        onTap: () {
+                          context.read<PaymentBloc>().add(
+                            const SelectPaymentMethodEvent(
+                              payment_domain.PaymentMethod.cash,
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -208,16 +271,19 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 _SectionCard(
                   title: 'Safety checks',
                   subtitle:
-                      'This flow is guarded to protect both the customer and your business.',
+                      'This post-service flow is guarded to keep the payment accurate and traceable.',
                   child: const Column(
                     children: [
+                      _ChecklistItem(
+                        'Only completed unpaid bookings can be charged',
+                      ),
                       _ChecklistItem('Amount is validated on the server'),
                       _ChecklistItem('Duplicate payment attempts are blocked'),
                       _ChecklistItem(
                         'Stripe confirmation is re-checked before success',
                       ),
                       _ChecklistItem(
-                        'Pending slot holds are released on cancellation',
+                        'Receipts and booking status stay in sync after payment',
                       ),
                     ],
                   ),
@@ -368,6 +434,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       return 'Bank transfer coming soon';
     }
 
+    if (method == payment_domain.PaymentMethod.cash) {
+      return 'Cash payment coming soon';
+    }
+
     switch (state.status) {
       case PaymentBlocStatus.creatingIntent:
         return 'Preparing secure payment...';
@@ -421,7 +491,7 @@ class _HeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Secure your appointment',
+            'Complete your service payment',
             style: TextStyle(
               color: Color(0xFFFFE9DC),
               fontSize: 13,
@@ -467,6 +537,82 @@ class _HeroCard extends StatelessWidget {
   }
 }
 
+class _PaymentUnavailableState extends StatelessWidget {
+  const _PaymentUnavailableState({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 420),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFF0D7CB)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 52, color: const Color(0xFF7A4A39)),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF43261D),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF7B6156),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: onAction,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6B3F32),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(actionLabel),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
     required this.title,
@@ -487,7 +633,7 @@ class _SummaryCard extends StatelessWidget {
     return _SectionCard(
       title: 'Booking summary',
       subtitle:
-          'You will only see the success screen after payment verification.',
+          'Payment is collected after service completion and only becomes final once Stripe verification succeeds.',
       child: Column(
         children: [
           _SummaryRow(label: 'Service', value: title),
@@ -568,7 +714,7 @@ class _PaymentMethodTile extends StatelessWidget {
       color: isSelected ? const Color(0xFFF7E7DA) : const Color(0xFFFFFAF5),
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(18),
         child: Container(
           width: double.infinity,

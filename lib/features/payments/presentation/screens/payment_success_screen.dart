@@ -87,7 +87,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Your booking is now secured and marked for service fulfillment.',
+                        'Your service payment is complete. You can return to your bookings and leave a review whenever you are ready.',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: const Color(0xFF6D574D),
@@ -123,9 +123,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                         height: 56,
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.of(
-                              context,
-                            ).popUntil((route) => route.isFirst);
+                            Navigator.of(context).pop(true);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6B3F32),
@@ -136,7 +134,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                             elevation: 0,
                           ),
                           child: const Text(
-                            'Return to home',
+                            'Back to bookings',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,

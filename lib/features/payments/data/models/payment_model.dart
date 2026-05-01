@@ -217,6 +217,8 @@ class PaymentModel extends PaymentEntity {
       case 'bank_transfer':
       case 'banktransfer':
         return PaymentMethod.bankTransfer;
+      case 'cash':
+        return PaymentMethod.cash;
       default:
         return PaymentMethod.card;
     }
