@@ -1,18 +1,20 @@
 import 'package:dartz/dartz.dart' show Either;
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/core/widgets/header.dart';
 import 'package:urs_beauty/core/widgets/retry_button.dart';
 import 'package:urs_beauty/features/beauty_services/domain/entities/service_entity.dart';
+import 'package:urs_beauty/features/beauty_services/domain/usecases/get_service_by_category.dart';
 import 'package:urs_beauty/features/beauty_services/domain/usecases/get_services.dart';
+import 'package:urs_beauty/features/beauty_services/presentation/screens/service_detail_screen.dart';
 import 'package:urs_beauty/features/beauty_services/presentation/widgets/service_tile.dart';
-import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
-import 'package:urs_beauty/features/stylists/presentation/pages/stylist_detail_screen.dart';
 import 'package:urs_beauty/injection_container.dart';
 
 class ServiceListScreen extends StatefulWidget {
-  const ServiceListScreen({super.key});
+  const ServiceListScreen({super.key, this.categoryId, this.categoryName});
+
+  final String? categoryId;
+  final String? categoryName;
 
   @override
   State<ServiceListScreen> createState() => _ServiceListScreenState();
@@ -21,6 +23,15 @@ class ServiceListScreen extends StatefulWidget {
 class _ServiceListScreenState extends State<ServiceListScreen> {
   late Future<Either<Failures, List<ServiceEntity>>> _servicesFuture;
 
+  bool get _isCategoryView => widget.categoryId?.trim().isNotEmpty == true;
+
+  String get _title {
+    if (_isCategoryView && widget.categoryName?.trim().isNotEmpty == true) {
+      return widget.categoryName!.trim();
+    }
+    return 'All services';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +39,12 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
   }
 
   void _loadServices() {
+    final categoryId = widget.categoryId?.trim();
+    if (categoryId != null && categoryId.isNotEmpty) {
+      _servicesFuture = getit<GetServiceByCategory>()(categoryId);
+      return;
+    }
+
     _servicesFuture = getit<GetServices>()();
   }
 
@@ -42,6 +59,12 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBF6),
+      appBar: AppBar(
+        title: Text(_title),
+        backgroundColor: const Color(0xFFFFFBF6),
+        foregroundColor: const Color(0xFF2E2420),
+        elevation: 0,
+      ),
       body: FutureBuilder<Either<Failures, List<ServiceEntity>>>(
         future: _servicesFuture,
         builder: (context, snapshot) {
@@ -89,34 +112,19 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                       if (index == 0) {
                         return Header(
                           theme: theme,
-                          title: 'Start your booking',
-                          description:
-                              'Pick a service first, then we will show the stylists who can take it.',
+                          title: _isCategoryView
+                              ? 'Services in $_title'
+                              : 'Start your booking',
+                          description: _isCategoryView
+                              ? 'Choose the exact service you want, then review details before picking a stylist.'
+                              : 'Browse every available service, review the details, then choose a stylist.',
                         );
                       }
 
                       final service = services[index - 1];
                       return ServiceTile(
                         service: service,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => BlocProvider(
-                                create: (_) {
-                                  final bloc = getit<StylistsBloc>();
-                                  bloc.add(
-                                    GetStylistsByServiceEvent(service.id),
-                                  );
-                                  return bloc;
-                                },
-                                child: StylistDetailScreen(
-                                  serviceId: service.id,
-                                  serviceName: service.name,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+                        onTap: () => _openServiceDetail(context, service),
                       );
                     },
                   ),
@@ -128,7 +136,12 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
       ),
     );
   }
+
+  void _openServiceDetail(BuildContext context, ServiceEntity service) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ServiceDetailScreen(service: service),
+      ),
+    );
+  }
 }
-
-
-

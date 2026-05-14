@@ -14,6 +14,7 @@ import 'package:urs_beauty/features/home/presentation/pages/home_screen.dart';
 import 'package:urs_beauty/features/payments/presentation/bloc/payment_bloc.dart';
 import 'package:urs_beauty/features/payments/presentation/screens/payment_methods_screen.dart';
 import 'package:urs_beauty/features/profile/presentation/screens/settings_screen.dart';
+import 'package:urs_beauty/features/search/presentation/pages/search_screen.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/stylists/presentation/pages/stylist_detail_screen.dart';
 import 'package:urs_beauty/injection_container.dart';
@@ -131,6 +132,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.resetPasswordScreen,
         builder: (_, __) => ResetPasswordScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.searchScreen,
+        builder: (_, __) => const SearchScreen(),
       ),
     ],
     errorBuilder: (context, state) {

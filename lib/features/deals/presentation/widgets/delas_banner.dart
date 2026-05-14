@@ -5,7 +5,7 @@ import 'package:urs_beauty/features/deals/domain/entities/deal.dart';
 class PromotionsBanner extends StatelessWidget {
   final List<Deal> deals;
 
-  const PromotionsBanner({super.key, required this.deals});
+  const   PromotionsBanner({super.key, required this.deals});
 
   @override
   Widget build(BuildContext context) {

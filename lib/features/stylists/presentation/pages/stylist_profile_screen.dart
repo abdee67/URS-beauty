@@ -168,39 +168,32 @@ class _StylistProfileView extends StatelessWidget {
                       ],
                     ),
                   ),
-                  ?_canBook
-                      ? Container(
-                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                          child: _canBook
-                              ? SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () => _openBookingFlow(context),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF6B3F32),
-                                      foregroundColor: Colors.white,
-                                      disabledBackgroundColor: const Color(
-                                        0xFFD8C0B5,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Book $_resolvedServiceName',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : null,
-                        )
-                      : null,
+                  if (_canBook)
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => _openBookingFlow(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6B3F32),
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: const Color(0xFFD8C0B5),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Book $_resolvedServiceName',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
