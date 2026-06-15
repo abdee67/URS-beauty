@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -16,13 +19,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
   await SupabaseConfig.init();
-  Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY']!;
   Stripe.urlScheme = 'ursbeauty';
   final merchantIdentifier = dotenv.env['STRIPE_MERCHANT_IDENTIFIER'];
   if (merchantIdentifier != null && merchantIdentifier.trim().isNotEmpty) {
     Stripe.merchantIdentifier = merchantIdentifier.trim();
   }
+   // ONLY initialize Stripe on mobile and web platforms
+  if (kIsWeb || Platform.isAndroid || Platform.isIOS) {
+  Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY']!;
   await Stripe.instance.applySettings();
+  } else {
+    debugPrint("Stripe is not initialized: Desktop platforms are not natively supported.");
+  }
   initDependency(); //initializing getit for dependency injection
   runApp(const URSBEAUTY());
 }
