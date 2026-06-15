@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_schedule_screen.dart';
+import 'package:urs_beauty/features/discover/presentation/widgets/distance_badge.dart';
 import 'package:urs_beauty/features/reviews/domain/entity/review_entity.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_bloc.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_state.dart';
@@ -15,11 +16,15 @@ class StylistProfileScreen extends StatefulWidget {
     required this.stylist,
     this.serviceId,
     this.serviceName,
+    this.requestedDateTime,
+    this.distanceKm,
   });
 
   final Stylist stylist;
   final String? serviceId;
   final String? serviceName;
+  final DateTime? requestedDateTime;
+  final double? distanceKm;
 
   @override
   State<StylistProfileScreen> createState() => _StylistProfileScreenState();
@@ -39,6 +44,8 @@ class _StylistProfileScreenState extends State<StylistProfileScreen> {
         stylist: widget.stylist,
         serviceId: widget.serviceId,
         serviceName: widget.serviceName,
+        requestedDateTime: widget.requestedDateTime,
+        distanceKm: widget.distanceKm,
         onRefreshMark: _queueRefreshIfStale,
       ),
     );
@@ -86,12 +93,16 @@ class _StylistProfileView extends StatelessWidget {
     required this.stylist,
     this.serviceId,
     this.serviceName,
+    this.requestedDateTime,
+    this.distanceKm,
     required this.onRefreshMark,
   });
 
   final Stylist stylist;
   final String? serviceId;
   final String? serviceName;
+  final DateTime? requestedDateTime;
+  final double? distanceKm;
   final void Function(BuildContext context, ReviewState state) onRefreshMark;
 
   bool get _canBook => serviceId?.trim().isNotEmpty == true;
@@ -133,7 +144,10 @@ class _StylistProfileView extends StatelessWidget {
                           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                           sliver: SliverList(
                             delegate: SliverChildListDelegate([
-                              _ProfileHeroCard(stylist: stylist),
+                              _ProfileHeroCard(
+                                stylist: stylist,
+                                distanceKm: distanceKm,
+                              ),
                               const SizedBox(height: 18),
                               _RatingSummaryCard(
                                 averageRating: stylist.averageRating,
@@ -220,6 +234,7 @@ class _StylistProfileView extends StatelessWidget {
             serviceId: resolvedServiceId,
             serviceName: _resolvedServiceName,
             stylist: stylist,
+            initialDateTime: requestedDateTime,
           ),
         ),
       ),
@@ -228,9 +243,10 @@ class _StylistProfileView extends StatelessWidget {
 }
 
 class _ProfileHeroCard extends StatelessWidget {
-  const _ProfileHeroCard({required this.stylist});
+  const _ProfileHeroCard({required this.stylist, this.distanceKm});
 
   final Stylist stylist;
+  final double? distanceKm;
 
   @override
   Widget build(BuildContext context) {
@@ -299,18 +315,25 @@ class _ProfileHeroCard extends StatelessWidget {
             ).textTheme.bodyLarge?.copyWith(color: Colors.white, height: 1.45),
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
             children: [
               _HeroStat(
                 icon: Icons.place_outlined,
                 label:
                     '${stylist.serviceRadiusKm.toStringAsFixed(0)} km radius',
               ),
-              const SizedBox(width: 12),
               _HeroStat(
                 icon: Icons.verified_outlined,
                 label: stylist.isVerified ? 'Verified' : 'Not verified',
               ),
+              if (distanceKm != null)
+                DistanceBadge(
+                  distanceKm: distanceKm!,
+                  foregroundColor: const Color(0xFFFFD6BA),
+                  backgroundColor: Colors.white.withValues(alpha: 0.14),
+                ),
             ],
           ),
         ],

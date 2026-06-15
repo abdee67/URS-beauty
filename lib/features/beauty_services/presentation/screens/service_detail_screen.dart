@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/beauty_services/domain/entities/service_entity.dart';
+import 'package:urs_beauty/features/discover/presentation/bloc/stylist_recommendation_bloc.dart';
+import 'package:urs_beauty/features/discover/presentation/widgets/service_date_time_picker.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/stylists/presentation/pages/stylist_detail_screen.dart';
 import 'package:urs_beauty/injection_container.dart';
@@ -100,14 +102,32 @@ class ServiceDetailScreen extends StatelessWidget {
     );
   }
 
-  void _openStylists(BuildContext context) {
+  Future<void> _openStylists(BuildContext context) async {
+    final requestedDateTime = await showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFFFFFBF6),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (_) => const ServiceDateTimePicker(),
+    );
+
+    if (requestedDateTime == null || !context.mounted) {
+      return;
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => BlocProvider(
-          create: (_) => getit<StylistsBloc>(),
+        builder: (_) => MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => getit<StylistsBloc>()),
+            BlocProvider(create: (_) => getit<StylistRecommendationBloc>()),
+          ],
           child: StylistDetailScreen(
             serviceId: service.id,
             serviceName: service.name,
+            requestedDateTime: requestedDateTime,
           ),
         ),
       ),

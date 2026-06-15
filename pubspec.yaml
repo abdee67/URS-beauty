@@ -37,6 +37,7 @@ dependencies:
   location: ^8.0.1
   http: ^1.6.0
   flutter_stripe: ^12.6.0
+  google_maps_flutter: ^2.17.1
 
 dev_dependencies:
   flutter_test:

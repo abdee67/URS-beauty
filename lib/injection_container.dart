@@ -59,6 +59,15 @@ import 'package:urs_beauty/features/deals/data/datasource/deals_remote_data_sour
 import 'package:urs_beauty/features/deals/data/repository/deals_repository_impl.dart';
 import 'package:urs_beauty/features/deals/domain/repository/deals_repository.dart';
 import 'package:urs_beauty/features/deals/domain/usescases/get_deals.dart';
+import 'package:urs_beauty/features/discover/data/datasources/stylist_recommendation_remote_data_source.dart';
+import 'package:urs_beauty/features/discover/data/datasources/stylist_recommendation_remote_data_source_impl.dart';
+import 'package:urs_beauty/features/discover/data/repositories/stylist_recommendation_repository_impl.dart';
+import 'package:urs_beauty/features/discover/domain/repositories/stylist_recommendation_repository.dart';
+import 'package:urs_beauty/features/discover/domain/usecases/fetch_available_slots.dart';
+import 'package:urs_beauty/features/discover/domain/usecases/fetch_stylist_recommendations.dart';
+import 'package:urs_beauty/features/discover/domain/usecases/get_client_location.dart';
+import 'package:urs_beauty/features/discover/presentation/bloc/stylist_recommendation_bloc.dart'
+    hide SearchStylists;
 import 'package:urs_beauty/features/reviews/data/datasource/review_remote_data_source.dart';
 import 'package:urs_beauty/features/reviews/data/datasource/review_remote_data_source_impl.dart';
 import 'package:urs_beauty/features/reviews/data/repository/review_repository_impl.dart';
@@ -112,6 +121,9 @@ void initDependency() {
   getit.registerLazySingleton<StylistsRemoteDataSource>(
     () => StylistsRemoteDataSourceImpl(),
   );
+  getit.registerLazySingleton<StylistRecommendationRemoteDataSource>(
+    () => StylistRecommendationRemoteDataSourceImpl(),
+  );
   getit.registerLazySingleton<DealsRemoteDataSource>(
     () => DealsRemoteDataSourceImpl(),
   );
@@ -141,6 +153,9 @@ void initDependency() {
   );
   getit.registerLazySingleton<StylistsRepository>(
     () => StylistsRepositoryImpl(remoteDataSource: getit()),
+  );
+  getit.registerLazySingleton<StylistRecommendationRepository>(
+    () => StylistRecommendationRepositoryImpl(remoteDataSource: getit()),
   );
   getit.registerLazySingleton<DealsRepository>(
     () => DealsRepositoryImpl(remoteDataSource: getit()),
@@ -197,6 +212,11 @@ void initDependency() {
   getit.registerLazySingleton(() => UpdateStylistsAvailability(getit()));
   getit.registerLazySingleton(() => SearchStylists(getit()));
   getit.registerLazySingleton(() => GetStylistsService(getit()));
+
+  // Discover use cases
+  getit.registerLazySingleton(() => GetClientLocation(getit()));
+  getit.registerLazySingleton(() => FetchStylistRecommendations(getit()));
+  getit.registerLazySingleton(() => FetchAvailableSlots(getit()));
 
   // Booking use cases
   getit.registerLazySingleton(() => CreateBooking(getit()));
@@ -279,6 +299,12 @@ void initDependency() {
       getit(), // GetStylistDetail
       getit(), // SearchStylists
       getit(), // GetNearbyStylists
+    ),
+  );
+  getit.registerFactory(
+    () => StylistRecommendationBloc(
+      getClientLocation: getit(),
+      fetchStylistRecommendations: getit(),
     ),
   );
   getit.registerFactory(
