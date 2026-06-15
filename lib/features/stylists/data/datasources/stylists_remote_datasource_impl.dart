@@ -2,8 +2,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/beauty_services/data/models/service_model.dart';
-import 'package:urs_beauty/features/bookings/data/models/booking_model.dart';
-import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylist_availability_slot_model.dart';
 import 'package:urs_beauty/features/stylists/data/datasources/stylists_remote_data_source.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_availability_model.dart';
@@ -30,9 +28,6 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
   static const String _serviceColumns =
       'id, name, description, category_id, duration_minutes, base_price, '
       'min_price, created_at, updated_at, is_active, icon_url';
-  static const String _bookingColumns =
-      'id, customer, stylist, status, notes, address, total_amount, '
-      'scheduled_at, end_at, created_at, updated_at, is_reviewed, payment_method, payment_status, paid_amount, refund_amount, currency';
 
   @override
   Future<List<StylistModel>> getStylists() {
@@ -196,8 +191,7 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     String serviceId,
     DateTime selectedDate, {
     String? ignoredBookingId,
-  }
-  ) {
+  }) {
     return _run(() async {
       _requireValue(stylistId, 'Stylist id is required');
       _requireValue(serviceId, 'Service id is required');
@@ -209,31 +203,32 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
         throw Failures(message: 'Selected service has an invalid duration');
       }
 
-      final dayOfWeek = _dayOfWeekLabel(selectedDate);
-      final availabilityResponse = await _client
-          .from(_stylistsAvailabilityTable)
-          .select(_availabilityColumns)
-          .eq('stylists_id', stylistId)
-          .eq('day_of_week', dayOfWeek)
-          .eq('is_available', true)
-          .order('start_time');
+      final params = <String, dynamic>{
+        'p_stylist_id': stylistId,
+        'p_service_id': serviceId,
+        'p_date': _dateParam(selectedDate),
+      };
 
-      final availabilityWindows = _mapAvailabilityList(availabilityResponse);
-      if (availabilityWindows.isEmpty) {
-        return const <StylistAvailabilitySlotModel>[];
+      final normalizedIgnoredBookingId = ignoredBookingId?.trim();
+      if (normalizedIgnoredBookingId != null &&
+          normalizedIgnoredBookingId.isNotEmpty) {
+        params['p_ignored_booking_id'] = normalizedIgnoredBookingId;
       }
 
-      final bookings = await _getBookingsForDate(
-        stylistId,
-        selectedDate,
-        ignoredBookingId: ignoredBookingId,
-      );
-      return _generateTimeSlots(
-        selectedDate: selectedDate,
-        durationMinutes: serviceDuration,
-        availabilityWindows: availabilityWindows,
-        bookings: bookings,
-      );
+      final response = await _client.rpc('get_available_slots', params: params);
+
+      return (response as List).map((item) {
+        final data = item as Map;
+        final startAt = _combineDateAndSlotTime(
+          selectedDate,
+          data['slot_time'].toString(),
+        );
+        return StylistAvailabilitySlotModel(
+          startAt: startAt,
+          endAt: startAt.add(Duration(minutes: serviceDuration)),
+          isAvailable: true,
+        );
+      }).toList();
     });
   }
 
@@ -302,15 +297,6 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     return ServiceModel.fromJson(Map<String, dynamic>.from(response as Map));
   }
 
-  List<BookingModel> _mapBookingList(dynamic response) {
-    return (response as List)
-        .map(
-          (item) =>
-              BookingModel.fromJson(Map<String, dynamic>.from(item as Map)),
-        )
-        .toList();
-  }
-
   StylistModel _mapStylist(dynamic response) {
     return StylistModel.fromJson(Map<String, dynamic>.from(response as Map));
   }
@@ -325,100 +311,7 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     return _mapService(response);
   }
 
-  Future<List<BookingModel>> _getBookingsForDate(
-    String stylistId,
-    DateTime selectedDate,
-    {
-    String? ignoredBookingId,
-    }
-  ) async {
-    final startOfDayLocal = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-    );
-    final endOfDayLocal = startOfDayLocal.add(const Duration(days: 1));
-    final startOfDayUtc = startOfDayLocal.toUtc();
-    final endOfDayUtc = endOfDayLocal.toUtc();
-
-    final normalizedIgnoredBookingId = ignoredBookingId?.trim();
-    var query = _client
-        .from('bookings')
-        .select(_bookingColumns)
-        .eq('stylist', stylistId)
-        .lt('scheduled_at', endOfDayUtc.toIso8601String())
-        .gt('end_at', startOfDayUtc.toIso8601String());
-
-    if (normalizedIgnoredBookingId != null && normalizedIgnoredBookingId.isNotEmpty) {
-      query = query.filter('id', 'neq', normalizedIgnoredBookingId);
-    }
-
-    final response = await query.order('scheduled_at');
-
-    return _mapBookingList(
-      response,
-    ).where((booking) => booking.status == BookingStatus.pending).toList();
-  }
-
-  List<StylistAvailabilitySlotModel> _generateTimeSlots({
-    required DateTime selectedDate,
-    required int durationMinutes,
-    required List<StylistsAvailabilityModel> availabilityWindows,
-    required List<BookingModel> bookings,
-  }) {
-    final slotsByStart = <DateTime, StylistAvailabilitySlotModel>{};
-    final cutoff = _slotCutoffForDate(selectedDate);
-    final slotDuration = Duration(minutes: durationMinutes);
-
-    for (final window in availabilityWindows) {
-      final windowStart = _combineDateAndTime(selectedDate, window.startTime);
-      final windowEnd = _combineDateAndTime(selectedDate, window.endTime);
-
-      if (!window.isAvailable || !windowEnd.isAfter(windowStart)) {
-        continue;
-      }
-
-      var slotStart = windowStart;
-      while (!slotStart.add(slotDuration).isAfter(windowEnd)) {
-        final slotEnd = slotStart.add(slotDuration);
-        final isBlockedByBooking = bookings.any(
-          (booking) =>
-              slotStart.isBefore(booking.endAt) &&
-              slotEnd.isAfter(booking.scheduledAt),
-        );
-        final isPastCutoff = cutoff != null && slotStart.isBefore(cutoff);
-
-        slotsByStart[slotStart] = StylistAvailabilitySlotModel(
-          startAt: slotStart,
-          endAt: slotEnd,
-          isAvailable: !isBlockedByBooking && !isPastCutoff,
-        );
-        slotStart = slotStart.add(slotDuration);
-      }
-    }
-
-    final slots = slotsByStart.values.toList()
-      ..sort((first, second) => first.startAt.compareTo(second.startAt));
-    return slots;
-  }
-
-  DateTime? _slotCutoffForDate(DateTime selectedDate) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final targetDate = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-    );
-
-    if (targetDate != today) {
-      return null;
-    }
-
-    return now.add(const Duration(minutes: 30));
-  }
-
-  DateTime _combineDateAndTime(DateTime date, String value) {
+  DateTime _combineDateAndSlotTime(DateTime date, String value) {
     final normalized = value.trim();
     final parts = normalized.split(':');
 
@@ -436,9 +329,10 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     return DateTime(date.year, date.month, date.day, hour, minute);
   }
 
-  String _dayOfWeekLabel(DateTime date) {
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return labels[date.weekday - 1];
+  String _dateParam(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
   }
 
   void _validateAvailability(StylistsAvailabilityModel availability) {
