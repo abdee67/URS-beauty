@@ -9,6 +9,13 @@ class Stylist {
   final int totalReview;
   final double longitude;
   final double latitude;
+  final int userId;
+  final String onboardingStatus;
+  final int yearsOfExperience;
+  final String? rejectionReason;
+  final double distanceKm;
+  final double servicePrice;
+  final int serviceDuration;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -23,7 +30,20 @@ class Stylist {
     required this.totalReview,
     required this.longitude,
     required this.latitude,
+    required this.userId,
+    required this.onboardingStatus,
+    required this.yearsOfExperience,
+    required this.rejectionReason,
+    required this.servicePrice,
+    required this.serviceDuration,
+    required this.distanceKm,
     this.createdAt,
     this.updatedAt,
   });
+    String get distanceDisplay => distanceKm < 1
+      ? '${(distanceKm * 1000).round()} m away'
+      : '${distanceKm.toStringAsFixed(1)} km away';
+
+  List<Object?> get props =>
+      [id, businessName, distanceKm, servicePrice, averageRating];
 }

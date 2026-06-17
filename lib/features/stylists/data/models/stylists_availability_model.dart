@@ -31,6 +31,27 @@ class StylistsAvailabilityModel extends StylistsAvailability {
       'is_available': isAvailable,
     };
   }
+  factory StylistsAvailabilityModel.fromEntity(StylistsAvailability entity) {
+    return StylistsAvailabilityModel(
+      id: entity.id,
+      stylistsId: entity.stylistsId,
+      dayOfWeek: entity.dayOfWeek,
+      startTime: entity.startTime,
+      endTime: entity.endTime,
+      isAvailable: entity.isAvailable,
+    );
+  }
+
+  StylistsAvailability toEntity() {
+    return StylistsAvailability(
+      id: id,
+      stylistsId: stylistsId,
+      dayOfWeek: dayOfWeek,
+      startTime: startTime,
+      endTime: endTime,
+      isAvailable: isAvailable,
+    );
+  }
 
   static String _asString(dynamic value) {
     if (value == null) {
