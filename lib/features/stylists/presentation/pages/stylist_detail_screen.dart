@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:urs_beauty/core/widgets/empty_state.dart';
-import 'package:urs_beauty/features/discover/data/models/stylist_card_model.dart';
-import 'package:urs_beauty/features/discover/presentation/bloc/stylist_recommendation_bloc.dart';
-import 'package:urs_beauty/features/discover/presentation/widgets/service_date_time_picker.dart';
-import 'package:urs_beauty/features/discover/presentation/widgets/sort_filter_bar.dart';
-import 'package:urs_beauty/features/discover/presentation/widgets/stylist_map_view.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/stylists/presentation/pages/stylist_profile_screen.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/service_date_time_picker.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/sort_filter_bar.dart';
 import 'package:urs_beauty/features/stylists/presentation/widgets/stylist_card.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/stylist_map_view.dart';
 
 class StylistDetailScreen extends StatefulWidget {
   const StylistDetailScreen({
@@ -81,8 +79,8 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
     final serviceId = widget.serviceId?.trim();
 
     if (_usesRecommendations && serviceId != null) {
-      context.read<StylistRecommendationBloc>().add(
-        SearchStylists(
+      context.read<StylistsBloc>().add(
+        SearchStylistsForService(
           serviceId: serviceId,
           requestedDateTime: _requestedDateTime!,
         ),
@@ -178,9 +176,11 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
   }
 
   Widget _buildRecommendationList(BuildContext context) {
-    return BlocBuilder<StylistRecommendationBloc, StylistRecommendationState>(
+    return BlocBuilder<StylistsBloc, StylistsState>(
       builder: (context, state) {
-        final loaded = state is RecommendationLoaded ? state : null;
+        final loaded = state.status == StylistsStatus.recomendedStylistsLoaded
+            ? state
+            : null;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -193,33 +193,28 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
     );
   }
 
-  Widget _buildRecommendationBody(
-    BuildContext context,
-    StylistRecommendationState state,
-  ) {
-    if (state is RecommendationLoading || state is RecommendationInitial) {
+  Widget _buildRecommendationBody(BuildContext context, StylistsState state) {
+    if (state.status == StylistsStatus.recomendedStylistsLoading ||
+        state.status == StylistsStatus.recomendedStylistsInitial) {
       return const _StylistListShimmer();
     }
 
-    if (state is RecommendationLoaded) {
+    if (state.status == StylistsStatus.recomendedStylistsLoaded) {
       return _buildLoadedRecommendation(context, state);
     }
 
-    if (state is RecommendationEmpty) {
+    if (state.status == StylistsStatus.recomendedStylistsEmpty) {
       return _buildEmptyRecommendation(context, state);
     }
 
-    if (state is RecommendationError) {
+    if (state.status == StylistsStatus.recomendedStylistsError) {
       return _buildRecommendationError(context, state);
     }
 
     return const SizedBox.shrink();
   }
 
-  Widget _buildLoadedRecommendation(
-    BuildContext context,
-    RecommendationLoaded state,
-  ) {
+  Widget _buildLoadedRecommendation(BuildContext context, StylistsState state) {
     if (state.isMapView) {
       return StylistMapView(
         stylists: state.sortedStylists,
@@ -234,7 +229,7 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
         SortFilterBar(
           currentSort: state.sortBy,
           onSortChanged: (sort) {
-            context.read<StylistRecommendationBloc>().add(SortStylists(sort));
+            context.read<StylistsBloc>().add(SortStylists(sort));
           },
         ),
         const SizedBox(height: 4),
@@ -243,9 +238,7 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
             onNotification: (notification) {
               if (notification.metrics.pixels >=
                   notification.metrics.maxScrollExtent - 180) {
-                context.read<StylistRecommendationBloc>().add(
-                  const LoadMoreStylists(),
-                );
+                context.read<StylistsBloc>().add(const LoadMoreStylists());
               }
               return false;
             },
@@ -276,14 +269,11 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
     );
   }
 
-  Widget _buildEmptyRecommendation(
-    BuildContext context,
-    RecommendationEmpty state,
-  ) {
+  Widget _buildEmptyRecommendation(BuildContext context, StylistsState state) {
     return _ActionState(
       icon: Icons.event_busy_rounded,
       title:
-          'No stylists available for this service in your area on ${_formatMediumDate(context, state.requestedDateTime)}.',
+          'No stylists available for this service in your area on ${_formatMediumDate(context, state.requestedDateTime ?? DateTime.now())}.',
       subtitle: 'Try another appointment time or choose a different service.',
       primaryLabel: 'Try a different date',
       onPrimary: () => _pickDifferentDate(context),
@@ -292,16 +282,13 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
     );
   }
 
-  Widget _buildRecommendationError(
-    BuildContext context,
-    RecommendationError state,
-  ) {
+  Widget _buildRecommendationError(BuildContext context, StylistsState state) {
     return _ActionState(
       icon: state.isLocationError
           ? Icons.location_off_rounded
           : Icons.error_outline_rounded,
       title: state.isLocationError ? 'Location needed' : 'Could not load',
-      subtitle: state.message,
+      subtitle: state.message ?? 'Failed to load stylists.',
       primaryLabel: state.isLocationError ? 'Open settings' : 'Try again',
       onPrimary: state.isLocationError
           ? Geolocator.openLocationSettings
@@ -333,7 +320,7 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
   Widget _buildTitle(
     BuildContext context,
     String serviceTitle, {
-    RecommendationLoaded? loadedState,
+    StylistsState? loadedState,
   }) {
     final requestedDateTime = _requestedDateTime;
     final subtitle = requestedDateTime == null
@@ -358,9 +345,7 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
               IconButton(
                 tooltip: loadedState.isMapView ? 'Show list' : 'Show map',
                 onPressed: () {
-                  context.read<StylistRecommendationBloc>().add(
-                    const ToggleMapView(),
-                  );
+                  context.read<StylistsBloc>().add(const ToggleMapView());
                 },
                 icon: Icon(
                   loadedState.isMapView
@@ -392,10 +377,7 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
     );
   }
 
-  void _openRecommendedStylistProfile(
-    BuildContext context,
-    StylistCardModel stylist,
-  ) {
+  void _openRecommendedStylistProfile(BuildContext context, Stylist stylist) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => StylistProfileScreen(

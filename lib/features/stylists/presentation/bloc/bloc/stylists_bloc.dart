@@ -1,12 +1,19 @@
+import 'dart:developer' as developer;
+
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:urs_beauty/features/stylists/data/models/stylists_availability_model.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_availability_slot_entity.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylists_availability_entity.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_client_location.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_nearby_stylists.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_by_service.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_detail.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_recommendations.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability_by_day.dart';
@@ -30,6 +37,8 @@ class StylistsBloc extends Bloc<StylistsEvent, StylistsState> {
     this.getStylistDetail,
     this.searchStylists,
     this.getNearByStylists,
+    this.getClientLocation,
+    this.getStylistRecommendations,
   ) : super(const StylistsState()) {
     on<GetStylistsEvent>(_onGetStylists);
     on<GetStylistsByServiceEvent>(_onGetStylistsByService);
@@ -41,6 +50,10 @@ class StylistsBloc extends Bloc<StylistsEvent, StylistsState> {
     on<GetStylistsAvailabilityEvent>(_onGetStylistsAvailability);
     on<GetStylistsAvailabilityByDayEvent>(_onGetStylistsAvailabilityByDay);
     on<GetStylistsAvailabilityByTimeEvent>(_onGetStylistsAvailabilityByTime);
+    on<SearchStylistsForService>(_onSearchStylistsForService);
+    on<SortStylists>(_onSort);
+    on<ToggleMapView>(_onToggleMap);
+    on<LoadMoreStylists>(_onLoadMore);
   }
 
   final GetStylistsAvailability getStylistsAvailability;
@@ -53,6 +66,17 @@ class StylistsBloc extends Bloc<StylistsEvent, StylistsState> {
   final GetStylistDetail getStylistDetail;
   final SearchStylists searchStylists;
   final GetNearbyStylists getNearByStylists;
+
+  final GetClientLocation getClientLocation;
+  final GetStylistRecommendations getStylistRecommendations;
+
+  static const int _limit = 20;
+
+  String? _serviceId;
+  DateTime? _requestedDateTime;
+  double? _clientLat;
+  double? _clientLng;
+  bool _isLoadingMore = false;
 
   Future<void> _onGetStylists(
     GetStylistsEvent event,
@@ -255,17 +279,190 @@ class StylistsBloc extends Bloc<StylistsEvent, StylistsState> {
         state.stylistsError(
           "Can't get stylist availability by time: ${failure.message}",
         ),
-        
       ),
-      
+
       (availability) => emit(
         state.copyWith(
           stylistsAvailabilityByTime: availability,
           status: StylistsStatus.stylistsAvailabilityByTimeLoaded,
         ),
       ),
-      
+    );
+  }
+
+  Future<void> _onSearchStylistsForService(
+    SearchStylistsForService event,
+    Emitter<StylistsState> emit,
+  ) async {
+    emit(state.recommenedStylistsLoading());
+    _serviceId = event.serviceId;
+    _requestedDateTime = event.requestedDateTime;
+
+    final locationResult = await getClientLocation();
+    Failures? locationFailure;
+    Position? position;
+    locationResult.fold(
+      (failure) => locationFailure = failure,
+      (clientPosition) => position = clientPosition,
     );
 
+    if (locationFailure != null || position == null) {
+      emit(
+        state.recommenedStylistsError(
+          "Can't get stylist recommendations: ${locationFailure?.message}",
+        ),
+      );
+      return;
+    }
+
+    _clientLat = position!.latitude;
+    _clientLng = position!.longitude;
+
+    final result = await getStylistRecommendations(
+      serviceId: event.serviceId,
+      clientLat: position!.latitude,
+      clientLng: position!.longitude,
+      requestedDateTime: event.requestedDateTime,
+      limit: _limit,
+    );
+
+    Failures? fetchFailure;
+    List<Stylist> stylists = const <Stylist>[];
+    result.fold(
+      (failure) => fetchFailure = failure,
+      (items) => stylists = items,
+    );
+
+    if (fetchFailure != null) {
+      emit(_errorFromFailure(fetchFailure));
+      return;
+    }
+
+    if (stylists.isEmpty) {
+      emit(
+        state.recommenedStylistsEmpty(
+          serviceId: event.serviceId,
+          requestedDateTime: event.requestedDateTime,
+        ),
+      );
+      return;
+    }
+    if (kDebugMode) {
+      developer.log('recomended stylists: ${stylists.length}');
+    }
+
+    emit(
+      state.recommenedStylistsLoaded(
+        stylists: stylists,
+        sortedStylists: _sortStylists(stylists, SortBy.distance),
+        sortBy: SortBy.distance,
+        hasMore: stylists.length == _limit,
+      ),
+    );
+    if (kDebugMode) {
+      developer.log('recomended stylists: ${stylists.length}');
+    }
+  }
+
+  void _onSort(SortStylists event, Emitter<StylistsState> emit) {
+    final current = state;
+    if (current.status != StylistsStatus.recomendedStylistsLoaded) {
+      return;
+    }
+
+    emit(
+      current.copyWith(
+        sortedStylists: _sortStylists(
+          current.stylists.cast<Stylist>(),
+          event.sortBy,
+        ),
+        sortBy: event.sortBy,
+      ),
+    );
+  }
+
+  void _onToggleMap(ToggleMapView event, Emitter<StylistsState> emit) {
+    final current = state;
+    if (current.status != StylistsStatus.recomendedStylistsLoaded) {
+      return;
+    }
+
+    emit(current.copyWith(isMapView: !current.isMapView));
+  }
+
+  Future<void> _onLoadMore(
+    LoadMoreStylists event,
+    Emitter<StylistsState> emit,
+  ) async {
+    final current = state;
+    final serviceId = _serviceId;
+    final requestedDateTime = _requestedDateTime;
+    final clientLat = _clientLat;
+    final clientLng = _clientLng;
+
+    if (current.status != StylistsStatus.recomendedStylistsLoaded ||
+        !current.hasMore ||
+        _isLoadingMore ||
+        serviceId == null ||
+        requestedDateTime == null ||
+        clientLat == null ||
+        clientLng == null) {
+      return;
+    }
+
+    _isLoadingMore = true;
+    final result = await getStylistRecommendations(
+      serviceId: serviceId,
+      clientLat: clientLat,
+      clientLng: clientLng,
+      requestedDateTime: requestedDateTime,
+      limit: _limit,
+      offset: current.stylists.length,
+    );
+    _isLoadingMore = false;
+
+    Failures? failure;
+    List<Stylist> nextPage = const <Stylist>[];
+    result.fold((error) => failure = error, (items) => nextPage = items);
+
+    if (failure != null) {
+      emit(_errorFromFailure(failure));
+      return;
+    }
+
+    final merged = <Stylist>[...current.stylists.cast<Stylist>(), ...nextPage];
+    emit(
+      current.copyWith(
+        stylists: merged,
+        sortedStylists: _sortStylists(merged, current.sortBy),
+        hasMore: nextPage.length == _limit,
+      ),
+    );
+  }
+
+  List<Stylist> _sortStylists(List<Stylist> stylists, SortBy sortBy) {
+    final sorted = List<Stylist>.from(stylists);
+    sorted.sort((a, b) {
+      switch (sortBy) {
+        case SortBy.distance:
+          return a.distanceKm.compareTo(b.distanceKm);
+        case SortBy.rating:
+          return b.averageRating.compareTo(a.averageRating);
+        case SortBy.price:
+          return a.servicePrice.compareTo(b.servicePrice);
+      }
+    });
+    return sorted;
+  }
+
+  StylistsState _errorFromFailure(Failures? failure) {
+    final message = failure?.message.trim();
+    return state.copyWith(
+      status: StylistsStatus.recomendedStylistsError,
+      errorMessage: message == null || message.isEmpty
+          ? 'Something went wrong. Please try again.'
+          : message,
+      isLocationError: failure is LocationFailure,
+    );
   }
 }

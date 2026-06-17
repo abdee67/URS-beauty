@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_schedule_screen.dart';
-import 'package:urs_beauty/features/discover/presentation/widgets/distance_badge.dart';
 import 'package:urs_beauty/features/reviews/domain/entity/review_entity.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_bloc.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_state.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/distance_badge.dart';
 import 'package:urs_beauty/injection_container.dart';
 
 class StylistProfileScreen extends StatefulWidget {
