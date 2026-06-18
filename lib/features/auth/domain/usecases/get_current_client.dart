@@ -2,13 +2,13 @@ import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/auth/domain/repositories/auth_repository.dart';
 
-import '../entities/client.dart';
+import '../entities/customer_entity.dart';
 
-class GetCurrentClient {
+class GetCurrentCustomer {
   final AuthRepository repo;
-  GetCurrentClient(this.repo);
+  GetCurrentCustomer(this.repo);
 
-  Future<Either<Failures, ClientEntity>> call() {
-    return repo.getCurrentClient();
+  Future<Either<Failures, CustomerEntity>> call() {
+    return repo.getCurrentCustomer();
   }
 }

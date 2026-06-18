@@ -1,39 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:urs_beauty/core/constants/app_routes.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/forgotPassword.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/resetPassword.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/welcome_screen.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/login_screen.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/signup_screen.dart';
+import 'package:urs_beauty/features/beauty_services/presentation/screens/service_list_screen.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_page.dart';
-import 'package:urs_beauty/features/chat/presentation/screens/chat_screen.dart';
 import 'package:urs_beauty/features/dashboard/dashboard_wrapper.dart';
 import 'package:urs_beauty/features/home/presentation/pages/home_screen.dart';
+import 'package:urs_beauty/features/payments/presentation/bloc/payment_bloc.dart';
 import 'package:urs_beauty/features/payments/presentation/screens/payment_methods_screen.dart';
+import 'package:urs_beauty/features/profile/presentation/screens/settings_screen.dart';
+import 'package:urs_beauty/features/search/presentation/pages/search_screen.dart';
+import 'package:urs_beauty/features/discover/presentation/bloc/stylist_recommendation_bloc.dart'
+    hide SearchStylists;
+import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/stylists/presentation/pages/stylist_detail_screen.dart';
-import 'package:urs_beauty/features/stylists_location_finder/presentation/screens/location_screen.dart';
+import 'package:urs_beauty/injection_container.dart';
 
 class AppRouter {
   final bool showOnboarding;
   AppRouter({required this.showOnboarding});
   // Global navigator key is useful for specialized dialogs/snackbars
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
-  static final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
   late final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: showOnboarding ? '/welcome' : '/login',
+    initialLocation: showOnboarding
+        ? AppRoutes.onboardingScreen
+        : AppRoutes.loginScreen,
     routes: [
       GoRoute(
-        path: '/welcome',
+        path: AppRoutes.onboardingScreen,
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
-        path: '/login',
+        path: AppRoutes.loginScreen,
         name: 'login',
         builder: (context, state) => const LoginScreen(),
       ),
-      GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
+      GoRoute(
+        path: AppRoutes.signupScreen,
+        builder: (_, __) => const SignupScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return DashboardWrapper(navigationShell: navigationShell);
@@ -41,50 +53,97 @@ class AppRouter {
         branches: [
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
+              GoRoute(
+                path: AppRoutes.homeScreen,
+                builder: (_, __) => const HomeScreen(),
+              ),
             ],
           ),
+
           // Additional branches can be added here for other tabs
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/location',
-                builder: (_, __) => const LocationScreen(),
+                path: AppRoutes.serviceScreen,
+                builder: (_, __) => const ServiceListScreen(),
               ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(path: '/booking', builder: (_, __) => const BookingPage()),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/stylists',
-                builder: (_, __) => const StylistDetailScreen(),
+                path: AppRoutes.bookingScreen,
+                builder: (_, __) => const BookingPage(),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/chat', builder: (_, __) => const ChatScreen()),
+              GoRoute(
+                path: AppRoutes.stylistsScreen,
+                builder: (_, state) {
+                  final extra = state.extra;
+                  final extraMap = extra is Map ? extra : null;
+                  final serviceId =
+                      state.uri.queryParameters['serviceId'] ??
+                      extraMap?['serviceId']?.toString();
+                  final serviceName =
+                      _decodeParam(state.uri.queryParameters['serviceName']) ??
+                      extraMap?['serviceName']?.toString();
+                  final rawRequestedDateTime = extraMap?['requestedDateTime'];
+                  final requestedDateTime = rawRequestedDateTime is DateTime
+                      ? rawRequestedDateTime
+                      : null;
+
+                  return MultiBlocProvider(
+                    providers: [
+                      BlocProvider(create: (_) => getit<StylistsBloc>()),
+                      BlocProvider(
+                        create: (_) => getit<StylistRecommendationBloc>(),
+                      ),
+                    ],
+                    child: StylistDetailScreen(
+                      serviceId: serviceId,
+                      serviceName: serviceName,
+                      requestedDateTime: requestedDateTime,
+                    ),
+                  );
+                },
+              ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/payment', builder: (_, __) => const PaymentMethodsScreen()),
+              GoRoute(
+                path: AppRoutes.settings,
+                builder: (_, __) => const SettingsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.payment,
+                builder: (_, __) => BlocProvider(
+                  create: (_) => getit<PaymentBloc>(),
+                  child: const PaymentMethodsScreen(),
+                ),
+              ),
             ],
           ),
         ],
       ),
       GoRoute(
-        path: '/forgot-password',
+        path: AppRoutes.forgotPasswordScreen,
         builder: (_, __) => ForgotPasswordScreen(),
       ),
       GoRoute(
-        path: '/reset-password',
+        path: AppRoutes.resetPasswordScreen,
         builder: (_, __) => ResetPasswordScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.searchScreen,
+        builder: (_, __) => const SearchScreen(),
       ),
     ],
     errorBuilder: (context, state) {
@@ -94,4 +153,13 @@ class AppRouter {
       );
     },
   );
+}
+
+String? _decodeParam(String? value) {
+  if (value == null) return null;
+  try {
+    return Uri.decodeComponent(value);
+  } catch (_) {
+    return value;
+  }
 }

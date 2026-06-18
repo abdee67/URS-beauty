@@ -26,12 +26,29 @@ class StylistModel extends Stylist {
       averageRating: json['avg_rating']?.toDouble() ?? 0.0,
       imageUrl: json['image_url'] ?? '',
       isVerified: json['is_verified'] ?? false,
-      totalReview: json['total_review'] ?? 0,
+      totalReview: json['total_reviews'] ?? 0,
       longitude: json['longitude'] ?? 0,
       latitude: json['latitude'] ?? 0,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
     );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'business_name': businessName,
+      'description': description,
+      'service_radius_km': serviceRadiusKm,
+      'avg_rating': averageRating,
+      'image_url': imageUrl,
+      'is_verified': isVerified,
+      'total_reviews': totalReview,
+      'longitude': longitude,
+      'latitude': latitude,
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+    };
   }
   Stylist toEntity() {
     return Stylist(

@@ -1,6 +1,5 @@
 import 'package:dartz/dartz.dart';
-
-import 'package:gotrue/src/types/session.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/auth/domain/repositories/auth_repository.dart';

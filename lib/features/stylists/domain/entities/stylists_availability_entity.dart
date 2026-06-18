@@ -1,5 +1,5 @@
 class StylistsAvailability {
-  final int id;
+  final String id;
   final String stylistsId;
   final String dayOfWeek;
   final String startTime;

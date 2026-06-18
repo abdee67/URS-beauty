@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 import 'package:urs_beauty/features/bookings/domain/repositories/booking_repository.dart';
 
 class CancelBooking {
@@ -7,7 +8,7 @@ class CancelBooking {
 
   final BookingRepository repository;
 
-  Future<Either<Failures, void>> call(String bookingId) {
+  Future<Either<Failures, BookingEntity>> call(String bookingId) {
     return repository.cancelBooking(bookingId);
   }
 }

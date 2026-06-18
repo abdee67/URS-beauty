@@ -1,12 +1,21 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/get_current_client.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/create_customer_address.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
+import 'package:urs_beauty/features/auth/domain/entities/customer_entity.dart';
+import 'package:urs_beauty/features/stylists/domain/entities/stylists_service.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
+import 'package:urs_beauty/features/bookings/domain/entities/create_booking_request.dart';
+import 'package:urs_beauty/features/bookings/domain/entities/create_booking_service_item.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_services.dart';
+import 'package:urs_beauty/features/bookings/domain/entities/reschedule_booking_request.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/add_notes_to_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/cancel_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/create_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/create_booking_with_services.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/get_current_location_address.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_customer_id.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_status.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/get_booking_by_sylist_id.dart';
@@ -17,6 +26,7 @@ import 'package:urs_beauty/features/bookings/domain/usecases/reschedule_booking.
 import 'package:urs_beauty/features/bookings/domain/usecases/search_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/update_booking.dart';
 import 'package:urs_beauty/features/bookings/domain/usecases/update_booking_status.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_services.dart';
 
 part 'booking_event.dart';
 part 'booking_state.dart';
@@ -37,22 +47,35 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     required this.addNotesToBooking,
     required this.updateBookingStatus,
     required this.searchBookings,
+    required this.createCustomerAddress,
+    required this.getCurrentLocationAddress,
+    required this.getCurrentCustomer,
+    required this.getStylistServices,
   }) : super(const BookingState()) {
     on<CreateBookingEvent>(_onCreateBooking);
     on<CreateBookingWithServicesEvent>(_onCreateBookingWithServices);
     on<UpdateBookingEvent>(_onUpdateBooking);
     on<CancelBookingEvent>(_onCancelBooking);
+    on<LoadMyBookingsEvent>(_onLoadMyBookings);
     on<GetBookingsEvent>(_onGetBookings);
     on<GetBookingByIdEvent>(_onGetBookingById);
     on<GetBookingsByCustomerIdEvent>(_onGetBookingsByCustomerId);
     on<GetBookingServicesEvent>(_onGetBookingServices);
     on<GetBookingsByStylistIdEvent>(_onGetBookingsByStylistId);
     on<GetBookingsByStatusEvent>(_onGetBookingsByStatus);
+    on<StartRescheduleFlowEvent>(_onStartRescheduleFlow);
     on<RescheduleBookingEvent>(_onRescheduleBooking);
     on<AddNotesToBookingEvent>(_onAddNotesToBooking);
     on<UpdateBookingStatusEvent>(_onUpdateBookingStatus);
     on<SearchBookingsEvent>(_onSearchBookings);
+    on<CreateCustomerAddressEvent>(_onCreateCustomerAddress);
+    on<UseCurrentLocationAddressEvent>(_onUseCurrentLocationAddress);
+    on<SelectBookingAddressEvent>(_onSelectBookingAddress);
+    on<ConfirmBookingEvent>(_onConfirmBooking);
     on<ClearBookingMessageEvent>(_onClearBookingMessage);
+    on<SelectDateEvent>(_onSelectDate);
+    on<SelectTimeEvent>(_onSelectTime);
+    on<LoadBookingContextEvent>(_onLoadBookingContext);
   }
 
   final CreateBooking createBooking;
@@ -69,6 +92,29 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   final AddNotesToBooking addNotesToBooking;
   final UpdateBookingStatus updateBookingStatus;
   final SearchBookings searchBookings;
+  final CreateCustomerAddress createCustomerAddress;
+  final GetCurrentLocationAddress
+  getCurrentLocationAddress; //this is common location getter(can used eveywhere it wanted as a constant)
+  final GetCurrentCustomer getCurrentCustomer;
+  final GetStylistServices getStylistServices;
+
+  void _onStartRescheduleFlow(
+    StartRescheduleFlowEvent event,
+    Emitter<BookingState> emit,
+  ) {
+    final now = DateTime.now();
+    emit(
+      state.copyWith(
+        rescheduleSourceBooking: event.booking,
+        bookingServices: const <BookingServicesEntity>[],
+        selectedDate: DateTime(now.year, now.month, now.day),
+        selectedTime: '',
+        clearSelectedBooking: true,
+        clearMessage: true,
+        clearError: true,
+      ),
+    );
+  }
 
   Future<void> _onCreateBooking(
     CreateBookingEvent event,
@@ -139,14 +185,38 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     final result = await cancelBooking(event.bookingId);
     result.fold(
       (failure) => emit(state.failure(failure.message)),
-      (_) => emit(
+      (booking) => emit(
         state.copyWith(
           status: BookingBlocStatus.cancelled,
+          selectedBooking: booking,
+          customerBookings: _mergeUpdatedBooking(state.customerBookings, booking),
+          bookings: _mergeUpdatedBooking(state.bookings, booking),
+          stylistBookings: _mergeUpdatedBooking(state.stylistBookings, booking),
+          statusBookings: _mergeUpdatedBooking(state.statusBookings, booking),
+          searchedBookings: _mergeUpdatedBooking(
+            state.searchedBookings,
+            booking,
+          ),
           message: 'Booking cancelled successfully.',
           clearError: true,
         ),
       ),
     );
+  }
+
+  Future<void> _onLoadMyBookings(
+    LoadMyBookingsEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.loading());
+
+    final customerResult = await getCurrentCustomer();
+    customerResult.fold((failure) => emit(state.failure(failure.message)), (
+      customer,
+    ) {
+      emit(state.copyWith(customer: customer, clearError: true));
+      add(GetBookingsByCustomerIdEvent(customer.id));
+    });
   }
 
   Future<void> _onGetBookings(
@@ -196,15 +266,22 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     emit(state.loading());
 
     final result = await getBookingsByCustomerId(event.customerId);
-    result.fold(
-      (failure) => emit(state.failure(failure.message)),
-      (bookings) => emit(
-        state.copyWith(
-          status: BookingBlocStatus.loaded,
-          customerBookings: bookings,
-          message: 'Customer bookings loaded successfully.',
-          clearError: true,
-        ),
+    if (result.isLeft()) {
+      result.fold(
+        (failure) => emit(state.failure(failure.message)),
+        (_) => null,
+      );
+      return;
+    }
+
+    final bookings = result.fold((_) => <BookingEntity>[], (items) => items);
+    final syncedBookings = await _syncExpiredBookings(bookings);
+    emit(
+      state.copyWith(
+        status: BookingBlocStatus.loaded,
+        customerBookings: syncedBookings,
+        message: 'Customer bookings loaded successfully.',
+        clearError: true,
       ),
     );
   }
@@ -273,18 +350,40 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     RescheduleBookingEvent event,
     Emitter<BookingState> emit,
   ) async {
-    emit(state.updating());
+    emit(state.rescheduling());
 
-    final result = await rescheduleBooking(
-      event.bookingId,
-      event.newScheduledAt,
-    );
+    final result = await rescheduleBooking(event.request);
     result.fold(
       (failure) => emit(state.failure(failure.message)),
       (booking) => emit(
         state.copyWith(
-          status: BookingBlocStatus.updated,
+          status: BookingBlocStatus.rescheduled,
           selectedBooking: booking,
+          customerBookings: _mergeRescheduledBooking(
+            state.customerBookings,
+            event.request.bookingId,
+            booking,
+          ),
+          bookings: _mergeRescheduledBooking(
+            state.bookings,
+            event.request.bookingId,
+            booking,
+          ),
+          stylistBookings: _mergeRescheduledBooking(
+            state.stylistBookings,
+            event.request.bookingId,
+            booking,
+          ),
+          statusBookings: _mergeRescheduledBooking(
+            state.statusBookings,
+            event.request.bookingId,
+            booking,
+          ),
+          searchedBookings: _mergeRescheduledBooking(
+            state.searchedBookings,
+            event.request.bookingId,
+            booking,
+          ),
           message: 'Booking rescheduled successfully.',
           clearError: true,
         ),
@@ -325,6 +424,17 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         state.copyWith(
           status: BookingBlocStatus.updated,
           selectedBooking: booking,
+          customerBookings: _mergeUpdatedBooking(
+            state.customerBookings,
+            booking,
+          ),
+          bookings: _mergeUpdatedBooking(state.bookings, booking),
+          stylistBookings: _mergeUpdatedBooking(state.stylistBookings, booking),
+          statusBookings: _mergeUpdatedBooking(state.statusBookings, booking),
+          searchedBookings: _mergeUpdatedBooking(
+            state.searchedBookings,
+            booking,
+          ),
           message: 'Booking status updated successfully.',
           clearError: true,
         ),
@@ -353,10 +463,336 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     );
   }
 
+  Future<void> _onCreateCustomerAddress(
+    CreateCustomerAddressEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.addressCreating());
+
+    final result = await createCustomerAddress(event.input);
+    result.fold(
+      (failure) => emit(state.failure(failure.message)),
+      (address) => emit(
+        state.copyWith(
+          status: BookingBlocStatus.addressCreated,
+          createdAddress: address,
+          addresses: _mergeAddresses(state.addresses, address),
+          selectedAddressId: address.id,
+          message: 'Address saved successfully.',
+          clearError: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onUseCurrentLocationAddress(
+    UseCurrentLocationAddressEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.addressCreating());
+
+    final locationResult = await getCurrentLocationAddress();
+    if (locationResult.isLeft()) {
+      locationResult.fold(
+        (failure) => emit(state.failure(failure.message)),
+        (_) => null,
+      );
+      return;
+    }
+
+    final input = locationResult.fold((_) => null, (value) => value)!;
+    add(CreateCustomerAddressEvent(input));
+  }
+
+  void _onSelectBookingAddress(
+    SelectBookingAddressEvent event,
+    Emitter<BookingState> emit,
+  ) {
+    emit(state.copyWith(selectedAddressId: event.addressId, clearError: true));
+  }
+
+  Future<void> _onConfirmBooking(
+    ConfirmBookingEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    final customer = state.customer;
+    final stylistService = state.stylistService;
+    final selectedAddressId = state.selectedAddressId?.trim() ?? '';
+
+    if (customer == null || stylistService == null) {
+      emit(
+        state.failure('Booking details are still loading. Please try again.'),
+      );
+      return;
+    }
+
+    if (selectedAddressId.isEmpty) {
+      emit(state.failure('Please choose a booking address.'));
+      return;
+    }
+
+    emit(state.creating());
+
+    final request = CreateBookingRequestEntity(
+      customerId: customer.id,
+      stylistId: event.stylistId,
+      scheduledAt: event.scheduledAt,
+      addressId: selectedAddressId,
+      notes: event.notes,
+      items: [
+        CreateBookingServiceItemEntity(
+          serviceId: event.serviceId,
+          stylistServiceId: stylistService.id,
+          quantity: 1,
+        ),
+      ],
+    );
+
+    final result = await createBookingWithServices(request);
+    result.fold(
+      (failure) => emit(state.failure(failure.message)),
+      (booking) => emit(
+        state.copyWith(
+          status: BookingBlocStatus.created,
+          selectedBooking: booking,
+          message: 'Booking created successfully.',
+          clearError: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onSelectDate(
+    SelectDateEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.copyWith(selectedDate: event.date));
+  }
+
+  Future<void> _onSelectTime(
+    SelectTimeEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.copyWith(selectedTime: event.time));
+  }
+
   void _onClearBookingMessage(
     ClearBookingMessageEvent event,
     Emitter<BookingState> emit,
   ) {
     emit(state.copyWith(clearMessage: true, clearError: true));
+  }
+
+  Future<void> _onLoadBookingContext(
+    LoadBookingContextEvent event,
+    Emitter<BookingState> emit,
+  ) async {
+    emit(state.loading());
+
+    final customerResult = await getCurrentCustomer();
+    final stylistServicesResult = await getStylistServices(event.stylistId);
+
+    // Handle failures
+    if (customerResult.isLeft()) {
+      return customerResult.fold(
+        (failure) => emit(state.failure(failure.message)),
+        (_) => null,
+      );
+    }
+
+    if (stylistServicesResult.isLeft()) {
+      return stylistServicesResult.fold(
+        (failure) => emit(state.failure(failure.message)),
+        (_) => null,
+      );
+    }
+
+    final customer = customerResult.fold((l) => null, (r) => r)!;
+    final stylistServices = stylistServicesResult.fold(
+      (l) => <StylistsServiceEntity>[],
+      (r) => r,
+    );
+
+    final matchingService = stylistServices
+        .where((service) => service.isAvailable)
+        .where((service) => service.serviceId == event.serviceId)
+        .cast<StylistsServiceEntity?>()
+        .firstWhere((service) => service != null, orElse: () => null);
+
+    if (matchingService == null) {
+      emit(
+        state.failure(
+          'This stylist is not available for the selected service.',
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        status: BookingBlocStatus.loaded,
+        customer: customer,
+        stylistService: matchingService,
+        addresses: customer.addresses,
+        selectedAddressId: customer.defaultAddress?.id,
+        message: 'Booking context loaded.',
+        clearError: true,
+      ),
+    );
+  }
+
+  List<CustomerAddressEntity> _mergeAddresses(
+    List<CustomerAddressEntity> addresses,
+    CustomerAddressEntity createdAddress,
+  ) {
+    final existingIndex = addresses.indexWhere(
+      (address) => address.id == createdAddress.id,
+    );
+
+    if (existingIndex == -1) {
+      return <CustomerAddressEntity>[...addresses, createdAddress];
+    }
+
+    final updated = <CustomerAddressEntity>[...addresses];
+    updated[existingIndex] = createdAddress;
+    return updated;
+  }
+
+  Future<List<BookingEntity>> _syncExpiredBookings(
+    List<BookingEntity> bookings,
+  ) async {
+    final now = DateTime.now();
+    final syncedBookings = <BookingEntity>[];
+
+    for (final booking in bookings) {
+      final shouldMarkPassed =
+          booking.status == BookingStatus.pending &&
+          booking.endAt.isBefore(now);
+
+      if (!shouldMarkPassed) {
+        syncedBookings.add(booking);
+        continue;
+      }
+
+      final result = await updateBookingStatus(
+        booking.id,
+        BookingStatus.noShow.name,
+      );
+
+      result.fold(
+        (_) => syncedBookings.add(
+          BookingEntity(
+            id: booking.id,
+            customerId: booking.customerId,
+            stylistId: booking.stylistId,
+            serviceName: booking.serviceName,
+            stylistName: booking.stylistName,
+            status: BookingStatus.noShow,
+            notes: booking.notes,
+            addressId: booking.addressId,
+            totalAmount: booking.totalAmount,
+            scheduledAt: booking.scheduledAt,
+            endAt: booking.endAt,
+            createdAt: booking.createdAt,
+            updatedAt: DateTime.now(),
+            isReviewed: booking.isReviewed,
+            rescheduledFrom: booking.rescheduledFrom,
+            rescheduledCount: booking.rescheduledCount,
+            currency: booking.currency,
+            paymentMethod: booking.paymentMethod,
+            paymentStatus: booking.paymentStatus,
+            paidAmount: booking.paidAmount,
+            refundAmount: booking.refundAmount,
+            commissionAmount: booking.commissionAmount,
+            stylistEarning: booking.stylistEarning,
+          ),
+        ),
+        (updatedBooking) => syncedBookings.add(updatedBooking),
+      );
+    }
+
+    return syncedBookings;
+  }
+
+  List<BookingEntity> _mergeUpdatedBooking(
+    List<BookingEntity> bookings,
+    BookingEntity updatedBooking,
+  ) {
+    final bookingIndex = bookings.indexWhere(
+      (booking) => booking.id == updatedBooking.id,
+    );
+
+    if (bookingIndex == -1) {
+      return bookings;
+    }
+
+    final mergedBookings = <BookingEntity>[...bookings];
+    mergedBookings[bookingIndex] = updatedBooking;
+    return mergedBookings;
+  }
+
+  List<BookingEntity> _mergeRescheduledBooking(
+    List<BookingEntity> bookings,
+    String sourceBookingId,
+    BookingEntity rescheduledBooking,
+  ) {
+    if (bookings.isEmpty) {
+      return bookings;
+    }
+
+    final mergedBookings = <BookingEntity>[];
+    var sourceFound = false;
+
+    for (final booking in bookings) {
+      if (booking.id == rescheduledBooking.id) {
+        continue;
+      }
+
+      if (booking.id != sourceBookingId) {
+        mergedBookings.add(booking);
+        continue;
+      }
+
+      sourceFound = true;
+      mergedBookings.add(
+        BookingEntity(
+          id: booking.id,
+          customerId: booking.customerId,
+          stylistId: booking.stylistId,
+          serviceName: booking.serviceName,
+          stylistName: booking.stylistName,
+          status: booking.status == BookingStatus.pending
+              ? BookingStatus.cancelled
+              : booking.status,
+          notes: booking.notes,
+          addressId: booking.addressId,
+          totalAmount: booking.totalAmount,
+          scheduledAt: booking.scheduledAt,
+          endAt: booking.endAt,
+          createdAt: booking.createdAt,
+          updatedAt: DateTime.now(),
+          isReviewed: booking.isReviewed,
+          rescheduledFrom: booking.rescheduledFrom,
+          rescheduledCount:
+              booking.rescheduledCount < rescheduledBooking.rescheduledCount
+              ? rescheduledBooking.rescheduledCount
+              : booking.rescheduledCount,
+          currency: booking.currency,
+          paymentMethod: booking.paymentMethod,
+          paymentStatus: booking.paymentStatus,
+          paidAmount: booking.paidAmount,
+          refundAmount: booking.refundAmount,
+          commissionAmount: booking.commissionAmount,
+          stylistEarning: booking.stylistEarning,
+        ),
+      );
+    }
+
+    if (!sourceFound) {
+      return bookings;
+    }
+
+    mergedBookings.add(rescheduledBooking);
+    return mergedBookings;
   }
 }

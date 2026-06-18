@@ -5,6 +5,7 @@ import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_dat
 import 'package:urs_beauty/features/bookings/data/models/booking_model.dart';
 import 'package:urs_beauty/features/bookings/data/models/booking_services_model.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
+import 'package:urs_beauty/features/bookings/data/models/reschedule_booking_request_model.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 
 class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
@@ -14,8 +15,12 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   final SupabaseClient _client;
 
   static const String _bookingColumns =
-      'id, customer, stylist, status, notes, address, total_amount, '
-      'scheduled_at, end_at, created_at, updated_at';
+      'id, customer, stylist, status, is_reviewed, rescheduled_from, '
+      'rescheduled_count, notes, address, total_amount, scheduled_at, end_at, '
+      'created_at, updated_at, payment_method, payment_status, currency, '
+      'paid_amount, refund_amount, commission_amount, stylist_earning, '
+      'stylist_profile:stylists(business_name), '
+      'booked_services:booking_services(service_name)';
   static const String _bookingServicesColumns =
       'id, booking_id, service_name, service_id, stylist_service_id, '
       'quantity, price_at_booking, duration_at_booking';
@@ -66,17 +71,31 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<void> cancelBooking(String bookingId) {
+  Future<BookingModel> cancelBooking(String bookingId) {
     return _run(() async {
       _requireValue(bookingId, 'Booking id is required to cancel a booking');
 
-      await _client
-          .from('bookings')
-          .update({
-            'status': BookingStatus.cancelled.name,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', bookingId);
+      final response = await _client.functions.invoke(
+        'cancel-booking',
+        body: {'booking_id': bookingId},
+      );
+
+      final data = response.data;
+      if (data is! Map && data is! Map<String, dynamic>) {
+        throw Failures(
+          message: 'Unexpected response from cancel-booking function.',
+        );
+      }
+
+      final payload = Map<String, dynamic>.from(data as Map);
+      final booking = payload['booking'];
+      if (booking is! Map && booking is! Map<String, dynamic>) {
+        throw Failures(
+          message: 'cancel-booking did not return an updated booking.',
+        );
+      }
+
+      return _mapBooking(booking);
     });
   }
 
@@ -153,9 +172,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<List<BookingModel>> getBookingsByStatus(String status) {
+  Future<List<BookingModel>> getBookingsByStatus(BookingStatus status) {
     return _run(() async {
-      final normalizedStatus = _normalizeStatus(status);
+      final normalizedStatus = _normalizeStatus(status.name);
 
       final response = await _client
           .from('bookings')
@@ -169,12 +188,18 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   @override
   Future<BookingModel> rescheduleBooking(
-    String bookingId,
-    DateTime newScheduledAt,
+    RescheduleBookingRequestModel request,
   ) {
-    return _updateBookingFields(bookingId, {
-      'scheduled_at': newScheduledAt.toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
+    return _run(() async {
+      _requireValue(request.bookingId, 'Booking id is required');
+      _requireValue(request.stylistId, 'Stylist id is required');
+
+      final response = await _client.rpc(
+        'reschedule_booking',
+        params: request.toRpcParams(),
+      );
+
+      return _mapRpcBooking(response);
     });
   }
 
@@ -182,7 +207,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   Future<BookingModel> addNotesToBooking(String bookingId, String notes) {
     return _updateBookingFields(bookingId, {
       'notes': notes.trim().isEmpty ? null : notes.trim(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 
@@ -190,7 +215,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   Future<BookingModel> updateBookingStatus(String bookingId, String status) {
     return _updateBookingFields(bookingId, {
       'status': _normalizeStatus(status),
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     });
   }
 
@@ -205,14 +230,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       final response = await _client
           .from('bookings')
           .select(_bookingColumns)
-          .or(
-            'id.ilike.%$normalizedQuery%,'
-            'customer.ilike.%$normalizedQuery%,'
-            'stylist.ilike.%$normalizedQuery%,'
-            'status.ilike.%$normalizedQuery%,'
-            'address.ilike.%$normalizedQuery%,'
-            'notes.ilike.%$normalizedQuery%',
-          )
+          .ilike('notes', '%$normalizedQuery%')
           .order('scheduled_at', ascending: false);
 
       return _mapBookingList(response);
@@ -242,6 +260,12 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       return await operation();
     } on Failures {
       rethrow;
+    } on FunctionException catch (e) {
+      final details = e.details;
+      if (details is Map && details['message'] != null) {
+        throw Failures(message: details['message'].toString());
+      }
+      throw Failures(message: e.reasonPhrase ?? 'Function invocation failed');
     } on PostgrestException catch (e) {
       throw Failures(message: e.message);
     } catch (e) {
@@ -306,12 +330,20 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'stylist': booking.stylistId,
       'status': booking.status.name,
       'notes': booking.notes,
-      'address': booking.address,
+      'address': booking.addressId,
       'total_amount': booking.totalAmount,
-      'scheduled_at': booking.scheduledAt.toIso8601String(),
-      'end_at': booking.endAt.toIso8601String(),
-      'created_at': booking.createdAt.toIso8601String(),
-      'updated_at': booking.updatedAt.toIso8601String(),
+      'scheduled_at': booking.scheduledAt.toUtc().toIso8601String(),
+      'end_at': booking.endAt.toUtc().toIso8601String(),
+      'is_reviewed': booking.isReviewed,
+      'rescheduled_from': booking.rescheduledFrom,
+      'rescheduled_count': booking.rescheduledCount,
+      'payment_method': booking.paymentMethod,
+      'payment_status': booking.paymentStatus.name,
+      'currency': booking.currency,
+      'paid_amount': booking.paidAmount,
+      'refund_amount': booking.refundAmount,
+      'commission_amount': booking.commissionAmount,
+      'stylist_earning': booking.stylistEarning,
     };
 
     if (booking.id.trim().isNotEmpty) {
@@ -327,11 +359,21 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'stylist': booking.stylistId,
       'status': booking.status.name,
       'notes': booking.notes,
-      'address': booking.address,
+      'address': booking.addressId,
       'total_amount': booking.totalAmount,
-      'scheduled_at': booking.scheduledAt.toIso8601String(),
-      'end_at': booking.endAt.toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'scheduled_at': booking.scheduledAt.toUtc().toIso8601String(),
+      'end_at': booking.endAt.toUtc().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'is_reviewed': booking.isReviewed,
+      'rescheduled_from': booking.rescheduledFrom,
+      'rescheduled_count': booking.rescheduledCount,
+      'payment_method': booking.paymentMethod,
+      'payment_status': booking.paymentStatus.name,
+      'currency': booking.currency,
+      'paid_amount': booking.paidAmount,
+      'refund_amount': booking.refundAmount,
+      'commission_amount': booking.commissionAmount,
+      'stylist_earning': booking.stylistEarning,
     };
   }
 
@@ -349,17 +391,17 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   void _validateCreateBookingRequest(CreateBookingRequestModel request) {
     _requireValue(request.customerId, 'Customer id is required');
     _requireValue(request.stylistId, 'Stylist id is required');
-    _requireValue(request.address, 'Booking address is required');
+    _requireValue(request.addressId, 'Booking address is required');
 
     if (request.items.isEmpty) {
       throw Failures(message: 'At least one service item is required');
     }
 
     for (final item in request.items) {
-      if (item.serviceId <= 0) {
+      if (item.serviceId.trim().isEmpty) {
         throw Failures(message: 'Each booking item must have a valid service');
       }
-      if (item.stylistServiceId <= 0) {
+      if (item.stylistServiceId.trim().isEmpty) {
         throw Failures(
           message: 'Each booking item must have a valid stylist service',
         );
@@ -377,8 +419,4 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       throw Failures(message: message);
     }
   }
-}
-
-class BookingsRemoteDataSourceImpl extends BookingRemoteDataSourceImpl {
-  BookingsRemoteDataSourceImpl({super.client});
 }

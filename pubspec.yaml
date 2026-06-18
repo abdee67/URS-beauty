@@ -32,6 +32,12 @@ dependencies:
   otp_text_field: ^1.1.3
   flutter_dotenv: ^5.2.1
   carousel_slider: ^5.1.1
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+  location: ^8.0.1
+  http: ^1.6.0
+  flutter_stripe: ^12.6.0
+  google_maps_flutter: ^2.17.1
 
 dev_dependencies:
   flutter_test:
@@ -53,7 +59,7 @@ flutter:
     - assets/images/onboarding3.png
     - assets/images/onboarding4.png
     - assets/images/onboarding3.jpeg
-    - .env
+    - assets/.env
   fonts:
     - family: BitcountPropSingle
       fonts:

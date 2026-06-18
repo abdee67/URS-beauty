@@ -6,12 +6,17 @@ enum BookingBlocStatus {
   loaded,
   creating,
   created,
+  addressCreating,
+  addressCreated,
   updating,
   updated,
   cancelling,
   cancelled,
   servicesLoading,
   servicesLoaded,
+  booking,
+  rescheduling,
+  rescheduled,
   searching,
   searched,
   failure,
@@ -26,7 +31,15 @@ class BookingState extends Equatable {
     this.statusBookings = const [],
     this.searchedBookings = const [],
     this.bookingServices = const [],
+    this.selectedDate,
+    this.selectedTime = '',
     this.selectedBooking,
+    this.rescheduleSourceBooking,
+    this.createdAddress,
+    this.customer,
+    this.stylistService,
+    this.addresses = const [],
+    this.selectedAddressId,
     this.message,
     this.errorMessage = '',
     this.query,
@@ -40,6 +53,14 @@ class BookingState extends Equatable {
   final List<BookingEntity> searchedBookings;
   final List<BookingServicesEntity> bookingServices;
   final BookingEntity? selectedBooking;
+  final BookingEntity? rescheduleSourceBooking;
+  final CustomerAddressEntity? createdAddress;
+  final CustomerEntity? customer;
+  final StylistsServiceEntity? stylistService;
+  final List<CustomerAddressEntity> addresses;
+  final String? selectedAddressId;
+  final DateTime? selectedDate;
+  final String selectedTime;
   final String? message;
   final String errorMessage;
   final String? query;
@@ -53,11 +74,25 @@ class BookingState extends Equatable {
   BookingState creating() =>
       copyWith(status: BookingBlocStatus.creating, clearError: true);
 
+  BookingState addressCreating() =>
+      copyWith(status: BookingBlocStatus.addressCreating, clearError: true);
+
+  BookingState addressCreated(CustomerAddressEntity address) => copyWith(
+        status: BookingBlocStatus.addressCreated,
+        createdAddress: address,
+        clearError: true,
+      );
+
   BookingState updating() =>
       copyWith(status: BookingBlocStatus.updating, clearError: true);
 
   BookingState cancelling() =>
       copyWith(status: BookingBlocStatus.cancelling, clearError: true);
+
+  BookingState rescheduling() =>
+      copyWith(status: BookingBlocStatus.rescheduling, clearError: true);
+
+  BookingState booking() => copyWith(status: BookingBlocStatus.booking);
 
   BookingState servicesLoading() =>
       copyWith(status: BookingBlocStatus.servicesLoading, clearError: true);
@@ -80,10 +115,19 @@ class BookingState extends Equatable {
     List<BookingEntity>? searchedBookings,
     List<BookingServicesEntity>? bookingServices,
     BookingEntity? selectedBooking,
+    BookingEntity? rescheduleSourceBooking,
+    CustomerAddressEntity? createdAddress,
+    CustomerEntity? customer,
+    StylistsServiceEntity? stylistService,
+    List<CustomerAddressEntity>? addresses,
+    String? selectedAddressId,
+    DateTime? selectedDate,
+    String? selectedTime,
     String? message,
     String? errorMessage,
     String? query,
     bool clearSelectedBooking = false,
+    bool clearRescheduleSourceBooking = false,
     bool clearMessage = false,
     bool clearError = false,
     bool clearQuery = false,
@@ -99,6 +143,16 @@ class BookingState extends Equatable {
       selectedBooking: clearSelectedBooking
           ? null
           : (selectedBooking ?? this.selectedBooking),
+      rescheduleSourceBooking: clearRescheduleSourceBooking
+          ? null
+          : (rescheduleSourceBooking ?? this.rescheduleSourceBooking),
+      createdAddress: createdAddress ?? this.createdAddress,
+      customer: customer ?? this.customer,
+      stylistService: stylistService ?? this.stylistService,
+      addresses: addresses ?? this.addresses,
+      selectedAddressId: selectedAddressId ?? this.selectedAddressId,
+      selectedDate: selectedDate ?? this.selectedDate,
+      selectedTime: selectedTime ?? this.selectedTime,
       message: clearMessage ? null : (message ?? this.message),
       errorMessage: clearError ? '' : (errorMessage ?? this.errorMessage),
       query: clearQuery ? null : (query ?? this.query),
@@ -115,6 +169,14 @@ class BookingState extends Equatable {
     searchedBookings,
     bookingServices,
     selectedBooking,
+    rescheduleSourceBooking,
+    createdAddress,
+    customer,
+    stylistService,
+    addresses,
+    selectedAddressId,
+    selectedDate,
+    selectedTime,
     message,
     errorMessage,
     query,

@@ -1,22 +1,32 @@
+import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
+import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source.dart';
 import 'package:urs_beauty/features/bookings/data/models/booking_model.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
+import 'package:urs_beauty/features/bookings/data/models/reschedule_booking_request_model.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_services.dart';
+import 'package:urs_beauty/features/bookings/domain/entities/create_booking_request.dart';
+import 'package:urs_beauty/features/bookings/data/models/create_booking_service_item_model.dart';
+import 'package:urs_beauty/features/bookings/domain/entities/reschedule_booking_request.dart';
 import 'package:urs_beauty/features/bookings/domain/repositories/booking_repository.dart';
 
 class BookingRepositoryImpl implements BookingRepository {
-  BookingRepositoryImpl({required this.remoteDataSource});
+  BookingRepositoryImpl({
+    required this.remoteDataSource,
+    required this.locationDataSource,
+  });
 
   final BookingRemoteDataSource remoteDataSource;
+  final AuthLocationDataSource locationDataSource;
 
   @override
   Future<Either<Failures, BookingEntity>> createBooking(
     BookingEntity booking,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.createBooking(
         _mapBookingEntityToModel(booking),
       );
@@ -26,10 +36,12 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failures, BookingEntity>> createBookingWithServices(
-    CreateBookingRequestModel request,
+    CreateBookingRequestEntity request,
   ) async {
-    return _runBookingOperation(() async {
-      final result = await remoteDataSource.createBookingWithServices(request);
+    return _runOperation(() async {
+      final result = await remoteDataSource.createBookingWithServices(
+        _mapCreateBookingRequestToModel(request),
+      );
       return result.toEntity();
     });
   }
@@ -38,7 +50,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> updateBooking(
     BookingEntity booking,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.updateBooking(
         _mapBookingEntityToModel(booking),
       );
@@ -47,9 +59,10 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
-  Future<Either<Failures, void>> cancelBooking(String bookingId) async {
+  Future<Either<Failures, BookingEntity>> cancelBooking(String bookingId) async {
     return _runOperation(() async {
-      await remoteDataSource.cancelBooking(bookingId);
+      final result = await remoteDataSource.cancelBooking(bookingId);
+      return result.toEntity();
     });
   }
 
@@ -67,7 +80,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> getBookingById(
     String bookingId,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.getBookingById(bookingId);
       return result.toEntity();
     });
@@ -111,7 +124,7 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failures, List<BookingEntity>>> getBookingsByStatus(
-    String status,
+    BookingStatus status,
   ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.getBookingsByStatus(status);
@@ -123,13 +136,15 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failures, BookingEntity>> rescheduleBooking(
-    String bookingId,
-    DateTime newScheduledAt,
+    RescheduleBookingRequestEntity request,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.rescheduleBooking(
-        bookingId,
-        newScheduledAt,
+        RescheduleBookingRequestModel(
+          bookingId: request.bookingId,
+          stylistId: request.stylistId,
+          scheduledAt: request.scheduledAt,
+        ),
       );
       return result.toEntity();
     });
@@ -140,7 +155,7 @@ class BookingRepositoryImpl implements BookingRepository {
     String bookingId,
     String notes,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.addNotesToBooking(bookingId, notes);
       return result.toEntity();
     });
@@ -151,7 +166,7 @@ class BookingRepositoryImpl implements BookingRepository {
     String bookingId,
     String status,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.updateBookingStatus(
         bookingId,
         status,
@@ -172,10 +187,9 @@ class BookingRepositoryImpl implements BookingRepository {
     });
   }
 
-  Future<Either<Failures, BookingEntity>> _runBookingOperation(
-    Future<BookingEntity> Function() operation,
-  ) async {
-    return _runOperation(operation);
+  @override
+  Future<Either<Failures, CustomerAddressInput>> getCurrentLocationAddress() {
+    return _runOperation(() => locationDataSource.getCurrentLocationAddress());
   }
 
   Future<Either<Failures, T>> _runOperation<T>(
@@ -195,14 +209,47 @@ class BookingRepositoryImpl implements BookingRepository {
       id: booking.id,
       customerId: booking.customerId,
       stylistId: booking.stylistId,
+      serviceName: booking.serviceName,
+      stylistName: booking.stylistName,
       status: booking.status,
       notes: booking.notes,
-      address: booking.address,
+      addressId: booking.addressId,
       totalAmount: booking.totalAmount,
       scheduledAt: booking.scheduledAt,
       endAt: booking.endAt,
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
+      isReviewed: booking.isReviewed,
+      rescheduledFrom: booking.rescheduledFrom,
+      rescheduledCount: booking.rescheduledCount,
+      paymentMethod: booking.paymentMethod,
+      paymentStatus: booking.paymentStatus,
+      currency: booking.currency,
+      paidAmount: booking.paidAmount,
+      refundAmount: booking.refundAmount,
+      commissionAmount: booking.commissionAmount,
+      stylistEarning: booking.stylistEarning,
+    );
+  }
+
+  CreateBookingRequestModel _mapCreateBookingRequestToModel(
+    CreateBookingRequestEntity request,
+  ) {
+    return CreateBookingRequestModel(
+      customerId: request.customerId,
+      stylistId: request.stylistId,
+      scheduledAt: request.scheduledAt,
+      addressId: request.addressId,
+      notes: request.notes,
+      items: request.items
+          .map(
+            (item) => CreateBookingServiceItemModel(
+              serviceId: item.serviceId,
+              stylistServiceId: item.stylistServiceId,
+              quantity: item.quantity,
+            ),
+          )
+          .toList(),
     );
   }
 }

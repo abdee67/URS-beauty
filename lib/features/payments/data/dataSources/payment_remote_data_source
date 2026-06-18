@@ -1,0 +1,42 @@
+import 'package:urs_beauty/features/payments/data/models/payment_model.dart';
+
+abstract class PaymentRemoteDataSource {
+  Future<PaymentModel> createCardPayment(
+    String bookingId,
+    PaymentModel payment,
+  );
+
+  Future<PaymentModel> confirmCardPayment(String transactionReference);
+
+  Future<PaymentModel> handleCardPaymentFailure(String transactionReference);
+
+  Future<PaymentModel> getCardPaymentStatus(String paymentId, String bookingId);
+
+  Future<PaymentModel> canclePendingCardPayment(String paymentId);
+
+  Future<PaymentModel> createBankTransferPayment(
+    String bookingId,
+    String proofUrl,
+    String reference,
+  );
+
+  Future<PaymentModel> verfiyBankTransferPayment(
+    String paymentId,
+    bool isVerified,
+  );
+
+  Future<PaymentModel> calculateRefund(String paymentId);
+
+  Future<PaymentModel> processRefundPayment(String paymentId);
+
+  Future<PaymentModel> calculateRescheduleCost(
+    String bookingId,
+    String newServiceId,
+  );
+
+  Future<PaymentModel> processReschedulePayment(
+    String bookingId,
+    DateTime newDateTime,
+    String newServiceId,
+  );
+}
