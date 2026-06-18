@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:location/location.dart' as loc;
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
@@ -240,22 +241,30 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
   @override
   Future<Position> getClientLocation() {
     return _run(() async {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      loc.Location location = loc.Location();
+      bool serviceEnabled = await location.serviceEnabled();
       if (!serviceEnabled) {
-        throw LocationFailure(
-          message: 'Please enable location services to find stylists near you.',
-        );
+        serviceEnabled = await location.requestService();
+        if (!serviceEnabled) {
+          throw LocationFailure(
+            message:
+                'Please enable location services to find stylists near you.',
+          );
+        }
       }
-
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
 
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        throw LocationFailure(
-          message: 'Location permission is required to find nearby stylists.',
+      if (permission == LocationPermission.denied) {
+        throw Failures(message: 'Location permissions are denied.');
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Failures(
+          message:
+              'Location permissions are permanently denied, we cannot request permissions.',
         );
       }
 
