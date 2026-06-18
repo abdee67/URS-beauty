@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
-import 'package:urs_beauty/features/bookings/presentation/screens/booking_success_screen.dart';
+import 'package:urs_beauty/features/bookings/presentation/screens/booking_page.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/address_option_card_widget.dart';
 import 'package:urs_beauty/core/widgets/error_state.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/empty_address_state_widget.dart';
@@ -87,13 +87,19 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
         if (state.status == BookingBlocStatus.created &&
             state.selectedBooking != null) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Booking created. Payment will be collected after the service is completed.',
+                ),
+              ),
+            );
+
           Navigator.of(context).pushReplacement(
             MaterialPageRoute<void>(
-              builder: (_) => BookingSuccessScreen(
-                booking: state.selectedBooking!,
-                serviceName: widget.serviceName,
-                stylistName: widget.stylist.businessName,
-              ),
+              builder: (_) => const BookingPage(),
             ),
           );
         }
@@ -266,7 +272,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                       ),
                     ),
                     child: Text(
-                      isSubmitting ? 'Confirming...' : 'Confirm booking',
+                      isSubmitting
+                          ? 'Creating booking...'
+                          : 'Confirm booking',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,

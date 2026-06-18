@@ -10,7 +10,7 @@ abstract class BookingRemoteDataSource {
     CreateBookingRequestModel request,
   );
   Future<BookingModel> updateBooking(BookingModel booking);
-  Future<void> cancelBooking(String bookingId);
+  Future<BookingModel> cancelBooking(String bookingId);
   Future<List<BookingModel>> getBookings();
   Future<BookingModel> getBookingById(String bookingId);
   Future<List<BookingServicesModel>> getBookingServices(String bookingId);

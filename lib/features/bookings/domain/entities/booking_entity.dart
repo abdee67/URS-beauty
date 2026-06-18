@@ -1,5 +1,14 @@
 enum BookingStatus { pending, completed, cancelled, noShow }
 
+enum PaymentStatus {
+  pending,
+  paid,
+  refunded,
+  failed,
+  partialRefunded,
+  pendingVerification,
+}
+
 class BookingEntity {
   final String id;
   final String customerId;
@@ -17,6 +26,26 @@ class BookingEntity {
   final bool isReviewed;
   final String? rescheduledFrom;
   final int rescheduledCount;
+  final String paymentMethod;
+  final PaymentStatus paymentStatus;
+  final String? currency;
+  final double? paidAmount;
+  final double? refundAmount;
+  final double? commissionAmount;
+  final double? stylistEarning;
+
+  bool get isPaid => paymentStatus == PaymentStatus.paid;
+
+  bool get isPaymentAwaitingVerification =>
+      paymentStatus == PaymentStatus.pendingVerification;
+
+  bool get canReviewCompletedService =>
+      status == BookingStatus.completed && isPaid && !isReviewed;
+
+  bool get canCollectPostServicePayment =>
+      status == BookingStatus.completed &&
+      (paymentStatus == PaymentStatus.pending ||
+          paymentStatus == PaymentStatus.failed);
 
   const BookingEntity({
     required this.id,
@@ -35,5 +64,12 @@ class BookingEntity {
     this.isReviewed = false,
     this.rescheduledFrom,
     this.rescheduledCount = 0,
+    this.paymentMethod = '',
+    this.paymentStatus = PaymentStatus.pending,
+    this.currency = 'ETB',
+    this.paidAmount = 0,
+    this.refundAmount = 0,
+    this.commissionAmount = 0,
+    this.stylistEarning = 0,
   });
 }

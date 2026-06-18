@@ -16,6 +16,7 @@ class BookingListItem extends StatelessWidget {
     this.onReschedule,
     this.review,
     this.onReviewTap,
+    this.onPayNow,
   });
 
   final BookingEntity booking;
@@ -26,6 +27,7 @@ class BookingListItem extends StatelessWidget {
   final VoidCallback? onReschedule;
   final ReviewEntity? review;
   final VoidCallback? onReviewTap;
+  final VoidCallback? onPayNow;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +94,12 @@ class BookingListItem extends StatelessWidget {
             label: 'Date & time',
             value: formattedDate,
           ),
+          const SizedBox(height: 10),
+          MetaRow(
+            icon: Icons.payments_outlined,
+            label: 'Payment',
+            value: _paymentSummary(booking),
+          ),
           if ((booking.notes ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 10),
             MetaRow(
@@ -150,8 +158,37 @@ class BookingListItem extends StatelessWidget {
           ]
           //for completed and not history
           else if (isCompleted) ...[
-            if (booking.status == BookingStatus.completed &&
-                booking.isReviewed == false) ...[
+            if (booking.canCollectPostServicePayment && onPayNow != null) ...[
+              const SizedBox(height: 18),
+              _PaymentNotice(
+                text: booking.paymentStatus == PaymentStatus.failed
+                    ? 'The last payment attempt did not go through. You can retry securely with card payment.'
+                    : 'Your service is complete. Pay now to finish this booking.',
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onPayNow,
+                  icon: const Icon(Icons.lock_clock_rounded),
+                  label: Text(_paymentButtonLabel(booking)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6B3F32),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ] else if (booking.isPaymentAwaitingVerification) ...[
+              const SizedBox(height: 18),
+              const _PaymentNotice(
+                text:
+                    'Your payment is being verified. Pull to refresh in a moment.',
+              ),
+            ] else if (booking.canReviewCompletedService) ...[
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
@@ -215,6 +252,59 @@ class BookingListItem extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  String _paymentSummary(BookingEntity booking) {
+    switch (booking.paymentStatus) {
+      case PaymentStatus.paid:
+        final paidAmount = (booking.paidAmount ?? 0) > 0
+            ? booking.paidAmount!
+            : booking.totalAmount;
+        return 'Paid ${booking.currency ?? 'ETB'} ${paidAmount.toStringAsFixed(2)}';
+      case PaymentStatus.failed:
+        return 'Payment failed';
+      case PaymentStatus.pendingVerification:
+        return 'Awaiting verification';
+      case PaymentStatus.refunded:
+        return 'Refunded';
+      case PaymentStatus.partialRefunded:
+        return 'Partially refunded';
+      case PaymentStatus.pending:
+        return booking.status == BookingStatus.completed
+            ? 'Waiting for customer payment'
+            : 'Payment due after service';
+    }
+  }
+
+  String _paymentButtonLabel(BookingEntity booking) {
+    return booking.paymentStatus == PaymentStatus.failed
+        ? 'Retry payment'
+        : 'Pay now';
+  }
+}
+
+class _PaymentNotice extends StatelessWidget {
+  const _PaymentNotice({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8EFE7),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFF7B6156),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

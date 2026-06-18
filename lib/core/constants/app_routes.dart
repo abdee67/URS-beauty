@@ -1,4 +1,4 @@
-class AppRoutes{
+class AppRoutes {
   static const String initialRoute = '/';
   static const String onboardingScreen = '/onboarding';
   static const String loginScreen = '/login';
@@ -6,6 +6,7 @@ class AppRoutes{
   static const String forgotPasswordScreen = '/forgot-password';
   static const String resetPasswordScreen = '/reset-password';
   static const String homeScreen = '/home';
+  static const String searchScreen = '/search';
   static const String locationScreen = '/location';
   static const String bookingScreen = '/booking';
   static const String stylistsScreen = '/stylists';
@@ -22,5 +23,4 @@ class AppRoutes{
   static const String privacyPolicy = '/privacy-policy';
   static const String termsAndConditions = '/terms-and-conditions';
   static const String logout = '/logout';
-
 }

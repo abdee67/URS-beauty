@@ -26,7 +26,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> createBooking(
     BookingEntity booking,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.createBooking(
         _mapBookingEntityToModel(booking),
       );
@@ -38,7 +38,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> createBookingWithServices(
     CreateBookingRequestEntity request,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.createBookingWithServices(
         _mapCreateBookingRequestToModel(request),
       );
@@ -50,7 +50,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> updateBooking(
     BookingEntity booking,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.updateBooking(
         _mapBookingEntityToModel(booking),
       );
@@ -59,9 +59,10 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
-  Future<Either<Failures, void>> cancelBooking(String bookingId) async {
+  Future<Either<Failures, BookingEntity>> cancelBooking(String bookingId) async {
     return _runOperation(() async {
-      await remoteDataSource.cancelBooking(bookingId);
+      final result = await remoteDataSource.cancelBooking(bookingId);
+      return result.toEntity();
     });
   }
 
@@ -79,7 +80,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> getBookingById(
     String bookingId,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.getBookingById(bookingId);
       return result.toEntity();
     });
@@ -137,7 +138,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> rescheduleBooking(
     RescheduleBookingRequestEntity request,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.rescheduleBooking(
         RescheduleBookingRequestModel(
           bookingId: request.bookingId,
@@ -154,7 +155,7 @@ class BookingRepositoryImpl implements BookingRepository {
     String bookingId,
     String notes,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.addNotesToBooking(bookingId, notes);
       return result.toEntity();
     });
@@ -165,7 +166,7 @@ class BookingRepositoryImpl implements BookingRepository {
     String bookingId,
     String status,
   ) async {
-    return _runBookingOperation(() async {
+    return _runOperation(() async {
       final result = await remoteDataSource.updateBookingStatus(
         bookingId,
         status,
@@ -189,12 +190,6 @@ class BookingRepositoryImpl implements BookingRepository {
   @override
   Future<Either<Failures, CustomerAddressInput>> getCurrentLocationAddress() {
     return _runOperation(() => locationDataSource.getCurrentLocationAddress());
-  }
-
-  Future<Either<Failures, BookingEntity>> _runBookingOperation(
-    Future<BookingEntity> Function() operation,
-  ) async {
-    return _runOperation(operation);
   }
 
   Future<Either<Failures, T>> _runOperation<T>(
@@ -227,6 +222,13 @@ class BookingRepositoryImpl implements BookingRepository {
       isReviewed: booking.isReviewed,
       rescheduledFrom: booking.rescheduledFrom,
       rescheduledCount: booking.rescheduledCount,
+      paymentMethod: booking.paymentMethod,
+      paymentStatus: booking.paymentStatus,
+      currency: booking.currency,
+      paidAmount: booking.paidAmount,
+      refundAmount: booking.refundAmount,
+      commissionAmount: booking.commissionAmount,
+      stylistEarning: booking.stylistEarning,
     );
   }
 

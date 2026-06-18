@@ -6,6 +6,8 @@ import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_reschedule_page.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/booking_list.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/booking_tab.dart';
+import 'package:urs_beauty/features/payments/presentation/bloc/payment_bloc.dart';
+import 'package:urs_beauty/features/payments/presentation/screens/payment_methods_screen.dart';
 import 'package:urs_beauty/features/reviews/domain/entity/review_entity.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_bloc.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_state.dart';
@@ -177,12 +179,16 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
                                   bookings: completedBookings,
                                   emptyTitle: 'No completed bookings yet',
                                   emptySubtitle:
-                                      'Completed appointments show up here so you can leave a review.',
+                                      'Completed appointments show up here so you can pay after service and leave a review.',
                                   onRefresh: _reloadBookings,
                                   itemBuilder: (booking) => BookingListItem(
                                     booking: booking,
                                     isCompleted: true,
                                     review: reviewsByBookingId[booking.id],
+                                    onPayNow:
+                                        booking.canCollectPostServicePayment
+                                        ? () => _openPaymentFlow(booking)
+                                        : null,
                                     onReviewTap: () => _openReviewFlow(
                                       booking,
                                       existingReview:
@@ -300,6 +306,35 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
     }
   }
 
+  Future<void> _openPaymentFlow(BookingEntity booking) async {
+    final didCompletePayment = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => BlocProvider(
+          create: (_) => getit<PaymentBloc>(),
+          child: PaymentMethodsScreen(
+            booking: booking,
+            serviceName: booking.serviceName,
+            stylistName: booking.stylistName,
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (didCompletePayment == true) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Payment completed successfully.')),
+        );
+    }
+
+    await _reloadBookings();
+  }
+
   Future<void> _openRescheduleFlow(BookingEntity booking) async {
     final rescheduled = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
@@ -347,7 +382,9 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
         .where(
           (booking) =>
               booking.status == BookingStatus.completed &&
-              !_hasReview(booking, reviewsByBookingId),
+              (booking.canCollectPostServicePayment ||
+                  booking.isPaymentAwaitingVerification ||
+                  !_hasReview(booking, reviewsByBookingId)),
         )
         .toList();
 
@@ -361,7 +398,9 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
   ) {
     final filtered = bookings.where((booking) {
       return (booking.status == BookingStatus.completed &&
-              _hasReview(booking, reviewsByBookingId)) ||
+              _hasReview(booking, reviewsByBookingId) &&
+              !booking.canCollectPostServicePayment &&
+              !booking.isPaymentAwaitingVerification) ||
           booking.status == BookingStatus.cancelled ||
           booking.status == BookingStatus.noShow;
     }).toList();

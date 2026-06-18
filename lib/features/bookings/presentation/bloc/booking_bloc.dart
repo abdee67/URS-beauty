@@ -93,7 +93,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   final UpdateBookingStatus updateBookingStatus;
   final SearchBookings searchBookings;
   final CreateCustomerAddress createCustomerAddress;
-  final GetCurrentLocationAddress getCurrentLocationAddress;//this is common location getter(can used eveywhere it wanted as a constant)
+  final GetCurrentLocationAddress
+  getCurrentLocationAddress; //this is common location getter(can used eveywhere it wanted as a constant)
   final GetCurrentCustomer getCurrentCustomer;
   final GetStylistServices getStylistServices;
 
@@ -184,12 +185,17 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     final result = await cancelBooking(event.bookingId);
     result.fold(
       (failure) => emit(state.failure(failure.message)),
-      (_) => emit(
+      (booking) => emit(
         state.copyWith(
           status: BookingBlocStatus.cancelled,
-          customerBookings: _markBookingCancelled(
-            state.customerBookings,
-            event.bookingId,
+          selectedBooking: booking,
+          customerBookings: _mergeUpdatedBooking(state.customerBookings, booking),
+          bookings: _mergeUpdatedBooking(state.bookings, booking),
+          stylistBookings: _mergeUpdatedBooking(state.stylistBookings, booking),
+          statusBookings: _mergeUpdatedBooking(state.statusBookings, booking),
+          searchedBookings: _mergeUpdatedBooking(
+            state.searchedBookings,
+            booking,
           ),
           message: 'Booking cancelled successfully.',
           clearError: true,
@@ -205,18 +211,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     emit(state.loading());
 
     final customerResult = await getCurrentCustomer();
-    customerResult.fold(
-      (failure) => emit(state.failure(failure.message)),
-      (customer) {
-        emit(
-          state.copyWith(
-            customer: customer,
-            clearError: true,
-          ),
-        );
-        add(GetBookingsByCustomerIdEvent(customer.id));
-      },
-    );
+    customerResult.fold((failure) => emit(state.failure(failure.message)), (
+      customer,
+    ) {
+      emit(state.copyWith(customer: customer, clearError: true));
+      add(GetBookingsByCustomerIdEvent(customer.id));
+    });
   }
 
   Future<void> _onGetBookings(
@@ -508,12 +508,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     SelectBookingAddressEvent event,
     Emitter<BookingState> emit,
   ) {
-    emit(
-      state.copyWith(
-        selectedAddressId: event.addressId,
-        clearError: true,
-      ),
-    );
+    emit(state.copyWith(selectedAddressId: event.addressId, clearError: true));
   }
 
   Future<void> _onConfirmBooking(
@@ -525,7 +520,9 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     final selectedAddressId = state.selectedAddressId?.trim() ?? '';
 
     if (customer == null || stylistService == null) {
-      emit(state.failure('Booking details are still loading. Please try again.'));
+      emit(
+        state.failure('Booking details are still loading. Please try again.'),
+      );
       return;
     }
 
@@ -623,7 +620,11 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         .firstWhere((service) => service != null, orElse: () => null);
 
     if (matchingService == null) {
-      emit(state.failure('This stylist is not available for the selected service.'));
+      emit(
+        state.failure(
+          'This stylist is not available for the selected service.',
+        ),
+      );
       return;
     }
 
@@ -665,7 +666,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
     for (final booking in bookings) {
       final shouldMarkPassed =
-          booking.status == BookingStatus.pending && booking.endAt.isBefore(now);
+          booking.status == BookingStatus.pending &&
+          booking.endAt.isBefore(now);
 
       if (!shouldMarkPassed) {
         syncedBookings.add(booking);
@@ -696,6 +698,13 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
             isReviewed: booking.isReviewed,
             rescheduledFrom: booking.rescheduledFrom,
             rescheduledCount: booking.rescheduledCount,
+            currency: booking.currency,
+            paymentMethod: booking.paymentMethod,
+            paymentStatus: booking.paymentStatus,
+            paidAmount: booking.paidAmount,
+            refundAmount: booking.refundAmount,
+            commissionAmount: booking.commissionAmount,
+            stylistEarning: booking.stylistEarning,
           ),
         ),
         (updatedBooking) => syncedBookings.add(updatedBooking),
@@ -720,36 +729,6 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     final mergedBookings = <BookingEntity>[...bookings];
     mergedBookings[bookingIndex] = updatedBooking;
     return mergedBookings;
-  }
-
-  List<BookingEntity> _markBookingCancelled(
-    List<BookingEntity> bookings,
-    String bookingId,
-  ) {
-    return bookings
-        .map(
-          (booking) => booking.id != bookingId
-              ? booking
-              : BookingEntity(
-                  id: booking.id,
-                  customerId: booking.customerId,
-                  stylistId: booking.stylistId,
-                  serviceName: booking.serviceName,
-                  stylistName: booking.stylistName,
-                  status: BookingStatus.cancelled,
-                  notes: booking.notes,
-                  addressId: booking.addressId,
-                  totalAmount: booking.totalAmount,
-                  scheduledAt: booking.scheduledAt,
-                  endAt: booking.endAt,
-                  createdAt: booking.createdAt,
-                  updatedAt: DateTime.now(),
-                  isReviewed: booking.isReviewed,
-                  rescheduledFrom: booking.rescheduledFrom,
-                  rescheduledCount: booking.rescheduledCount,
-                ),
-        )
-        .toList();
   }
 
   List<BookingEntity> _mergeRescheduledBooking(
@@ -794,9 +773,17 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
           updatedAt: DateTime.now(),
           isReviewed: booking.isReviewed,
           rescheduledFrom: booking.rescheduledFrom,
-          rescheduledCount: booking.rescheduledCount < rescheduledBooking.rescheduledCount
+          rescheduledCount:
+              booking.rescheduledCount < rescheduledBooking.rescheduledCount
               ? rescheduledBooking.rescheduledCount
               : booking.rescheduledCount,
+          currency: booking.currency,
+          paymentMethod: booking.paymentMethod,
+          paymentStatus: booking.paymentStatus,
+          paidAmount: booking.paidAmount,
+          refundAmount: booking.refundAmount,
+          commissionAmount: booking.commissionAmount,
+          stylistEarning: booking.stylistEarning,
         ),
       );
     }

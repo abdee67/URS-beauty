@@ -1,13 +1,19 @@
-
 import 'package:flutter/material.dart';
+import 'package:urs_beauty/features/discover/presentation/widgets/distance_badge.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 import 'package:urs_beauty/features/stylists/presentation/widgets/stylist_avatar.dart';
 
 class StylistCard extends StatelessWidget {
-  const StylistCard({super.key, required this.stylist, required this.onTap});
+  const StylistCard({
+    super.key,
+    required this.stylist,
+    required this.onTap,
+    this.distanceKm,
+  });
 
   final Stylist stylist;
   final VoidCallback onTap;
+  final double? distanceKm;
 
   @override
   Widget build(BuildContext context) {
@@ -44,25 +50,34 @@ class StylistCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Row(
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
-                        Icon(
-                          Icons.star,
-                          size: 16,
-                          color: Colors.amber.shade700,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.star,
+                              size: 16,
+                              color: Colors.amber.shade700,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              stylist.averageRating.toStringAsFixed(1),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          stylist.averageRating.toStringAsFixed(1),
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(width: 8),
                         Text(
                           '${stylist.totalReview} reviews',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: Colors.grey.shade600),
                         ),
+                        if (distanceKm != null)
+                          DistanceBadge(distanceKm: distanceKm!),
                       ],
                     ),
                     const SizedBox(height: 8),

@@ -17,7 +17,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   static const String _bookingColumns =
       'id, customer, stylist, status, is_reviewed, rescheduled_from, '
       'rescheduled_count, notes, address, total_amount, scheduled_at, end_at, '
-      'created_at, updated_at, stylist_profile:stylists(business_name), '
+      'created_at, updated_at, payment_method, payment_status, currency, '
+      'paid_amount, refund_amount, commission_amount, stylist_earning, '
+      'stylist_profile:stylists(business_name), '
       'booked_services:booking_services(service_name)';
   static const String _bookingServicesColumns =
       'id, booking_id, service_name, service_id, stylist_service_id, '
@@ -69,17 +71,31 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<void> cancelBooking(String bookingId) {
+  Future<BookingModel> cancelBooking(String bookingId) {
     return _run(() async {
       _requireValue(bookingId, 'Booking id is required to cancel a booking');
 
-      await _client
-          .from('bookings')
-          .update({
-            'status': BookingStatus.cancelled.name,
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', bookingId);
+      final response = await _client.functions.invoke(
+        'cancel-booking',
+        body: {'booking_id': bookingId},
+      );
+
+      final data = response.data;
+      if (data is! Map && data is! Map<String, dynamic>) {
+        throw Failures(
+          message: 'Unexpected response from cancel-booking function.',
+        );
+      }
+
+      final payload = Map<String, dynamic>.from(data as Map);
+      final booking = payload['booking'];
+      if (booking is! Map && booking is! Map<String, dynamic>) {
+        throw Failures(
+          message: 'cancel-booking did not return an updated booking.',
+        );
+      }
+
+      return _mapBooking(booking);
     });
   }
 
@@ -171,7 +187,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<BookingModel> rescheduleBooking(RescheduleBookingRequestModel request) {
+  Future<BookingModel> rescheduleBooking(
+    RescheduleBookingRequestModel request,
+  ) {
     return _run(() async {
       _requireValue(request.bookingId, 'Booking id is required');
       _requireValue(request.stylistId, 'Stylist id is required');
@@ -242,6 +260,12 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       return await operation();
     } on Failures {
       rethrow;
+    } on FunctionException catch (e) {
+      final details = e.details;
+      if (details is Map && details['message'] != null) {
+        throw Failures(message: details['message'].toString());
+      }
+      throw Failures(message: e.reasonPhrase ?? 'Function invocation failed');
     } on PostgrestException catch (e) {
       throw Failures(message: e.message);
     } catch (e) {
@@ -313,6 +337,13 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'is_reviewed': booking.isReviewed,
       'rescheduled_from': booking.rescheduledFrom,
       'rescheduled_count': booking.rescheduledCount,
+      'payment_method': booking.paymentMethod,
+      'payment_status': booking.paymentStatus.name,
+      'currency': booking.currency,
+      'paid_amount': booking.paidAmount,
+      'refund_amount': booking.refundAmount,
+      'commission_amount': booking.commissionAmount,
+      'stylist_earning': booking.stylistEarning,
     };
 
     if (booking.id.trim().isNotEmpty) {
@@ -336,6 +367,13 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'is_reviewed': booking.isReviewed,
       'rescheduled_from': booking.rescheduledFrom,
       'rescheduled_count': booking.rescheduledCount,
+      'payment_method': booking.paymentMethod,
+      'payment_status': booking.paymentStatus.name,
+      'currency': booking.currency,
+      'paid_amount': booking.paidAmount,
+      'refund_amount': booking.refundAmount,
+      'commission_amount': booking.commissionAmount,
+      'stylist_earning': booking.stylistEarning,
     };
   }
 

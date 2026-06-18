@@ -13,11 +13,13 @@ class BookingScheduleScreen extends StatefulWidget {
     required this.serviceId,
     required this.serviceName,
     required this.stylist,
+    this.initialDateTime,
   });
 
   final String serviceId;
   final String serviceName;
   final Stylist stylist;
+  final DateTime? initialDateTime;
 
   @override
   State<BookingScheduleScreen> createState() => _BookingScheduleScreenState();
@@ -25,20 +27,34 @@ class BookingScheduleScreen extends StatefulWidget {
 
 class _BookingScheduleScreenState extends State<BookingScheduleScreen> {
   late final List<DateTime> _availableDates;
+  bool _didInitializeSelection = false;
 
   @override
   void initState() {
     super.initState();
     final today = DateTime.now();
     _availableDates = List<DateTime>.generate(
-      7,
+      14,
       (index) => DateTime(today.year, today.month, today.day + index),
     );
+  }
 
-    final initialDate =
-        context.read<BookingBloc>().state.selectedDate ?? _availableDates.first;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInitializeSelection) {
+      return;
+    }
+    _didInitializeSelection = true;
+
+    final initialDate = _initialDate();
+    final initialTimeLabel = widget.initialDateTime == null
+        ? ''
+        : MaterialLocalizations.of(
+            context,
+          ).formatTimeOfDay(TimeOfDay.fromDateTime(widget.initialDateTime!));
     context.read<BookingBloc>().add(SelectDateEvent(initialDate));
-    context.read<BookingBloc>().add(const SelectTimeEvent(''));
+    context.read<BookingBloc>().add(SelectTimeEvent(initialTimeLabel));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -46,6 +62,25 @@ class _BookingScheduleScreenState extends State<BookingScheduleScreen> {
       }
       _loadSlotsForDate(initialDate);
     });
+  }
+
+  DateTime _initialDate() {
+    final requested = widget.initialDateTime;
+    if (requested == null) {
+      return context.read<BookingBloc>().state.selectedDate ??
+          _availableDates.first;
+    }
+
+    final requestedDate = DateTime(
+      requested.year,
+      requested.month,
+      requested.day,
+    );
+    final firstDate = _availableDates.first;
+    if (requestedDate.isBefore(firstDate)) {
+      return firstDate;
+    }
+    return requestedDate;
   }
 
   void _loadSlotsForDate(DateTime date) {
@@ -116,7 +151,8 @@ class _BookingScheduleScreenState extends State<BookingScheduleScreen> {
             final selectedSlotIsAvailable = slots.any(
               (slot) =>
                   slot.isAvailable &&
-                  _slotLabel(context, slot.startAt) == bookingState.selectedTime,
+                  _slotLabel(context, slot.startAt) ==
+                      bookingState.selectedTime,
             );
             final isLoading =
                 stylistsState.status ==
@@ -212,8 +248,8 @@ class _BookingScheduleScreenState extends State<BookingScheduleScreen> {
   }
 
   String _slotLabel(BuildContext context, DateTime dateTime) {
-    return MaterialLocalizations.of(context).formatTimeOfDay(
-      TimeOfDay.fromDateTime(dateTime),
-    );
+    return MaterialLocalizations.of(
+      context,
+    ).formatTimeOfDay(TimeOfDay.fromDateTime(dateTime));
   }
 }
