@@ -267,10 +267,23 @@ class StylistsBloc extends Bloc<StylistsEvent, StylistsState> {
     GetStylistsAvailabilityByTimeEvent event,
     Emitter<StylistsState> emit,
   ) async {
+    final stylistId = event.stylistId.trim();
+    final serviceId = event.serviceId.trim();
+    if (stylistId.isEmpty || serviceId.isEmpty) {
+      emit(
+        state.stylistsAvailabilityError(
+          stylistId.isEmpty
+              ? 'Can\'t load slots: stylist ID is missing. Please select a valid stylist.'
+              : 'Can\'t load slots: service ID is missing.',
+        ),
+      );
+      return;
+    }
+
     emit(state.stylistsAvailabilityByTimeLoading());
     final result = await getStylistsAvailabilityByTime(
-      event.stylistId,
-      event.serviceId,
+      stylistId,
+      serviceId,
       event.selectedDate,
       ignoredBookingId: event.ignoredBookingId,
     );

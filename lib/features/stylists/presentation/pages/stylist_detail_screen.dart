@@ -195,7 +195,7 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
 
   Widget _buildRecommendationBody(BuildContext context, StylistsState state) {
     if (state.status == StylistsStatus.recomendedStylistsLoading ||
-        state.status == StylistsStatus.recomendedStylistsInitial) {
+        state.status == StylistsStatus.initial) {
       return const _StylistListShimmer();
     }
 

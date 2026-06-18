@@ -7,7 +7,6 @@ import 'package:urs_beauty/features/stylists/domain/entities/stylist_availabilit
 import 'package:urs_beauty/features/stylists/data/models/stylists_availability_model.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_service_model.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
-import 'package:urs_beauty/features/stylists/domain/entities/stylists_availability_entity.dart';
 import 'package:urs_beauty/features/stylists/domain/repository/stylists_repository.dart';
 
 class StylistsRepositoryImpl implements StylistsRepository {

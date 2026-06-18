@@ -23,7 +23,6 @@ class StylistModel extends Stylist {
     super.updatedAt,
   });
 
-
   String get stylistId => id;
 
   String get distanceDisplay {
@@ -35,7 +34,7 @@ class StylistModel extends Stylist {
 
   factory StylistModel.fromJson(Map<String, dynamic> json) {
     return StylistModel(
-      id: _asString(json['id']),
+      id: _asString(json['stylist_id'] ?? json['id']),
       businessName: _asString(json['business_name']),
       description: _asString(json['description']),
       serviceRadiusKm: _asDouble(json['service_radius_km']),
