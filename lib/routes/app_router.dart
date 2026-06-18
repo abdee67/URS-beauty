@@ -15,8 +15,6 @@ import 'package:urs_beauty/features/payments/presentation/bloc/payment_bloc.dart
 import 'package:urs_beauty/features/payments/presentation/screens/payment_methods_screen.dart';
 import 'package:urs_beauty/features/profile/presentation/screens/settings_screen.dart';
 import 'package:urs_beauty/features/search/presentation/pages/search_screen.dart';
-import 'package:urs_beauty/features/discover/presentation/bloc/stylist_recommendation_bloc.dart'
-    hide SearchStylists;
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/stylists/presentation/pages/stylist_detail_screen.dart';
 import 'package:urs_beauty/injection_container.dart';
@@ -98,9 +96,6 @@ class AppRouter {
                   return MultiBlocProvider(
                     providers: [
                       BlocProvider(create: (_) => getit<StylistsBloc>()),
-                      BlocProvider(
-                        create: (_) => getit<StylistRecommendationBloc>(),
-                      ),
                     ],
                     child: StylistDetailScreen(
                       serviceId: serviceId,
