@@ -4,8 +4,8 @@ import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/payments/data/models/payment_model.dart';
 import 'package:urs_beauty/features/payments/domain/entity/payment_entity.dart';
 
-class StripeApiService extends ApiService {
-  StripeApiService({super.client});
+class ChapaApiService extends ApiService {
+  ChapaApiService({super.client});
 
   static const String _paymentColumns =
       'id, booking_id, customer_id, payment_method, payment_type, status, '
@@ -114,7 +114,7 @@ class StripeApiService extends ApiService {
 
   Future<PaymentModel> calculateRefund(String paymentId) async {
     final response = await invokeFunction(
-      'calculate-refund-card-payment',
+      'calculate-refund-payment',
       body: <String, dynamic>{'payment_id': paymentId},
     );
 

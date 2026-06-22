@@ -1,4 +1,4 @@
-enum BookingStatus { pending, completed, cancelled, noShow }
+enum BookingStatus { pending,  completed, cancelled, noShow }
 
 enum PaymentStatus {
   pending,
