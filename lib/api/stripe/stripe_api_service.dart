@@ -42,6 +42,7 @@ class StripeApiService extends ApiService {
     return _mapFunctionPaymentResponse(response);
   }
 
+
   Future<PaymentModel> handleCardPaymentFailure(String paymentReference) async {
     final response = await invokeFunction(
       'cancel-card-payment',
@@ -54,7 +55,7 @@ class StripeApiService extends ApiService {
     return _mapFunctionPaymentResponse(response);
   }
 
-  Future<PaymentModel> getCardPaymentStatus(
+  Future<PaymentModel> getPaymentStatus(
     String paymentId,
     String bookingId,
   ) async {
@@ -64,7 +65,7 @@ class StripeApiService extends ApiService {
           .select(_paymentColumns)
           .eq('id', paymentId)
           .eq('booking_id', bookingId)
-          .maybeSingle();
+          .maybeSingle(); 
 
       if (response == null) {
         throw Failures(message: 'Payment not found.');
@@ -114,14 +115,14 @@ class StripeApiService extends ApiService {
 
   Future<PaymentModel> calculateRefund(String paymentId) async {
     final response = await invokeFunction(
-      'calculate-refund-card-payment',
+      'calculate-refund-payment',
       body: <String, dynamic>{'payment_id': paymentId},
     );
 
     return _mapFunctionPaymentResponse(response);
   }
 
-  Future<PaymentModel> processRefundPayment(String paymentId) async {
+  Future<PaymentModel> processRefundCardPayment(String paymentId) async {
     final response = await invokeFunction(
       'process-refund-payment',
       body: <String, dynamic>{'payment_id': paymentId},

@@ -299,7 +299,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () {
                           context.read<PaymentBloc>().add(
-                            RefreshCardPaymentStatusEvent(
+                            RefreshPaymentStatusEvent(
                               paymentId: activePayment.id,
                               bookingId: booking.id,
                             ),

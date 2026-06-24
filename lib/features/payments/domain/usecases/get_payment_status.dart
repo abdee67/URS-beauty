@@ -1,10 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/payments/domain/entity/payment_entity.dart';
-import 'package:urs_beauty/features/payments/domain/repository/payment_repostiory';
+import 'package:urs_beauty/features/payments/domain/repository/payment_repostiory.dart';
 
-class GetCardPaymentStatusUseCase {
-  const GetCardPaymentStatusUseCase({required this.paymentRepository});
+class GetPaymentStatusUseCase {
+  const GetPaymentStatusUseCase({required this.paymentRepository});
 
   final PaymentRepository paymentRepository;
 
@@ -12,6 +12,6 @@ class GetCardPaymentStatusUseCase {
     String paymentId,
     String bookingId,
   ) async {
-    return await paymentRepository.getCardPaymentStatus(paymentId, bookingId);
+    return await paymentRepository.getPaymentStatus(paymentId, bookingId);
   }
 }

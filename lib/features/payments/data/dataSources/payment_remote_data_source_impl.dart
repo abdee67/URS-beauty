@@ -1,40 +1,68 @@
 import 'package:urs_beauty/api/stripe/stripe_api_service.dart';
-import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source';
+import 'package:urs_beauty/api/chapa/chapa_api_service.dart';
+import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source.dart';
 import 'package:urs_beauty/features/payments/data/models/payment_model.dart';
 
 class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
-  final StripeApiService apiService;
-  const PaymentRemoteDataSourceImpl({required this.apiService});
+  final StripeApiService stripeApiService;
+  final ChapaApiService chapaApiService;
+  const PaymentRemoteDataSourceImpl({
+    required this.stripeApiService,
+    required this.chapaApiService,
+  });
 
   @override
   Future<PaymentModel> createCardPayment(
     String bookingId,
     PaymentModel payment,
   ) {
-    return apiService.createCardPayment(bookingId, payment);
+    return stripeApiService.createCardPayment(bookingId, payment);
+  }
+
+  @override
+  Future<PaymentModel> createWalletPayment(
+    String bookingId,
+    PaymentModel payment,
+  ) {
+    return chapaApiService.createWalletPayment(bookingId, payment);
   }
 
   @override
   Future<PaymentModel> confirmCardPayment(String transactionReference) {
-    return apiService.confirmCardPayment(transactionReference);
+    return stripeApiService.confirmCardPayment(transactionReference);
+  }
+
+  @override
+  Future<PaymentModel> confirmWalletPayment(String transactionReference) {
+    return chapaApiService.confirmWalletPayment(transactionReference);
   }
 
   @override
   Future<PaymentModel> handleCardPaymentFailure(String transactionReference) {
-    return apiService.handleCardPaymentFailure(transactionReference);
+    return stripeApiService.handleCardPaymentFailure(transactionReference);
   }
 
   @override
-  Future<PaymentModel> getCardPaymentStatus(
+  Future<PaymentModel> handleWalletPaymentFailure(String transactionReference) {
+    return chapaApiService.handleWalletPaymentFailure(transactionReference);
+  }
+
+  @override
+  Future<PaymentModel> getPaymentStatus(
     String paymentId,
     String bookingId,
   ) {
-    return apiService.getCardPaymentStatus(paymentId, bookingId);
+    return stripeApiService.getPaymentStatus(paymentId, bookingId);
   }
 
   @override
   Future<PaymentModel> canclePendingCardPayment(String paymentId) {
-    return apiService.canclePendingCardPayment(paymentId);
+    return stripeApiService.canclePendingCardPayment(paymentId);
+  }
+
+  @override
+  Future<PaymentModel> canclePendingWalletPayment(String paymentId) {
+    return chapaApiService.canclePendingWalletPayment(paymentId);
   }
 
   @override
@@ -43,7 +71,11 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     String proofUrl,
     String reference,
   ) {
-    return apiService.createBankTransferPayment(bookingId, proofUrl, reference);
+    return stripeApiService.createBankTransferPayment(
+      bookingId,
+      proofUrl,
+      reference,
+    );
   }
 
   @override
@@ -51,17 +83,22 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     String paymentId,
     bool isVerified,
   ) {
-    return apiService.verfiyBankTransferPayment(paymentId, isVerified);
+    return stripeApiService.verfiyBankTransferPayment(paymentId, isVerified);
   }
 
   @override
   Future<PaymentModel> calculateRefund(String paymentId) {
-    return apiService.calculateRefund(paymentId);
+    return stripeApiService.calculateRefund(paymentId);
   }
 
   @override
-  Future<PaymentModel> processRefundPayment(String paymentId) {
-    return apiService.processRefundPayment(paymentId);
+  Future<PaymentModel> processRefundCardPayment(String paymentId) {
+    return stripeApiService.processRefundCardPayment(paymentId);
+  }
+
+  @override
+  Future<PaymentModel> processRefundWalletPayment(String paymentId) {
+    return chapaApiService.processRefundWalletPayment(paymentId);
   }
 
   @override
@@ -69,7 +106,7 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     String bookingId,
     String newServiceId,
   ) {
-    return apiService.calculateRescheduleCost(bookingId, newServiceId);
+    return stripeApiService.calculateRescheduleCost(bookingId, newServiceId);
   }
 
   @override
@@ -78,7 +115,7 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     DateTime newDateTime,
     String newServiceId,
   ) {
-    return apiService.processReschedulePayment(
+    return stripeApiService.processReschedulePayment(
       bookingId,
       newDateTime,
       newServiceId,

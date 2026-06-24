@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:urs_beauty/core/constants/app_routes.dart';
-import 'package:urs_beauty/features/beauty_services/presentation/screens/service_list_screen.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 
 class BookingSuccessScreen extends StatelessWidget {

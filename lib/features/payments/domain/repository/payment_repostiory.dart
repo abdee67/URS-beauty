@@ -7,21 +7,34 @@ abstract class PaymentRepository {
     String bookingId,
     PaymentEntity payment,
   );
+  Future<Either<Failures, PaymentEntity>> createWalletPayment(
+    String bookingId,
+    PaymentEntity payment,
+  );
 
   Future<Either<Failures, PaymentEntity>> confirmCardPayment(
+    String transactionReference,
+  );
+  Future<Either<Failures, PaymentEntity>> confirmWalletPayment(
     String transactionReference,
   );
 
   Future<Either<Failures, PaymentEntity>> handleCardPaymentFailure(
     String transactionReference,
   );
+  Future<Either<Failures, PaymentEntity>> handleWalletPaymentFailure(
+    String transactionReference,
+  );
 
-  Future<Either<Failures, PaymentEntity>> getCardPaymentStatus(
+  Future<Either<Failures, PaymentEntity>> getPaymentStatus(
     String paymentId,
     String bookingId,
   );
 
   Future<Either<Failures, PaymentEntity>> canclePendingCardPayment(
+    String paymentId,
+  );
+  Future<Either<Failures, PaymentEntity>> canclePendingWalletPayment(
     String paymentId,
   );
 
@@ -36,9 +49,16 @@ abstract class PaymentRepository {
     bool isVerified,
   );
 
-  Future<Either<Failures, PaymentEntity>> calculateRefund(String paymentId);
+  Future<Either<Failures, PaymentEntity>> calculateRefund(
+    String paymentId,
+  );
 
-  Future<Either<Failures, PaymentEntity>> processRefundPayment(String paymentId);
+  Future<Either<Failures, PaymentEntity>> processRefundCardPayment(
+    String paymentId,
+  );
+  Future<Either<Failures, PaymentEntity>> processRefundWalletPayment(
+    String paymentId,
+  );
 
   Future<Either<Failures, PaymentEntity>> calculateRescheduleCost(
     String bookingId,

@@ -1,4 +1,6 @@
 import 'package:get_it/get_it.dart';
+import 'package:http/http.dart';
+import 'package:urs_beauty/api/chapa/chapa_api_service.dart';
 import 'package:urs_beauty/api/stripe/stripe_api_service.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
@@ -82,15 +84,15 @@ import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_recomme
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
-import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source';
+import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source.dart';
 import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source_impl.dart';
 import 'package:urs_beauty/features/payments/data/repository/payment_repository_impl.dart';
-import 'package:urs_beauty/features/payments/domain/repository/payment_repostiory';
-import 'package:urs_beauty/features/payments/domain/usecases/cancel_pending_card_payment.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/confirm_card_payment.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/create_card_payment.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/get_card_payment_status.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/handle_card_payment_faillure.dart';
+import 'package:urs_beauty/features/payments/domain/repository/payment_repostiory.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/cancel_pending_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/confirm_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/create_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/get_payment_status.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/handle_payment_faillure.dart';
 import 'package:urs_beauty/features/payments/presentation/bloc/payment_bloc.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability_by_day.dart';
@@ -128,8 +130,9 @@ void initDependency() {
     () => ReviewRemoteDataSourceImpl(),
   );
   getit.registerLazySingleton(() => StripeApiService());
+  getit.registerLazySingleton(() => ChapaApiService());
   getit.registerLazySingleton<PaymentRemoteDataSource>(
-    () => PaymentRemoteDataSourceImpl(apiService: getit()),
+    () => PaymentRemoteDataSourceImpl(stripeApiService: getit(), chapaApiService: getit()),
   );
 
   //================== injecting  repository===================
@@ -234,10 +237,22 @@ void initDependency() {
     () => HandleCardPaymentFailureUseCase(paymentRepository: getit()),
   );
   getit.registerLazySingleton(
-    () => GetCardPaymentStatusUseCase(paymentRepository: getit()),
+    () => GetPaymentStatusUseCase(paymentRepository: getit()),
   );
   getit.registerLazySingleton(
     () => CancelPendingCardPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => CancelPendingWalletPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => ConfirmWalletPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => CreateWalletPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => HandleWalletPaymentFailureUseCase(paymentRepository: getit()),
   );
 
   // Review use cases
@@ -327,8 +342,12 @@ void initDependency() {
       createCardPayment: getit(),
       confirmCardPayment: getit(),
       handleCardPaymentFailure: getit(),
-      getCardPaymentStatus: getit(),
+      getPaymentStatus: getit(),
       cancelPendingCardPayment: getit(),
+      cancelPendingWalletPayment: getit(),
+      confirmWalletPayment: getit(),
+      createWalletPayment: getit(),
+      handleWalletPaymentFailure: getit(),
     ),
   );
 

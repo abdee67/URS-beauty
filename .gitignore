@@ -48,4 +48,4 @@ app.*.map.json
 assets/.env
 
 #prompts
-client_recommendation_prompt.md
+*_prompt*

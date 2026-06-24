@@ -14,7 +14,7 @@ enum PaymentBlocStatus {
 class PaymentState extends Equatable {
   const PaymentState({
     this.status = PaymentBlocStatus.initial,
-    this.selectedMethod = PaymentMethod.card,
+    this.selectedMethod = PaymentMethod.wallet,
     this.activePayment,
     this.message,
     this.errorMessage = '',

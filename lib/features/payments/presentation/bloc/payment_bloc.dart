@@ -5,11 +5,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart'
     hide PaymentStatus;
 import 'package:urs_beauty/features/payments/domain/entity/payment_entity.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/cancel_pending_card_payment.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/confirm_card_payment.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/create_card_payment.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/get_card_payment_status.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/handle_card_payment_faillure.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/cancel_pending_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/confirm_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/create_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/get_payment_status.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/handle_payment_faillure.dart';
 
 part 'payment_event.dart';
 part 'payment_state.dart';
@@ -19,23 +19,33 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     required this.createCardPayment,
     required this.confirmCardPayment,
     required this.handleCardPaymentFailure,
-    required this.getCardPaymentStatus,
+    required this.getPaymentStatus,
     required this.cancelPendingCardPayment,
+    required this.cancelPendingWalletPayment,
+    required this.handleWalletPaymentFailure,
+    required this.createWalletPayment,
+    required this.confirmWalletPayment,
   }) : super(const PaymentState()) {
     on<SelectPaymentMethodEvent>(_onSelectPaymentMethod);
     on<CreateCardPaymentEvent>(_onCreateCardPayment);
     on<ConfirmCardPaymentEvent>(_onConfirmCardPayment);
-    on<RefreshCardPaymentStatusEvent>(_onRefreshCardPaymentStatus);
+    on<RefreshPaymentStatusEvent>(_onRefreshPaymentStatus);
     on<HandleCardPaymentFailureEvent>(_onHandleCardPaymentFailure);
     on<CancelPendingCardPaymentEvent>(_onCancelPendingCardPayment);
     on<ClearPaymentMessageEvent>(_onClearPaymentMessage);
+    
   }
 
   final CreateCardPaymentUseCase createCardPayment;
   final ConfirmCardPaymentUseCase confirmCardPayment;
   final HandleCardPaymentFailureUseCase handleCardPaymentFailure;
-  final GetCardPaymentStatusUseCase getCardPaymentStatus;
+  final GetPaymentStatusUseCase getPaymentStatus;
   final CancelPendingCardPaymentUseCase cancelPendingCardPayment;
+  final CancelPendingWalletPaymentUseCase cancelPendingWalletPayment;
+  final HandleWalletPaymentFailureUseCase handleWalletPaymentFailure;
+  final CreateWalletPaymentUseCase createWalletPayment;
+  final ConfirmWalletPaymentUseCase confirmWalletPayment;
+  
 
   void _onSelectPaymentMethod(
     SelectPaymentMethodEvent event,
@@ -49,6 +59,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
             'Manual bank transfer verification is coming soon.',
           PaymentMethod.cash => 'Cash payment support is coming soon.',
           PaymentMethod.card => null,
+          PaymentMethod.wallet => null,
         },
         clearError: true,
       ),
@@ -136,13 +147,13 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     );
   }
 
-  Future<void> _onRefreshCardPaymentStatus(
-    RefreshCardPaymentStatusEvent event,
+  Future<void> _onRefreshPaymentStatus(
+    RefreshPaymentStatusEvent event,
     Emitter<PaymentState> emit,
   ) async {
     emit(state.verifying());
 
-    final result = await getCardPaymentStatus(event.paymentId, event.bookingId);
+    final result = await getPaymentStatus(event.paymentId, event.bookingId);
     await result.fold(
       (failure) async => emit(state.failure(failure.message)),
       (payment) async => _resolvePaymentState(payment, emit),
@@ -272,7 +283,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     for (var attempt = 0; attempt < 4; attempt++) {
       await Future<void>.delayed(const Duration(seconds: 2));
 
-      final result = await getCardPaymentStatus(paymentId, bookingId);
+      final result = await getPaymentStatus(paymentId, bookingId);
       if (result.isLeft()) {
         continue;
       }

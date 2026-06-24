@@ -34,8 +34,8 @@ class ConfirmCardPaymentEvent extends PaymentEvent {
   List<Object?> get props => [paymentReference];
 }
 
-class RefreshCardPaymentStatusEvent extends PaymentEvent {
-  const RefreshCardPaymentStatusEvent({
+class RefreshPaymentStatusEvent extends PaymentEvent {
+  const RefreshPaymentStatusEvent({
     required this.paymentId,
     required this.bookingId,
   });
@@ -71,4 +71,38 @@ class CancelPendingCardPaymentEvent extends PaymentEvent {
 
 class ClearPaymentMessageEvent extends PaymentEvent {
   const ClearPaymentMessageEvent();
+}
+
+class CreateWalletPaymentEvent extends PaymentEvent {
+  final BookingEntity booking;
+
+  const CreateWalletPaymentEvent(this.booking);
+}
+
+class ConfirmWalletPaymentEvent extends PaymentEvent {
+  final String paymentReference;
+
+  const ConfirmWalletPaymentEvent(this.paymentReference);
+}
+
+class HandleWalletPaymentFailureEvent extends PaymentEvent {
+  const HandleWalletPaymentFailureEvent(
+    this.paymentReference, {
+    this.failureReason,
+  });
+
+  final String paymentReference;
+  final String? failureReason;
+
+  @override
+  List<Object?> get props => [paymentReference, failureReason];
+}
+
+class CancelPendingWalletPaymentEvent extends PaymentEvent {
+  const CancelPendingWalletPaymentEvent(this.paymentId);
+
+  final String paymentId;
+
+  @override
+  List<Object?> get props => [paymentId];
 }

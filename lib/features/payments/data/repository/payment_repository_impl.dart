@@ -1,9 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
-import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source';
+import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source.dart';
 import 'package:urs_beauty/features/payments/data/models/payment_model.dart';
 import 'package:urs_beauty/features/payments/domain/entity/payment_entity.dart';
-import 'package:urs_beauty/features/payments/domain/repository/payment_repostiory';
+import 'package:urs_beauty/features/payments/domain/repository/payment_repostiory.dart';
 
 class PaymentRepositoryImpl implements PaymentRepository {
   const PaymentRepositoryImpl({required this.paymentRemoteDataSource});
@@ -25,11 +25,37 @@ class PaymentRepositoryImpl implements PaymentRepository {
   }
 
   @override
+  Future<Either<Failures, PaymentEntity>> createWalletPayment(
+    String bookingId,
+    PaymentEntity payment,
+  ) async {
+    return _runOperation(() async {
+      final result = await paymentRemoteDataSource.createWalletPayment(
+        bookingId,
+        PaymentModel.fromEntity(payment),
+      );
+      return result.toEntity();
+    });
+  }
+
+  @override
   Future<Either<Failures, PaymentEntity>> confirmCardPayment(
     String transactionReference,
   ) async {
     return _runOperation(() async {
       final result = await paymentRemoteDataSource.confirmCardPayment(
+        transactionReference,
+      );
+      return result.toEntity();
+    });
+  }
+
+  @override
+  Future<Either<Failures, PaymentEntity>> confirmWalletPayment(
+    String transactionReference,
+  ) async {
+    return _runOperation(() async {
+      final result = await paymentRemoteDataSource.confirmWalletPayment(
         transactionReference,
       );
       return result.toEntity();
@@ -47,14 +73,25 @@ class PaymentRepositoryImpl implements PaymentRepository {
       return result.toEntity();
     });
   }
+  @override
+  Future<Either<Failures, PaymentEntity>> handleWalletPaymentFailure(
+    String transactionReference,
+  ) async {
+    return _runOperation(() async {
+      final result = await paymentRemoteDataSource.handleWalletPaymentFailure(
+        transactionReference,
+      );
+      return result.toEntity();
+    });
+  }
 
   @override
-  Future<Either<Failures, PaymentEntity>> getCardPaymentStatus(
+  Future<Either<Failures, PaymentEntity>> getPaymentStatus(
     String paymentId,
     String bookingId,
   ) async {
     return _runOperation(() async {
-      final result = await paymentRemoteDataSource.getCardPaymentStatus(
+      final result = await paymentRemoteDataSource.getPaymentStatus(
         paymentId,
         bookingId,
       );
@@ -68,6 +105,18 @@ class PaymentRepositoryImpl implements PaymentRepository {
   ) async {
     return _runOperation(() async {
       final result = await paymentRemoteDataSource.canclePendingCardPayment(
+        paymentId,
+      );
+      return result.toEntity();
+    });
+  }
+
+  @override
+  Future<Either<Failures, PaymentEntity>> canclePendingWalletPayment(
+    String paymentId,
+  ) async {
+    return _runOperation(() async {
+      final result = await paymentRemoteDataSource.canclePendingWalletPayment(
         paymentId,
       );
       return result.toEntity();
@@ -115,11 +164,23 @@ class PaymentRepositoryImpl implements PaymentRepository {
   }
 
   @override
-  Future<Either<Failures, PaymentEntity>> processRefundPayment(
+  Future<Either<Failures, PaymentEntity>> processRefundCardPayment(
     String paymentId,
   ) async {
     return _runOperation(() async {
-      final result = await paymentRemoteDataSource.processRefundPayment(
+      final result = await paymentRemoteDataSource.processRefundCardPayment(
+        paymentId,
+      );
+      return result.toEntity();
+    });
+  }
+
+  @override
+  Future<Either<Failures, PaymentEntity>> processRefundWalletPayment(
+    String paymentId,
+  ) async {
+    return _runOperation(() async {
+      final result = await paymentRemoteDataSource.processRefundWalletPayment(
         paymentId,
       );
       return result.toEntity();
