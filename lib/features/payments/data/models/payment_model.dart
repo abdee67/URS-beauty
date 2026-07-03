@@ -192,7 +192,9 @@ class PaymentModel extends PaymentEntity {
 
   static Map<String, dynamic> _metadataFromJson(Map<String, dynamic> json) {
     if (json['meta_data'] is Map<String, dynamic>) {
-      return Map<String, dynamic>.from(json['meta_data'] as Map<String, dynamic>);
+      return Map<String, dynamic>.from(
+        json['meta_data'] as Map<String, dynamic>,
+      );
     }
 
     if (json['meta_data'] is Map) {
@@ -200,7 +202,9 @@ class PaymentModel extends PaymentEntity {
     }
 
     if (json['metadata'] is Map<String, dynamic>) {
-      return Map<String, dynamic>.from(json['metadata'] as Map<String, dynamic>);
+      return Map<String, dynamic>.from(
+        json['metadata'] as Map<String, dynamic>,
+      );
     }
 
     if (json['metadata'] is Map) {
@@ -214,6 +218,8 @@ class PaymentModel extends PaymentEntity {
     switch (value.toLowerCase()) {
       case 'card':
         return PaymentMethod.card;
+      case 'wallet':
+        return PaymentMethod.wallet;
       case 'bank_transfer':
       case 'banktransfer':
         return PaymentMethod.bankTransfer;

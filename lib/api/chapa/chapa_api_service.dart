@@ -75,15 +75,18 @@ class ChapaApiService extends ApiService {
     final paymentPayload = response['payment'] != null
         ? requireMap(response['payment'], context: 'payment')
         : response;
+    final metadata = _mapChapaMetadata(paymentPayload, response);
 
     final mergedPayload = <String, dynamic>{
       ...paymentPayload,
       if (fallbackBookingId != null &&
           (paymentPayload['booking_id']?.toString().trim().isEmpty ?? true))
         'booking_id': fallbackBookingId,
-      if (response['payment_intent_client_secret'] != null)
-        'payment_intent_client_secret':
-            response['payment_intent_client_secret'],
+      if (response['tx_ref'] != null &&
+          (paymentPayload['transaction_reference']?.toString().trim().isEmpty ??
+              true))
+        'transaction_reference': response['tx_ref'],
+      if (metadata.isNotEmpty) 'metadata': metadata,
       if (response['booking_status'] != null)
         'booking_status': response['booking_status'],
       if (response['booking_payment_status'] != null)
@@ -109,5 +112,45 @@ class ChapaApiService extends ApiService {
     }
 
     return PaymentModel.fromJson(mergedPayload);
+  }
+
+  Map<String, dynamic> _mapChapaMetadata(
+    Map<String, dynamic> paymentPayload,
+    Map<String, dynamic> response,
+  ) {
+    final metadata = <String, dynamic>{};
+    final existingMetadata =
+        paymentPayload['metadata'] ?? paymentPayload['meta_data'];
+
+    if (existingMetadata is Map<String, dynamic>) {
+      metadata.addAll(existingMetadata);
+    } else if (existingMetadata is Map) {
+      metadata.addAll(Map<String, dynamic>.from(existingMetadata));
+    }
+
+    final txRef = response['tx_ref']?.toString().trim();
+    if (txRef?.isNotEmpty == true) {
+      metadata['chapa_tx_ref'] = txRef;
+    }
+
+    if (response['amount'] != null) {
+      metadata['chapa_amount'] = response['amount'];
+    }
+
+    if (response['currency'] != null) {
+      metadata['chapa_currency'] = response['currency'];
+    }
+
+    if (response['customer'] is Map) {
+      final customer = Map<String, dynamic>.from(response['customer'] as Map);
+      metadata['chapa_customer'] = <String, dynamic>{
+        'email': customer['email']?.toString() ?? '',
+        'phone': customer['phone']?.toString() ?? '',
+        'first_name': customer['first_name']?.toString() ?? '',
+        'last_name': customer['last_name']?.toString() ?? '',
+      };
+    }
+
+    return metadata;
   }
 }
