@@ -4,7 +4,7 @@ class Stylist {
   final String description;
   final double serviceRadiusKm;
   final double averageRating;
-  final String imageUrl;
+  final String? imageUrl;
   final bool isVerified;
   final int totalReview;
   final double longitude;
@@ -25,7 +25,7 @@ class Stylist {
     required this.description,
     required this.serviceRadiusKm,
     required this.averageRating,
-    required this.imageUrl,
+    this.imageUrl,
     required this.isVerified,
     required this.totalReview,
     required this.longitude,
@@ -40,10 +40,15 @@ class Stylist {
     this.createdAt,
     this.updatedAt,
   });
-    String get distanceDisplay => distanceKm < 1
+  String get distanceDisplay => distanceKm < 1
       ? '${(distanceKm * 1000).round()} m away'
       : '${distanceKm.toStringAsFixed(1)} km away';
 
-  List<Object?> get props =>
-      [id, businessName, distanceKm, servicePrice, averageRating];
+  List<Object?> get props => [
+    id,
+    businessName,
+    distanceKm,
+    servicePrice,
+    averageRating,
+  ];
 }

@@ -1,4 +1,5 @@
 import 'package:urs_beauty/features/stylists/domain/entities/stylists_service.dart';
+import 'package:urs_beauty/core/constants/app_strings.dart';
 
 class StylistsServiceModel extends StylistsServiceEntity {
   StylistsServiceModel({
@@ -11,11 +12,11 @@ class StylistsServiceModel extends StylistsServiceEntity {
 
   factory StylistsServiceModel.fromJson(Map<String, dynamic> json) {
     return StylistsServiceModel(
-      id: (json['id'] ?? '').toString(),
-      serviceId: (json['service_id'] ?? '').toString(),
-      stylistsId: (json['stylists_id'] ?? '').toString(),
-      price: (json['price'] as num?)?.toDouble() ?? 0,
-      isAvailable: json['is_available'] ?? false,
+      id: AppStrings.asString(json['id'] ?? ''),
+      serviceId: AppStrings.asString(json['service_id'] ?? ''),
+      stylistsId: AppStrings.asString(json['stylists_id'] ?? ''),
+      price: AppStrings.asDouble(json['price'] as num?),
+      isAvailable: AppStrings.asBool(json['is_available']),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:urs_beauty/features/stylists/domain/entities/stylists_availability_entity.dart';
+import 'package:urs_beauty/core/constants/app_strings.dart';
 
 class StylistsAvailabilityModel extends StylistsAvailability {
   StylistsAvailabilityModel({
@@ -12,12 +13,12 @@ class StylistsAvailabilityModel extends StylistsAvailability {
 
   factory StylistsAvailabilityModel.fromJson(Map<String, dynamic> json) {
     return StylistsAvailabilityModel(
-      id: _asString(json['id']),
-      stylistsId: _asString(json['stylists_id']),
-      dayOfWeek: _asString(json['day_of_week']),
-      startTime: _asString(json['start_time']),
-      endTime: _asString(json['end_time']),
-      isAvailable: _asBool(json['is_available']),
+      id: AppStrings.asString(json['id']),
+      stylistsId: AppStrings.asString(json['stylists_id']),
+      dayOfWeek: AppStrings.asString(json['day_of_week']),
+      startTime: AppStrings.asString(json['start_time']),
+      endTime: AppStrings.asString(json['end_time']),
+      isAvailable: AppStrings.asBool(json['is_available']),
     );
   }
 
@@ -31,6 +32,7 @@ class StylistsAvailabilityModel extends StylistsAvailability {
       'is_available': isAvailable,
     };
   }
+
   factory StylistsAvailabilityModel.fromEntity(StylistsAvailability entity) {
     return StylistsAvailabilityModel(
       id: entity.id,
@@ -51,25 +53,5 @@ class StylistsAvailabilityModel extends StylistsAvailability {
       endTime: endTime,
       isAvailable: isAvailable,
     );
-  }
-
-  static String _asString(dynamic value) {
-    if (value == null) {
-      return '';
-    }
-    return value.toString().trim();
-  }
-
-  static bool _asBool(dynamic value) {
-    if (value is bool) {
-      return value;
-    }
-    if (value is String) {
-      return value.toLowerCase() == 'true';
-    }
-    if (value is num) {
-      return value != 0;
-    }
-    return false;
   }
 }

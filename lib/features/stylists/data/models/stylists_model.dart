@@ -1,4 +1,5 @@
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
+import 'package:urs_beauty/core/constants/app_strings.dart';
 
 class StylistModel extends Stylist {
   StylistModel({
@@ -23,34 +24,29 @@ class StylistModel extends Stylist {
     super.updatedAt,
   });
 
-  String get stylistId => id;
-
-  String get distanceDisplay {
-    if (distanceKm < 1) {
-      return '${(distanceKm * 1000).round()} m away';
-    }
-    return '${distanceKm.toStringAsFixed(1)} km away';
-  }
-
   factory StylistModel.fromJson(Map<String, dynamic> json) {
     return StylistModel(
-      id: _asString(json['stylist_id'] ?? json['id']),
-      businessName: _asString(json['business_name']),
-      description: _asString(json['description']),
-      serviceRadiusKm: _asDouble(json['service_radius_km']),
-      averageRating: _asDouble(json['avg_rating']),
-      imageUrl: _asString(json['image_url']),
+      id: AppStrings.asString(json['stylist_id'] ?? json['id']),
+      businessName: AppStrings.asString(json['business_name']),
+      description: AppStrings.asString(json['description']),
+      serviceRadiusKm: AppStrings.asDouble(json['service_radius_km']),
+      averageRating: AppStrings.asDouble(json['avg_rating']),
+      imageUrl: json['image_url'] == 'null' || json['image_url'] == null
+          ? null
+          : AppStrings.asString(json['image_url']),
       isVerified: json['is_verified'] ?? false,
-      totalReview: _asInt(json['total_reviews']),
-      longitude: _asDouble(json['longitude']),
-      latitude: _asDouble(json['latitude']),
-      userId: _asInt(json['user_id']),
-      onboardingStatus: _asString(json['onboarding_status'] ?? 'pending'),
-      yearsOfExperience: _asInt(json['years_experience'] ?? 0),
-      rejectionReason: _asString(json['rejection_reason'] ?? ''),
-      distanceKm: _asDouble(json['distance_km'] ?? 0),
-      servicePrice: _asDouble(json['service_price'] ?? 0),
-      serviceDuration: _asInt(json['service_duration'] ?? 0),
+      totalReview: AppStrings.asInt(json['total_reviews']),
+      longitude: AppStrings.asDouble(json['longitude']),
+      latitude: AppStrings.asDouble(json['latitude']),
+      userId: AppStrings.asInt(json['user_id']),
+      onboardingStatus: AppStrings.asString(
+        json['onboarding_status'] ?? 'pending',
+      ),
+      yearsOfExperience: AppStrings.asInt(json['years_experience'] ?? 0),
+      rejectionReason: AppStrings.asString(json['rejection_reason'] ?? ''),
+      distanceKm: AppStrings.asDouble(json['distance_km'] ?? 0),
+      servicePrice: AppStrings.asDouble(json['service_price'] ?? 0),
+      serviceDuration: AppStrings.asInt(json['service_duration'] ?? 0),
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
@@ -103,41 +99,5 @@ class StylistModel extends Stylist {
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
-  }
-
-  static double _asDouble(dynamic value) {
-    if (value is double) {
-      return value;
-    }
-    if (value is num) {
-      return value.toDouble();
-    }
-    if (value is String && value.trim().isNotEmpty) {
-      return double.tryParse(value.trim()) ?? 0;
-    }
-    return 0;
-  }
-
-  static int _asInt(dynamic value) {
-    if (value is int) {
-      return value;
-    }
-    if (value is num) {
-      return value.toInt();
-    }
-    if (value is String && value.trim().isNotEmpty) {
-      return int.tryParse(value.trim()) ?? 0;
-    }
-    return 0;
-  }
-
-  static String _asString(dynamic value) {
-    if (value == null) {
-      return '';
-    }
-    if (value is String) {
-      return value.trim();
-    }
-    return value.toString().trim();
   }
 }

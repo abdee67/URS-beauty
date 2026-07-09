@@ -236,18 +236,18 @@ class _StylistCard extends StatelessWidget {
 }
 
 class _StylistImage extends StatelessWidget {
-  const _StylistImage({required this.imageUrl});
+  const _StylistImage({this.imageUrl});
 
-  final String imageUrl;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
-    if (imageUrl.trim().isEmpty) {
+    if (imageUrl == null || imageUrl!.trim().isEmpty) {
       return const _StylistFallback();
     }
 
     return Image.network(
-      imageUrl,
+      imageUrl!,
       fit: BoxFit.cover,
       width: double.infinity,
       loadingBuilder: (context, child, progress) {
@@ -266,17 +266,9 @@ class _StylistFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFE9B7A6), Color(0xFF9F624F), Color(0xFF2E2420)],
-        ),
-      ),
-      child: Center(
-        child: Icon(Icons.person_rounded, color: Colors.white, size: 54),
-      ),
+    return CircleAvatar(
+      backgroundImage: const AssetImage('assets/images/stylist.png'),
+      radius: 28,
     );
   }
 }

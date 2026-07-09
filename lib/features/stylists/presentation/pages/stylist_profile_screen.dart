@@ -250,7 +250,7 @@ class _ProfileHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = stylist.imageUrl.trim().isNotEmpty;
+    final hasImage = stylist.imageUrl?.trim().isNotEmpty ?? false;
 
     return Container(
       width: double.infinity,
@@ -268,7 +268,7 @@ class _ProfileHeroCard extends StatelessWidget {
                 radius: 34,
                 backgroundColor: const Color(0xFFFFE7D5),
                 backgroundImage: hasImage
-                    ? NetworkImage(stylist.imageUrl)
+                    ? NetworkImage(stylist.imageUrl!)
                     : null,
                 child: hasImage
                     ? null
