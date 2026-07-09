@@ -106,3 +106,37 @@ class CancelPendingWalletPaymentEvent extends PaymentEvent {
   @override
   List<Object?> get props => [paymentId];
 }
+
+class ReceiveCashPaymentEvent extends PaymentEvent {
+  const ReceiveCashPaymentEvent(this.booking);
+
+  final BookingEntity booking;
+
+  @override
+  List<Object?> get props => [booking];
+}
+
+class CustomerConfirmCashPaymentEvent extends PaymentEvent {
+  const CustomerConfirmCashPaymentEvent(this.customerId, this.bookingId);
+
+  final String customerId;
+  final String bookingId;
+
+  @override
+  List<Object?> get props => [customerId, bookingId];
+}
+
+class CustomerDisputeCashPaymentEvent extends PaymentEvent {
+  const CustomerDisputeCashPaymentEvent(
+    this.customerId,
+    this.bookingId,
+    this.note,
+  );
+
+  final String customerId;
+  final String bookingId;
+  final String? note;
+
+  @override
+  List<Object?> get props => [customerId, bookingId, note];
+}

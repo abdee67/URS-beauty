@@ -1,5 +1,5 @@
 import 'package:get_it/get_it.dart';
-import 'package:http/http.dart';
+import 'package:urs_beauty/api/cash/cash_payment_api_service.dart';
 import 'package:urs_beauty/api/chapa/chapa_api_service.dart';
 import 'package:urs_beauty/api/stripe/stripe_api_service.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
@@ -131,8 +131,13 @@ void initDependency() {
   );
   getit.registerLazySingleton(() => StripeApiService());
   getit.registerLazySingleton(() => ChapaApiService());
+  getit.registerLazySingleton(() => CashPaymentApiService());
   getit.registerLazySingleton<PaymentRemoteDataSource>(
-    () => PaymentRemoteDataSourceImpl(stripeApiService: getit(), chapaApiService: getit()),
+    () => PaymentRemoteDataSourceImpl(
+      stripeApiService: getit(),
+      chapaApiService: getit(),
+      cashPaymentApiService: getit(),
+    ),
   );
 
   //================== injecting  repository===================
@@ -252,6 +257,15 @@ void initDependency() {
     () => CreateWalletPaymentUseCase(paymentRepository: getit()),
   );
   getit.registerLazySingleton(
+    () => CreateCashPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => CustomerConfirmCashPayment(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => CustomerDisputeCashPayment(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
     () => HandleWalletPaymentFailureUseCase(paymentRepository: getit()),
   );
 
@@ -348,6 +362,9 @@ void initDependency() {
       confirmWalletPayment: getit(),
       createWalletPayment: getit(),
       handleWalletPaymentFailure: getit(),
+      createCashPayment: getit(),
+      customerConfirmCashPayment: getit(),
+      customerDisputeCashPayment: getit(),
     ),
   );
 

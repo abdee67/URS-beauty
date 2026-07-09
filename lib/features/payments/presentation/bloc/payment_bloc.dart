@@ -25,6 +25,9 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     required this.handleWalletPaymentFailure,
     required this.createWalletPayment,
     required this.confirmWalletPayment,
+    required this.createCashPayment,
+    required this.customerConfirmCashPayment,
+    required this.customerDisputeCashPayment,
   }) : super(const PaymentState()) {
     on<SelectPaymentMethodEvent>(_onSelectPaymentMethod);
     on<CreateCardPaymentEvent>(_onCreateCardPayment);
@@ -39,17 +42,29 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
     on<ConfirmWalletPaymentEvent>(_onConfirmWalletPayment);
     on<HandleWalletPaymentFailureEvent>(_onHandleWalletPaymentFailure);
     on<CancelPendingWalletPaymentEvent>(_onCancelPendingWalletPayment);
+
+    // =====================================  CASH PAYMENT =====================================
+    on<ReceiveCashPaymentEvent>(_onReceiveCashPayment);
+    on<CustomerConfirmCashPaymentEvent>(_onCustomerConfirmCashPayment);
+    on<CustomerDisputeCashPaymentEvent>(_onCustomerDisputeCashPayment);
   }
 
+  //==============CARD=============================
   final CreateCardPaymentUseCase createCardPayment;
   final ConfirmCardPaymentUseCase confirmCardPayment;
   final HandleCardPaymentFailureUseCase handleCardPaymentFailure;
+
+  //===================WALLET======================
   final GetPaymentStatusUseCase getPaymentStatus;
   final CancelPendingCardPaymentUseCase cancelPendingCardPayment;
   final CancelPendingWalletPaymentUseCase cancelPendingWalletPayment;
   final HandleWalletPaymentFailureUseCase handleWalletPaymentFailure;
   final CreateWalletPaymentUseCase createWalletPayment;
   final ConfirmWalletPaymentUseCase confirmWalletPayment;
+  //=============CASH============================
+  final CreateCashPaymentUseCase createCashPayment;
+  final CustomerConfirmCashPayment customerConfirmCashPayment;
+  final CustomerDisputeCashPayment customerDisputeCashPayment;
 
   void _onSelectPaymentMethod(
     SelectPaymentMethodEvent event,
@@ -61,7 +76,8 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
         message: switch (event.method) {
           PaymentMethod.bankTransfer =>
             'Manual bank transfer verification is coming soon.',
-          PaymentMethod.cash => 'Cash payment support is coming soon.',
+          PaymentMethod.cash =>
+            'Choose QR or OTP verification to confirm the cash payment.',
           PaymentMethod.card => null,
           PaymentMethod.wallet => null,
         },
@@ -206,6 +222,89 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
         ),
       );
     });
+  }
+
+  //create cash payment
+  Future<void> _onReceiveCashPayment(
+    ReceiveCashPaymentEvent event,
+    Emitter<PaymentState> emit,
+  ) async {
+    final booking = event.booking;
+    if (!booking.canCollectPostServicePayment) {
+      final message = booking.status != BookingStatus.completed
+          ? 'Payment is only available after the stylist marks the service as completed.'
+          : booking.isPaid
+          ? 'This booking has already been paid. There is nothing left to charge.'
+          : booking.isPaymentAwaitingVerification
+          ? 'This payment is already being verified. Please refresh your bookings shortly.'
+          : 'This booking is not ready for cash payment yet.';
+
+      emit(state.failure(message));
+      return;
+    }
+
+    emit(state.confirming());
+
+    final now = DateTime.now();
+    final paymentSeed = PaymentEntity(
+      id: '',
+      bookingId: booking.id,
+      customerId: booking.customerId,
+      paymentMethod: PaymentMethod.cash,
+      paymentType: PaymentType.payment,
+      status: PaymentStatus.pending,
+      amount: booking.totalAmount,
+      currency: booking.currency ?? 'ETB',
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    final result = await createCashPayment(booking.id, paymentSeed);
+    result.fold(
+      (failure) => emit(state.failure(failure.message)),
+      (payment) => emit(
+        state.success(
+          'Cash payment confirmed. Commission has been recorded.',
+          payment,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onCustomerConfirmCashPayment(
+    CustomerConfirmCashPaymentEvent event,
+    Emitter<PaymentState> emit,
+  ) async {
+    emit(state.confirming());
+
+    final result = await customerConfirmCashPayment(
+      event.customerId,
+      event.bookingId,
+    );
+    result.fold(
+      (failure) => emit(state.failure(failure.message)),
+      (payment) =>
+          emit(state.success('Cash payment confirmation saved.', payment)),
+    );
+  }
+
+  Future<void> _onCustomerDisputeCashPayment(
+    CustomerDisputeCashPaymentEvent event,
+    Emitter<PaymentState> emit,
+  ) async {
+    emit(state.confirming());
+
+    final result = await customerDisputeCashPayment(
+      event.customerId,
+      event.bookingId,
+      event.note,
+    );
+    result.fold(
+      (failure) => emit(state.failure(failure.message)),
+      (payment) => emit(
+        state.success('Cash payment dispute has been submitted.', payment),
+      ),
+    );
   }
 
   Future<void> _onConfirmCardPayment(

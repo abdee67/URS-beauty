@@ -5,6 +5,7 @@ enum PaymentBlocStatus {
   creatingIntent,
   paymentSheetReady,
   verifying,
+  confirming,
   awaitingWebhook,
   success,
   cancelled,
@@ -28,7 +29,8 @@ class PaymentState extends Equatable {
 
   bool get isBusy =>
       status == PaymentBlocStatus.creatingIntent ||
-      status == PaymentBlocStatus.verifying;
+      status == PaymentBlocStatus.verifying ||
+      status == PaymentBlocStatus.confirming;
 
   PaymentState creatingIntent() => copyWith(
     status: PaymentBlocStatus.creatingIntent,
@@ -39,6 +41,17 @@ class PaymentState extends Equatable {
   PaymentState verifying() => copyWith(
     status: PaymentBlocStatus.verifying,
     clearMessage: true,
+    clearError: true,
+  );
+  PaymentState confirming() => copyWith(
+    status: PaymentBlocStatus.confirming,
+    clearMessage: true,
+    clearError: true,
+  );
+  PaymentState success(String message, PaymentEntity paymentEntity) => copyWith(
+    status: PaymentBlocStatus.success,
+    message: message,
+    activePayment: paymentEntity,
     clearError: true,
   );
 

@@ -265,6 +265,8 @@ class PaymentModel extends PaymentEntity {
         return PaymentStatus.partiallyRefunded;
       case 'pending_verification':
         return PaymentStatus.pendingVerification;
+      case 'disputed':
+        return PaymentStatus.disputed;
       case 'failed':
         return PaymentStatus.failed;
       default:

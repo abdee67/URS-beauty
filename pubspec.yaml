@@ -39,6 +39,7 @@ dependencies:
   flutter_stripe: ^12.6.0
   google_maps_flutter: ^2.17.1
   chapasdk: ^0.0.8+1
+  qr_flutter: ^4.1.0
 
 dependency_overrides:
   fluttertoast: ^9.1.0

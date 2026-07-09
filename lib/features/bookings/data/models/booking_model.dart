@@ -14,6 +14,10 @@ class BookingModel extends BookingEntity {
     required super.totalAmount,
     required super.scheduledAt,
     required super.endAt,
+    super.startedAt,
+    super.completedAt,
+    super.paymentDueAt,
+    super.cashReceivedAt,
     required super.createdAt,
     required super.updatedAt,
     required super.isReviewed,
@@ -58,6 +62,12 @@ class BookingModel extends BookingEntity {
       totalAmount: (json['total_amount'] as num?)?.toDouble() ?? 0.0,
       scheduledAt: AppStrings.asLocalDateTime(json['scheduled_at']),
       endAt: AppStrings.asLocalDateTime(json['end_at']),
+      startedAt: AppStrings.asNullableLocalDateTime(json['started_at']),
+      completedAt: AppStrings.asNullableLocalDateTime(json['completed_at']),
+      paymentDueAt: AppStrings.asNullableLocalDateTime(json['payment_due_at']),
+      cashReceivedAt: AppStrings.asNullableLocalDateTime(
+        json['cash_received_at'],
+      ),
       createdAt: AppStrings.asLocalDateTime(json['created_at']),
       updatedAt: AppStrings.asLocalDateTime(json['updated_at']),
       isReviewed: AppStrings.isReviewedFromString(json['is_reviewed']),
@@ -88,6 +98,10 @@ class BookingModel extends BookingEntity {
       totalAmount: totalAmount,
       scheduledAt: scheduledAt,
       endAt: endAt,
+      startedAt: startedAt,
+      completedAt: completedAt,
+      paymentDueAt: paymentDueAt,
+      cashReceivedAt: cashReceivedAt,
       createdAt: createdAt,
       updatedAt: updatedAt,
       isReviewed: isReviewed,
@@ -136,6 +150,8 @@ class BookingModel extends BookingEntity {
         return PaymentStatus.partialRefunded;
       case 'pending_verification':
         return PaymentStatus.pendingVerification;
+      case 'disputed':
+        return PaymentStatus.disputed;
       default:
         return PaymentStatus.pending;
     }

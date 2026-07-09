@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:urs_beauty/config/app_config.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 import 'package:urs_beauty/features/payments/domain/entity/payment_entity.dart'
@@ -289,10 +290,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       const SizedBox(height: 12),
                       _PaymentMethodTile(
                         title: 'Cash Payment',
-                        subtitle: 'Cash collection support is coming soon',
+                        subtitle:
+                            'Confirm with QR or OTP after handing cash to the stylist',
                         isSelected:
                             selectedMethod == payment_domain.PaymentMethod.cash,
-                        enabled: false,
+                        enabled: true,
                         onTap: () {
                           context.read<PaymentBloc>().add(
                             const SelectPaymentMethodEvent(
@@ -374,6 +376,14 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                               CreateWalletPaymentEvent(booking),
                             );
                           }
+                        : selectedMethod == payment_domain.PaymentMethod.cash
+                        ? () => _showCashVerificationOptions(
+                            context,
+                            booking,
+                            serviceLabel.isEmpty
+                                ? 'Beauty service'
+                                : serviceLabel,
+                          )
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6B3F32),
@@ -574,6 +584,105 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     return '';
   }
 
+  Future<void> _showCashVerificationOptions(
+    BuildContext context,
+    BookingEntity booking,
+    String serviceName,
+  ) async {
+    final method = await showModalBottomSheet<_CashVerificationMethod>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CashVerificationMethodSheet(
+        amountLabel:
+            '${booking.currency ?? 'ETB'} ${booking.totalAmount.toStringAsFixed(2)}',
+      ),
+    );
+
+    if (!mounted || method == null) {
+      return;
+    }
+
+    switch (method) {
+      case _CashVerificationMethod.qr:
+        await _showCashQrSheet(booking, serviceName);
+        return;
+      case _CashVerificationMethod.otp:
+        await _showCashOtpSheet(booking, serviceName);
+        return;
+    }
+  }
+
+  Future<void> _showCashQrSheet(
+    BookingEntity booking,
+    String serviceName,
+  ) async {
+    final payload = _cashVerificationPayload(booking, 'qr');
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CashQrSheet(
+        payload: payload,
+        serviceName: serviceName,
+        amountLabel:
+            '${booking.currency ?? 'ETB'} ${booking.totalAmount.toStringAsFixed(2)}',
+      ),
+    );
+
+    if (!mounted || confirmed != true) {
+      return;
+    }
+
+    this.context.read<PaymentBloc>().add(ReceiveCashPaymentEvent(booking));
+  }
+
+  Future<void> _showCashOtpSheet(
+    BookingEntity booking,
+    String serviceName,
+  ) async {
+    final otp = _cashOtp(booking);
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CashOtpSheet(
+        otp: otp,
+        serviceName: serviceName,
+        amountLabel:
+            '${booking.currency ?? 'ETB'} ${booking.totalAmount.toStringAsFixed(2)}',
+      ),
+    );
+
+    if (!mounted || confirmed != true) {
+      return;
+    }
+
+    this.context.read<PaymentBloc>().add(ReceiveCashPaymentEvent(booking));
+  }
+
+  String _cashVerificationPayload(BookingEntity booking, String mode) {
+    return Uri(
+      scheme: 'ursbeauty',
+      host: 'cash-payment',
+      queryParameters: <String, String>{
+        'booking_id': booking.id,
+        'customer_id': booking.customerId,
+        'stylist_id': booking.stylistId,
+        'mode': mode,
+      },
+    ).toString();
+  }
+
+  String _cashOtp(BookingEntity booking) {
+    final source = '${booking.id}:${booking.customerId}:${booking.stylistId}';
+    final hash = source.codeUnits.fold<int>(
+      0,
+      (value, codeUnit) => (value * 31 + codeUnit) & 0x7fffffff,
+    );
+    return (100000 + hash % 900000).toString();
+  }
+
   String _primaryActionLabel(
     PaymentState state,
     payment_domain.PaymentMethod method,
@@ -583,7 +692,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     }
 
     if (method == payment_domain.PaymentMethod.cash) {
-      return 'Cash payment coming soon';
+      if (state.status == PaymentBlocStatus.confirming) {
+        return 'Confirming cash payment...';
+      }
+
+      return 'Continue with cash';
     }
 
     switch (state.status) {
@@ -591,6 +704,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         return 'Preparing secure payment...';
       case PaymentBlocStatus.verifying:
         return 'Verifying payment...';
+      case PaymentBlocStatus.confirming:
+        return 'Confirming payment...';
       default:
         return 'Pay now';
     }
@@ -608,6 +723,382 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           ),
         ),
         child: SafeArea(child: child),
+      ),
+    );
+  }
+}
+
+enum _CashVerificationMethod { qr, otp }
+
+class _CashVerificationMethodSheet extends StatelessWidget {
+  const _CashVerificationMethodSheet({required this.amountLabel});
+
+  final String amountLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CashSheetFrame(
+      title: 'Cash verification',
+      subtitle: amountLabel,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _CashMethodButton(
+            icon: Icons.qr_code_2_rounded,
+            title: 'Show QR code',
+            subtitle: 'Stylist scans it to confirm cash receipt',
+            onTap: () => Navigator.of(context).pop(_CashVerificationMethod.qr),
+          ),
+          const SizedBox(height: 12),
+          _CashMethodButton(
+            icon: Icons.pin_rounded,
+            title: 'Generate OTP',
+            subtitle: 'Share a short code with your stylist',
+            onTap: () => Navigator.of(context).pop(_CashVerificationMethod.otp),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CashQrSheet extends StatelessWidget {
+  const _CashQrSheet({
+    required this.payload,
+    required this.serviceName,
+    required this.amountLabel,
+  });
+
+  final String payload;
+  final String serviceName;
+  final String amountLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CashSheetFrame(
+      title: 'Scan cash QR',
+      subtitle: amountLabel,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            serviceName,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: const Color(0xFF43261D),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: 220,
+            height: 220,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE8C8B8)),
+            ),
+            child: QrImageView(
+              data: payload,
+              version: QrVersions.auto,
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF43261D),
+            ),
+          ),
+          const SizedBox(height: 18),
+          _CashNotice(
+            text:
+                'After the stylist scans this code, the server confirms the cash payment and records the commission debit.',
+          ),
+          const SizedBox(height: 18),
+          _CashPrimaryButton(
+            label: 'Stylist scanned QR',
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CashOtpSheet extends StatefulWidget {
+  const _CashOtpSheet({
+    required this.otp,
+    required this.serviceName,
+    required this.amountLabel,
+  });
+
+  final String otp;
+  final String serviceName;
+  final String amountLabel;
+
+  @override
+  State<_CashOtpSheet> createState() => _CashOtpSheetState();
+}
+
+class _CashOtpSheetState extends State<_CashOtpSheet> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _CashSheetFrame(
+      title: 'Cash OTP',
+      subtitle: widget.amountLabel,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            widget.serviceName,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: const Color(0xFF43261D),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF5EC),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE8C8B8)),
+            ),
+            child: Text(
+              widget.otp,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF43261D),
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          const _CashNotice(
+            text:
+                'Share this code with the stylist. When they confirm it, the server records the cash payment and commission debit.',
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Enter OTP to confirm',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 18),
+          _CashPrimaryButton(
+            label: 'Confirm OTP',
+            onPressed: _controller.text.trim() == widget.otp
+                ? () => Navigator.of(context).pop(true)
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CashSheetFrame extends StatelessWidget {
+  const _CashSheetFrame({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.viewInsetsOf(context).bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          color: Color(0xFFFFFBF6),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: const Color(0xFF43261D),
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: const Color(0xFF7B6156),
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CashMethodButton extends StatelessWidget {
+  const _CashMethodButton({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFFFFFAF5),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFF1D8CB)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: const Color(0xFF7A4A39), size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: const Color(0xFF43261D),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF7B6156),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFF8B5C49)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CashNotice extends StatelessWidget {
+  const _CashNotice({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(
+          Icons.info_outline_rounded,
+          size: 18,
+          color: Color(0xFF8B5C49),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF7B6156),
+              height: 1.35,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CashPrimaryButton extends StatelessWidget {
+  const _CashPrimaryButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF6B3F32),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Text(label),
       ),
     );
   }

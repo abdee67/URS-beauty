@@ -21,3 +21,21 @@ class HandleWalletPaymentFailureUseCase {
     return await paymentRepository.handleWalletPaymentFailure(paymentReference);
   }
 }
+
+class CustomerDisputeCashPayment {
+  const CustomerDisputeCashPayment({required this.paymentRepository});
+
+  final PaymentRepository paymentRepository;
+
+  Future<Either<Failures, PaymentEntity>> call(
+    String customerId,
+    String bookingId,
+    String? note,
+  ) async {
+    return await paymentRepository.customerDisputeCashPayment(
+      customerId,
+      bookingId,
+      note,
+    );
+  }
+}

@@ -12,6 +12,7 @@ class ConfirmCardPaymentUseCase {
     return await paymentRepository.confirmCardPayment(paymentReference);
   }
 }
+
 class ConfirmWalletPaymentUseCase {
   const ConfirmWalletPaymentUseCase({required this.paymentRepository});
 
@@ -19,5 +20,21 @@ class ConfirmWalletPaymentUseCase {
 
   Future<Either<Failures, PaymentEntity>> call(String paymentReference) async {
     return await paymentRepository.confirmWalletPayment(paymentReference);
+  }
+}
+
+class CustomerConfirmCashPayment {
+  const CustomerConfirmCashPayment({required this.paymentRepository});
+
+  final PaymentRepository paymentRepository;
+
+  Future<Either<Failures, PaymentEntity>> call(
+    String customerId,
+    String bookingId,
+  ) async {
+    return await paymentRepository.customerConfirmCashPayment(
+      customerId,
+      bookingId,
+    );
   }
 }

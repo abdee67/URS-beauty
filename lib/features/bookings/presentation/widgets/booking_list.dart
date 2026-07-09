@@ -278,6 +278,8 @@ class BookingListItem extends StatelessWidget {
         return 'Paid ${booking.currency ?? 'ETB'} ${paidAmount.toStringAsFixed(2)}';
       case PaymentStatus.failed:
         return 'Payment failed';
+      case PaymentStatus.disputed:
+        return 'Payment disouted';
       case PaymentStatus.pendingVerification:
         return 'Awaiting verification';
       case PaymentStatus.refunded:
@@ -292,7 +294,7 @@ class BookingListItem extends StatelessWidget {
   }
 
   String _paymentButtonLabel(BookingEntity booking) {
-    return booking.paymentStatus == PaymentStatus.failed
+    return booking.paymentStatus == PaymentStatus.failed || booking.paymentStatus == PaymentStatus.disputed
         ? 'Retry payment'
         : 'Pay now';
   }
