@@ -107,6 +107,10 @@ class BookingModel extends BookingEntity {
     switch (status.toLowerCase()) {
       case 'pending':
         return BookingStatus.pending;
+      case 'confirmed':
+        return BookingStatus.confirmed;
+      case 'in_progress':
+        return BookingStatus.inProgress;
       case 'completed':
         return BookingStatus.completed;
       case 'cancelled':
