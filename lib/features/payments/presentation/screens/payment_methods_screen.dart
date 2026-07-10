@@ -634,7 +634,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       return;
     }
 
-    this.context.read<PaymentBloc>().add(ReceiveCashPaymentEvent(booking));
+    // context.read<PaymentBloc>().add(ReceiveCashPaymentEvent(booking));
   }
 
   Future<void> _showCashOtpSheet(
@@ -658,7 +658,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       return;
     }
 
-    this.context.read<PaymentBloc>().add(ReceiveCashPaymentEvent(booking));
+    //context.read<PaymentBloc>().add(ReceiveCashPaymentEvent(booking));
   }
 
   String _cashVerificationPayload(BookingEntity booking, String mode) {
