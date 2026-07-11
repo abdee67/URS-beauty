@@ -410,7 +410,9 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
   }
 
   bool _isScheduled(BookingStatus status) {
-    return status == BookingStatus.pending;
+    return status == BookingStatus.pending ||
+        status == BookingStatus.inProgress ||
+        status == BookingStatus.confirmed;
   }
 
   bool _hasReview(

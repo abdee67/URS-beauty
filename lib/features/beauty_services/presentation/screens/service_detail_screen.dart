@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/beauty_services/domain/entities/service_entity.dart';
-import 'package:urs_beauty/features/discover/presentation/bloc/stylist_recommendation_bloc.dart';
-import 'package:urs_beauty/features/discover/presentation/widgets/service_date_time_picker.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/stylists/presentation/pages/stylist_detail_screen.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/service_date_time_picker.dart';
 import 'package:urs_beauty/injection_container.dart';
 
 class ServiceDetailScreen extends StatelessWidget {
@@ -122,7 +121,6 @@ class ServiceDetailScreen extends StatelessWidget {
         builder: (_) => MultiBlocProvider(
           providers: [
             BlocProvider(create: (_) => getit<StylistsBloc>()),
-            BlocProvider(create: (_) => getit<StylistRecommendationBloc>()),
           ],
           child: StylistDetailScreen(
             serviceId: service.id,

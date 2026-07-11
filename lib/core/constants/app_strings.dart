@@ -4,6 +4,15 @@ class AppStrings {
     return parsed.isUtc ? parsed.toLocal() : parsed;
   }
 
+  static DateTime? asNullableLocalDateTime(dynamic value) {
+    final normalized = value?.toString().trim() ?? '';
+    if (normalized.isEmpty || normalized.toLowerCase() == 'null') {
+      return null;
+    }
+
+    return asLocalDateTime(normalized);
+  }
+
   static bool isReviewedFromString(dynamic value) {
     return value.toString().toLowerCase() == 'true';
   }
@@ -44,5 +53,18 @@ class AppStrings {
       return double.tryParse(value.trim()) ?? 0.0;
     }
     return 0.0;
+  }
+
+  static bool asBool(dynamic value) {
+    if (value is bool) {
+      return value;
+    }
+    if (value is String) {
+      return value.toLowerCase() == 'true';
+    }
+    if (value is num) {
+      return value != 0;
+    }
+    return false;
   }
 }

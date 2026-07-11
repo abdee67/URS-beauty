@@ -1,9 +1,22 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:chapasdk/data/model/initiate_payment.dart';
+import 'package:chapasdk/data/model/network_response.dart';
+import 'package:chapasdk/data/model/request/direct_charge_request.dart';
+import 'package:chapasdk/data/model/request/validate_direct_charge_request.dart';
+import 'package:chapasdk/data/model/response/api_error_response.dart';
+import 'package:chapasdk/data/model/response/direct_charge_success_response.dart';
+import 'package:chapasdk/data/model/response/verify_direct_charge_response.dart';
+import 'package:chapasdk/data/services/payment_service.dart';
+import 'package:chapasdk/domain/constants/enums.dart' as chapa;
+import 'package:chapasdk/domain/constants/extentions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:urs_beauty/config/app_config.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 import 'package:urs_beauty/features/payments/domain/entity/payment_entity.dart'
     as payment_domain;
@@ -115,7 +128,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           icon: Icons.hourglass_top_rounded,
           title: 'Payment is being verified',
           message:
-              'Stripe is still confirming this payment. Return to bookings and refresh shortly.',
+              'Confirming this payment. Return to bookings and refresh shortly.',
           actionLabel: 'Back to bookings',
           onAction: () => Navigator.of(context).pop(true),
         ),
@@ -134,8 +147,16 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       listener: (context, state) async {
         if (state.status == PaymentBlocStatus.paymentSheetReady &&
             state.activePayment != null &&
-            !_isPresentingSheet) {
+            !_isPresentingSheet &&
+            state.selectedMethod == payment_domain.PaymentMethod.card) {
           await _presentPaymentSheet(state.activePayment!);
+          return;
+        }
+        if (state.status == PaymentBlocStatus.paymentSheetReady &&
+            state.activePayment != null &&
+            !_isPresentingSheet &&
+            state.selectedMethod == payment_domain.PaymentMethod.wallet) {
+          await _handleWalletPayment(state.activePayment!);
           return;
         }
 
@@ -235,6 +256,23 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       ),
                       const SizedBox(height: 12),
                       _PaymentMethodTile(
+                        title: 'Wallet',
+                        subtitle:
+                            'Pay now with Telebirr, CBE Birr, eBirr or M-Pesa after service completion',
+                        isSelected:
+                            selectedMethod ==
+                            payment_domain.PaymentMethod.wallet,
+                        enabled: true,
+                        onTap: () {
+                          context.read<PaymentBloc>().add(
+                            const SelectPaymentMethodEvent(
+                              payment_domain.PaymentMethod.wallet,
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _PaymentMethodTile(
                         title: 'Bank Transfer',
                         subtitle: 'Manual verification coming soon',
                         isSelected:
@@ -252,10 +290,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       const SizedBox(height: 12),
                       _PaymentMethodTile(
                         title: 'Cash Payment',
-                        subtitle: 'Cash collection support is coming soon',
+                        subtitle:
+                            'Confirm with QR or OTP after handing cash to the stylist',
                         isSelected:
                             selectedMethod == payment_domain.PaymentMethod.cash,
-                        enabled: false,
+                        enabled: true,
                         onTap: () {
                           context.read<PaymentBloc>().add(
                             const SelectPaymentMethodEvent(
@@ -280,7 +319,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       _ChecklistItem('Amount is validated on the server'),
                       _ChecklistItem('Duplicate payment attempts are blocked'),
                       _ChecklistItem(
-                        'Stripe confirmation is re-checked before success',
+                        'Payment confirmation is re-checked before success',
                       ),
                       _ChecklistItem(
                         'Receipts and booking status stay in sync after payment',
@@ -291,15 +330,15 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 if (isAwaitingWebhook) ...[
                   const SizedBox(height: 18),
                   _SectionCard(
-                    title: 'Waiting for Stripe confirmation',
+                    title: 'Waiting for payment confirmation',
                     subtitle:
-                        'Your card step is done. We are waiting for the secure Stripe webhook to finish syncing the booking record.',
+                        'Your payment step is done. We are waiting for the secure webhook to finish syncing the booking record.',
                     child: SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: () {
                           context.read<PaymentBloc>().add(
-                            RefreshCardPaymentStatusEvent(
+                            RefreshPaymentStatusEvent(
                               paymentId: activePayment.id,
                               bookingId: booking.id,
                             ),
@@ -331,6 +370,20 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                               CreateCardPaymentEvent(booking),
                             );
                           }
+                        : selectedMethod == payment_domain.PaymentMethod.wallet
+                        ? () {
+                            context.read<PaymentBloc>().add(
+                              CreateWalletPaymentEvent(booking),
+                            );
+                          }
+                        : selectedMethod == payment_domain.PaymentMethod.cash
+                        ? () => _showCashVerificationOptions(
+                            context,
+                            booking,
+                            serviceLabel.isEmpty
+                                ? 'Beauty service'
+                                : serviceLabel,
+                          )
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6B3F32),
@@ -426,6 +479,210 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     }
   }
 
+  Future<void> _handleWalletPayment(
+    payment_domain.PaymentEntity payment,
+  ) async {
+    if (_isPresentingSheet) {
+      return;
+    }
+
+    final amount = payment.amount;
+    if (amount <= 0) {
+      context.read<PaymentBloc>().add(
+        HandleWalletPaymentFailureEvent(
+          payment.id,
+          failureReason: 'Payment amount must be greater than 0.',
+        ),
+      );
+      return;
+    }
+
+    final publicKey = AppConfig.chapaPublicKey.trim();
+    final txRef = _walletPaymentReference(payment);
+    if (publicKey.isEmpty || txRef.isEmpty) {
+      context.read<PaymentBloc>().add(
+        HandleWalletPaymentFailureEvent(
+          payment.id,
+          failureReason: publicKey.isEmpty
+              ? 'Chapa public key is not configured.'
+              : 'Wallet payment reference is missing.',
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isPresentingSheet = true;
+    });
+
+    final bloc = context.read<PaymentBloc>();
+    final result = await showModalBottomSheet<_WalletCheckoutResult>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (checkoutContext) {
+        return _ChapaWalletCheckoutSheet(
+          publicKey: publicKey,
+          payment: payment,
+          txRef: txRef,
+          initialPhone: _chapaCustomerValue(payment, 'phone'),
+          email: _chapaCustomerValue(payment, 'email'),
+          firstName: _chapaCustomerValue(payment, 'first_name'),
+          lastName: _chapaCustomerValue(payment, 'last_name'),
+        );
+      },
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isPresentingSheet = false;
+    });
+
+    switch (result?.status) {
+      case _WalletCheckoutStatus.success:
+      case _WalletCheckoutStatus.pending:
+        bloc.add(ConfirmWalletPaymentEvent(txRef));
+      case _WalletCheckoutStatus.failed:
+      case _WalletCheckoutStatus.cancelled:
+      case null:
+        bloc.add(
+          HandleWalletPaymentFailureEvent(
+            txRef,
+            failureReason:
+                result?.message ??
+                'Wallet checkout was closed before completion.',
+          ),
+        );
+    }
+  }
+
+  String _walletPaymentReference(payment_domain.PaymentEntity payment) {
+    final metadataRef = payment.metaData['chapa_tx_ref']?.toString().trim();
+    if (metadataRef?.isNotEmpty == true) {
+      return metadataRef!;
+    }
+
+    final transactionReference = payment.transactionReference?.trim();
+    if (transactionReference?.isNotEmpty == true) {
+      return transactionReference!;
+    }
+
+    return '';
+  }
+
+  String _chapaCustomerValue(payment_domain.PaymentEntity payment, String key) {
+    final customer = payment.metaData['chapa_customer'];
+    if (customer is Map) {
+      return customer[key]?.toString() ?? '';
+    }
+
+    return '';
+  }
+
+  Future<void> _showCashVerificationOptions(
+    BuildContext context,
+    BookingEntity booking,
+    String serviceName,
+  ) async {
+    final method = await showModalBottomSheet<_CashVerificationMethod>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CashVerificationMethodSheet(
+        amountLabel:
+            '${booking.currency ?? 'ETB'} ${booking.totalAmount.toStringAsFixed(2)}',
+      ),
+    );
+
+    if (!mounted || method == null) {
+      return;
+    }
+
+    switch (method) {
+      case _CashVerificationMethod.qr:
+        await _showCashQrSheet(booking, serviceName);
+        return;
+      case _CashVerificationMethod.otp:
+        await _showCashOtpSheet(booking, serviceName);
+        return;
+    }
+  }
+
+  Future<void> _showCashQrSheet(
+    BookingEntity booking,
+    String serviceName,
+  ) async {
+    final payload = _cashVerificationPayload(booking, 'qr');
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CashQrSheet(
+        payload: payload,
+        serviceName: serviceName,
+        amountLabel:
+            '${booking.currency ?? 'ETB'} ${booking.totalAmount.toStringAsFixed(2)}',
+      ),
+    );
+
+    if (!mounted || confirmed != true) {
+      return;
+    }
+
+    // context.read<PaymentBloc>().add(ReceiveCashPaymentEvent(booking));
+  }
+
+  Future<void> _showCashOtpSheet(
+    BookingEntity booking,
+    String serviceName,
+  ) async {
+    final otp = _cashOtp(booking);
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CashOtpSheet(
+        otp: otp,
+        serviceName: serviceName,
+        amountLabel:
+            '${booking.currency ?? 'ETB'} ${booking.totalAmount.toStringAsFixed(2)}',
+      ),
+    );
+
+    if (!mounted || confirmed != true) {
+      return;
+    }
+
+    //context.read<PaymentBloc>().add(ReceiveCashPaymentEvent(booking));
+  }
+
+  String _cashVerificationPayload(BookingEntity booking, String mode) {
+    return Uri(
+      scheme: 'ursbeauty',
+      host: 'cash-payment',
+      queryParameters: <String, String>{
+        'booking_id': booking.id,
+        'customer_id': booking.customerId,
+        'stylist_id': booking.stylistId,
+        'mode': mode,
+      },
+    ).toString();
+  }
+
+  String _cashOtp(BookingEntity booking) {
+    final source = '${booking.id}:${booking.customerId}:${booking.stylistId}';
+    final hash = source.codeUnits.fold<int>(
+      0,
+      (value, codeUnit) => (value * 31 + codeUnit) & 0x7fffffff,
+    );
+    return (100000 + hash % 900000).toString();
+  }
+
   String _primaryActionLabel(
     PaymentState state,
     payment_domain.PaymentMethod method,
@@ -435,7 +692,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     }
 
     if (method == payment_domain.PaymentMethod.cash) {
-      return 'Cash payment coming soon';
+      if (state.status == PaymentBlocStatus.confirming) {
+        return 'Confirming cash payment...';
+      }
+
+      return 'Continue with cash';
     }
 
     switch (state.status) {
@@ -443,6 +704,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         return 'Preparing secure payment...';
       case PaymentBlocStatus.verifying:
         return 'Verifying payment...';
+      case PaymentBlocStatus.confirming:
+        return 'Confirming payment...';
       default:
         return 'Pay now';
     }
@@ -460,6 +723,810 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           ),
         ),
         child: SafeArea(child: child),
+      ),
+    );
+  }
+}
+
+enum _CashVerificationMethod { qr, otp }
+
+class _CashVerificationMethodSheet extends StatelessWidget {
+  const _CashVerificationMethodSheet({required this.amountLabel});
+
+  final String amountLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CashSheetFrame(
+      title: 'Cash verification',
+      subtitle: amountLabel,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _CashMethodButton(
+            icon: Icons.qr_code_2_rounded,
+            title: 'Show QR code',
+            subtitle: 'Stylist scans it to confirm cash receipt',
+            onTap: () => Navigator.of(context).pop(_CashVerificationMethod.qr),
+          ),
+          const SizedBox(height: 12),
+          _CashMethodButton(
+            icon: Icons.pin_rounded,
+            title: 'Generate OTP',
+            subtitle: 'Share a short code with your stylist',
+            onTap: () => Navigator.of(context).pop(_CashVerificationMethod.otp),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CashQrSheet extends StatelessWidget {
+  const _CashQrSheet({
+    required this.payload,
+    required this.serviceName,
+    required this.amountLabel,
+  });
+
+  final String payload;
+  final String serviceName;
+  final String amountLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CashSheetFrame(
+      title: 'Scan cash QR',
+      subtitle: amountLabel,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            serviceName,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: const Color(0xFF43261D),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: 220,
+            height: 220,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE8C8B8)),
+            ),
+            child: QrImageView(
+              data: payload,
+              version: QrVersions.auto,
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF43261D),
+            ),
+          ),
+          const SizedBox(height: 18),
+          _CashNotice(
+            text:
+                'After the stylist scans this code, the server confirms the cash payment and records the commission debit.',
+          ),
+          const SizedBox(height: 18),
+          _CashPrimaryButton(
+            label: 'Stylist scanned QR',
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CashOtpSheet extends StatefulWidget {
+  const _CashOtpSheet({
+    required this.otp,
+    required this.serviceName,
+    required this.amountLabel,
+  });
+
+  final String otp;
+  final String serviceName;
+  final String amountLabel;
+
+  @override
+  State<_CashOtpSheet> createState() => _CashOtpSheetState();
+}
+
+class _CashOtpSheetState extends State<_CashOtpSheet> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _CashSheetFrame(
+      title: 'Cash OTP',
+      subtitle: widget.amountLabel,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            widget.serviceName,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: const Color(0xFF43261D),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF5EC),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE8C8B8)),
+            ),
+            child: Text(
+              widget.otp,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF43261D),
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          const _CashNotice(
+            text:
+                'Share this code with the stylist. When they confirm it, the server records the cash payment and commission debit.',
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Enter OTP to confirm',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 18),
+          _CashPrimaryButton(
+            label: 'Confirm OTP',
+            onPressed: _controller.text.trim() == widget.otp
+                ? () => Navigator.of(context).pop(true)
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CashSheetFrame extends StatelessWidget {
+  const _CashSheetFrame({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.viewInsetsOf(context).bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          color: Color(0xFFFFFBF6),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: const Color(0xFF43261D),
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: const Color(0xFF7B6156),
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CashMethodButton extends StatelessWidget {
+  const _CashMethodButton({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFFFFFAF5),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFF1D8CB)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: const Color(0xFF7A4A39), size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: const Color(0xFF43261D),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF7B6156),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFF8B5C49)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CashNotice extends StatelessWidget {
+  const _CashNotice({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(
+          Icons.info_outline_rounded,
+          size: 18,
+          color: Color(0xFF8B5C49),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF7B6156),
+              height: 1.35,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CashPrimaryButton extends StatelessWidget {
+  const _CashPrimaryButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF6B3F32),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+}
+
+enum _WalletCheckoutStatus { success, pending, failed, cancelled }
+
+class _WalletCheckoutResult {
+  const _WalletCheckoutResult({required this.status, required this.message});
+
+  final _WalletCheckoutStatus status;
+  final String message;
+}
+
+class _ChapaWalletCheckoutSheet extends StatefulWidget {
+  const _ChapaWalletCheckoutSheet({
+    required this.publicKey,
+    required this.payment,
+    required this.txRef,
+    required this.initialPhone,
+    required this.email,
+    required this.firstName,
+    required this.lastName,
+  });
+
+  final String publicKey;
+  final payment_domain.PaymentEntity payment;
+  final String txRef;
+  final String initialPhone;
+  final String email;
+  final String firstName;
+  final String lastName;
+
+  @override
+  State<_ChapaWalletCheckoutSheet> createState() =>
+      _ChapaWalletCheckoutSheetState();
+}
+
+class _ChapaWalletCheckoutSheetState extends State<_ChapaWalletCheckoutSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _paymentService = PaymentService();
+  late final TextEditingController _phoneController;
+  chapa.LocalPaymentMethods _selectedMethod =
+      chapa.LocalPaymentMethods.telebirr;
+  bool _isProcessing = false;
+  String? _errorMessage;
+  String? _statusMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController = TextEditingController(text: widget.initialPhone);
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startPayment() async {
+    if (!_formKey.currentState!.validate() || _isProcessing) {
+      return;
+    }
+
+    setState(() {
+      _isProcessing = true;
+      _errorMessage = null;
+      _statusMessage = 'Sending payment request to your wallet...';
+    });
+
+    final result = await _chargeWallet();
+    if (!mounted) {
+      return;
+    }
+
+    if (result.status == _WalletCheckoutStatus.failed) {
+      setState(() {
+        _isProcessing = false;
+        _errorMessage = result.message;
+        _statusMessage = null;
+      });
+      return;
+    }
+
+    Navigator.of(context).pop(result);
+  }
+
+  Future<_WalletCheckoutResult> _chargeWallet() async {
+    final phone = _phoneController.text.trim();
+    final method = _selectedMethod.value();
+
+    final initiateResponse = await _paymentService.initializeDirectPayment(
+      request: DirectChargeRequest(
+        mobile: phone,
+        firstName: widget.firstName,
+        lastName: widget.lastName,
+        amount: widget.payment.amount.toStringAsFixed(2),
+        currency: widget.payment.currency.toUpperCase(),
+        email: widget.email,
+        txRef: widget.txRef,
+        paymentMethod: method,
+      ),
+      publicKey: widget.publicKey,
+    );
+
+    if (initiateResponse is Success) {
+      final body = initiateResponse.body;
+      if (body is! DirectChargeSuccessResponse) {
+        return const _WalletCheckoutResult(
+          status: _WalletCheckoutStatus.failed,
+          message: 'Chapa returned an unexpected payment response.',
+        );
+      }
+
+      final reference = body.data?.meta?.refId?.trim() ?? '';
+      if (reference.isEmpty) {
+        return _WalletCheckoutResult(
+          status: _WalletCheckoutStatus.failed,
+          message:
+              body.data?.meta?.message ??
+              body.message ??
+              'Chapa could not start the wallet charge.',
+        );
+      }
+
+      if (mounted) {
+        setState(() {
+          _statusMessage = 'Waiting for wallet approval...';
+        });
+      }
+
+      return _waitForWalletApproval(
+        reference: reference,
+        phone: phone,
+        method: method,
+      );
+    }
+
+    if (initiateResponse is ApiError) {
+      return _WalletCheckoutResult(
+        status: _WalletCheckoutStatus.failed,
+        message: _apiErrorMessage(initiateResponse.error),
+      );
+    }
+
+    if (initiateResponse is NetworkError) {
+      return const _WalletCheckoutResult(
+        status: _WalletCheckoutStatus.failed,
+        message: 'Could not reach Chapa. Check your connection and try again.',
+      );
+    }
+
+    return const _WalletCheckoutResult(
+      status: _WalletCheckoutStatus.failed,
+      message: 'Unable to start wallet payment. Please try again.',
+    );
+  }
+
+  Future<_WalletCheckoutResult> _waitForWalletApproval({
+    required String reference,
+    required String phone,
+    required String method,
+  }) async {
+    for (var attempt = 0; attempt < 8; attempt++) {
+      if (attempt > 0) {
+        await Future<void>.delayed(const Duration(seconds: 3));
+      }
+
+      final verifyResponse = await _paymentService.verifyPayment(
+        body: ValidateDirectChargeRequest(
+          reference: reference,
+          mobile: phone,
+          paymentMethod: method,
+        ),
+        publicKey: widget.publicKey,
+      );
+
+      if (verifyResponse is Success) {
+        final body = verifyResponse.body;
+        if (body is! ValidateDirectChargeResponse) {
+          return const _WalletCheckoutResult(
+            status: _WalletCheckoutStatus.pending,
+            message: 'Wallet payment is still being confirmed.',
+          );
+        }
+
+        final status = body.data?.status?.toLowerCase().trim();
+        if (status == 'success') {
+          return const _WalletCheckoutResult(
+            status: _WalletCheckoutStatus.success,
+            message: 'Wallet payment approved.',
+          );
+        }
+
+        if (status == 'pending') {
+          if (mounted) {
+            setState(() {
+              _statusMessage = 'Still waiting for approval on your phone...';
+            });
+          }
+          continue;
+        }
+
+        return _WalletCheckoutResult(
+          status: _WalletCheckoutStatus.failed,
+          message: body.message ?? 'Wallet payment was not completed.',
+        );
+      }
+
+      if (verifyResponse is ApiError) {
+        return _WalletCheckoutResult(
+          status: _WalletCheckoutStatus.pending,
+          message: _apiErrorMessage(verifyResponse.error),
+        );
+      }
+
+      if (verifyResponse is NetworkError) {
+        return const _WalletCheckoutResult(
+          status: _WalletCheckoutStatus.pending,
+          message:
+              'Wallet payment was sent, but confirmation is still pending.',
+        );
+      }
+    }
+
+    return const _WalletCheckoutResult(
+      status: _WalletCheckoutStatus.pending,
+      message:
+          'Wallet payment is still pending. Approve it on your phone, then check payment status.',
+    );
+  }
+
+  String _apiErrorMessage(Object? error) {
+    if (error is DirectChargeApiError) {
+      return error.data?.message ??
+          error.message ??
+          'Chapa could not process this wallet payment.';
+    }
+
+    if (error is ApiErrorResponse) {
+      return error.message ?? 'Chapa could not process this wallet payment.';
+    }
+
+    final message = error?.toString().trim();
+    if (message != null && message.isNotEmpty) {
+      return message;
+    }
+
+    return 'Chapa could not process this wallet payment.';
+  }
+
+  void _cancel() {
+    if (_isProcessing) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      const _WalletCheckoutResult(
+        status: _WalletCheckoutStatus.cancelled,
+        message: 'Wallet checkout was cancelled before completion.',
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.viewInsetsOf(context).bottom;
+    final amountLabel =
+        '${widget.payment.currency.toUpperCase()} ${widget.payment.amount.toStringAsFixed(2)}';
+
+    return PopScope(
+      canPop: !_isProcessing,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomPadding),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFFFFBF6),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: SafeArea(
+            top: false,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Wallet checkout',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: const Color(0xFF43261D),
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              amountLabel,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: const Color(0xFF7B6156),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _isProcessing ? null : _cancel,
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: chapa.LocalPaymentMethods.values.map((method) {
+                      return ChoiceChip(
+                        label: Text(method.displayName()),
+                        selected: _selectedMethod == method,
+                        onSelected: _isProcessing
+                            ? null
+                            : (_) {
+                                setState(() {
+                                  _selectedMethod = method;
+                                });
+                              },
+                        selectedColor: const Color(0xFFF1D2C0),
+                        labelStyle: TextStyle(
+                          color: _selectedMethod == method
+                              ? const Color(0xFF43261D)
+                              : const Color(0xFF7B6156),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _phoneController,
+                    enabled: !_isProcessing,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: 'Wallet phone number',
+                      hintText: '0911121314',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      final phone = value?.trim() ?? '';
+                      if (phone.isEmpty) {
+                        return 'Phone number is required.';
+                      }
+
+                      if (!RegExp(r'^[0-9]{10}$').hasMatch(phone) ||
+                          !RegExp(r'^(09|07|011)').hasMatch(phone)) {
+                        return 'Enter a valid Ethiopian wallet phone number.';
+                      }
+
+                      return null;
+                    },
+                  ),
+                  if (_statusMessage != null) ...[
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _statusMessage!,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: const Color(0xFF7B6156)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 14),
+                    Text(
+                      _errorMessage!,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.red.shade700,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isProcessing ? null : _startPayment,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6B3F32),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        _isProcessing ? 'Processing...' : 'Pay with wallet',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -633,7 +1700,7 @@ class _SummaryCard extends StatelessWidget {
     return _SectionCard(
       title: 'Booking summary',
       subtitle:
-          'Payment is collected after service completion and only becomes final once Stripe verification succeeds.',
+          'Payment is collected after service completion and only becomes final once payment verification succeeds.',
       child: Column(
         children: [
           _SummaryRow(label: 'Service', value: title),

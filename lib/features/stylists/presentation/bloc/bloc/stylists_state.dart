@@ -30,9 +30,16 @@ enum StylistsStatus {
   stylistsServiceLoaded,
   stylistsServiceError,
   stylistSearching,
+  recomendedStylistsInitial,
+  recomendedStylistsLoading,
+  recomendedStylistsLoaded,
+  recomendedStylistsError,
+  recomendedStylistsEmpty,
   success,
   failure,
 }
+
+enum SortBy { distance, rating, price }
 
 class StylistsState extends Equatable {
   const StylistsState({
@@ -50,6 +57,13 @@ class StylistsState extends Equatable {
     this.message,
     this.errorMessage = '',
     this.query,
+    this.sortedStylists = const [],
+    this.sortBy = SortBy.distance,
+    this.isMapView = false,
+    this.hasMore = true,
+    this.serviceId = '',
+    this.requestedDateTime,
+    this.isLocationError = false,
   });
 
   final StylistsStatus status;
@@ -66,6 +80,13 @@ class StylistsState extends Equatable {
   final String? message;
   final String errorMessage;
   final String? query;
+  final List<Stylist> sortedStylists;
+  final SortBy sortBy;
+  final bool isMapView;
+  final bool hasMore;
+  final String serviceId;
+  final DateTime? requestedDateTime;
+  final bool isLocationError;
 
   StylistsState stylistsLoading() =>
       copyWith(status: StylistsStatus.stylistsLoading);
@@ -169,6 +190,41 @@ class StylistsState extends Equatable {
   StylistsState stylistSearching() =>
       copyWith(status: StylistsStatus.stylistSearching);
 
+  StylistsState recomendedStylistsInitial() =>
+      copyWith(status: StylistsStatus.recomendedStylistsInitial);
+
+  StylistsState recommenedStylistsLoading() =>
+      copyWith(status: StylistsStatus.recomendedStylistsLoading);
+
+  StylistsState recommenedStylistsLoaded({
+    List<Stylist>? stylists,
+    List<Stylist>? sortedStylists,
+    SortBy? sortBy,
+    DateTime? requestedDateTime,
+    bool? hasMore,
+  }) => copyWith(
+    status: StylistsStatus.recomendedStylistsLoaded,
+    stylists: stylists,
+    sortedStylists: sortedStylists,
+    sortBy: sortBy,
+    requestedDateTime: requestedDateTime,
+    hasMore: hasMore,
+  );
+
+  StylistsState recommenedStylistsError(String message) => copyWith(
+    status: StylistsStatus.recomendedStylistsError,
+    errorMessage: message,
+  );
+
+  StylistsState recommenedStylistsEmpty({
+    String? serviceId,
+    DateTime? requestedDateTime,
+  }) => copyWith(
+    status: StylistsStatus.recomendedStylistsEmpty,
+    serviceId: serviceId,
+    requestedDateTime: requestedDateTime,
+  );
+
   StylistsState success() => copyWith(status: StylistsStatus.success);
 
   StylistsState failure(String message) =>
@@ -189,6 +245,13 @@ class StylistsState extends Equatable {
     String? message,
     String? errorMessage,
     String? query,
+    String? serviceId,
+    DateTime? requestedDateTime,
+    bool? isLocationError,
+    bool? hasMore,
+    bool? isMapView,
+    SortBy? sortBy,
+    List<Stylist>? sortedStylists,
   }) {
     return StylistsState(
       status: status ?? this.status,
@@ -208,6 +271,13 @@ class StylistsState extends Equatable {
       message: message ?? this.message,
       errorMessage: errorMessage ?? this.errorMessage,
       query: query ?? this.query,
+      serviceId: serviceId ?? this.serviceId,
+      requestedDateTime: requestedDateTime ?? this.requestedDateTime,
+      isLocationError: isLocationError ?? this.isLocationError,
+      hasMore: hasMore ?? this.hasMore,
+      isMapView: isMapView ?? this.isMapView,
+      sortBy: sortBy ?? this.sortBy,
+      sortedStylists: sortedStylists ?? this.sortedStylists,
     );
   }
 

@@ -61,7 +61,7 @@ class GetStylistsAvailabilityEvent extends StylistsEvent {
 class UpdateStylistsAvailabilityEvent extends StylistsEvent {
   const UpdateStylistsAvailabilityEvent(this.availability);
 
-  final StylistsAvailabilityModel availability;
+  final StylistsAvailability availability;
 
   @override
   List<Object> get props => [availability];
@@ -106,4 +106,33 @@ class GetStylistsServicesEvent extends StylistsEvent {
 
   @override
   List<Object> get props => [stylistId];
+}
+class SearchStylistsForService extends StylistsEvent {
+  const SearchStylistsForService({
+    required this.serviceId,
+    required this.requestedDateTime,
+  });
+
+  final String serviceId;
+  final DateTime requestedDateTime;
+
+  @override
+  List<Object> get props => [serviceId, requestedDateTime];
+}
+
+class SortStylists extends StylistsEvent {
+  const SortStylists(this.sortBy);
+
+  final SortBy sortBy;
+
+  @override
+  List<Object> get props => [sortBy];
+}
+
+class ToggleMapView extends StylistsEvent {
+  const ToggleMapView();
+}
+
+class LoadMoreStylists extends StylistsEvent {
+  const LoadMoreStylists();
 }

@@ -10,9 +10,10 @@ enum PaymentStatus {
   refunded,
   partiallyRefunded,
   pendingVerification,
+  disputed,
 }
 
-enum PaymentMethod { card, bankTransfer, cash }
+enum PaymentMethod { card, wallet, bankTransfer, cash }
 
 enum PaymentType { payment, adjustment, refund }
 
@@ -37,6 +38,8 @@ extension PaymentStatusX on PaymentStatus {
         return 'partially_refunded';
       case PaymentStatus.pendingVerification:
         return 'pending_verification';
+      case PaymentStatus.disputed:
+        return 'disputed';
     }
   }
 
@@ -45,7 +48,8 @@ extension PaymentStatusX on PaymentStatus {
         this == PaymentStatus.failed ||
         this == PaymentStatus.cancelled ||
         this == PaymentStatus.refunded ||
-        this == PaymentStatus.partiallyRefunded;
+        this == PaymentStatus.partiallyRefunded ||
+        this == PaymentStatus.disputed;
   }
 }
 
@@ -54,6 +58,8 @@ extension PaymentMethodX on PaymentMethod {
     switch (this) {
       case PaymentMethod.card:
         return 'card';
+      case PaymentMethod.wallet:
+        return 'wallet';
       case PaymentMethod.bankTransfer:
         return 'bank_transfer';
       case PaymentMethod.cash:
@@ -65,6 +71,8 @@ extension PaymentMethodX on PaymentMethod {
     switch (this) {
       case PaymentMethod.card:
         return 'Card Payment';
+      case PaymentMethod.wallet:
+        return 'Wallet Payment';
       case PaymentMethod.bankTransfer:
         return 'Bank Transfer';
       case PaymentMethod.cash:

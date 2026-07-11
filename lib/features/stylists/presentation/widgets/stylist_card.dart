@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:urs_beauty/features/discover/presentation/widgets/distance_badge.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/distance_badge.dart';
 import 'package:urs_beauty/features/stylists/presentation/widgets/stylist_avatar.dart';
 
 class StylistCard extends StatelessWidget {

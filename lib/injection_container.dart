@@ -1,4 +1,6 @@
 import 'package:get_it/get_it.dart';
+import 'package:urs_beauty/api/cash/cash_payment_api_service.dart';
+import 'package:urs_beauty/api/chapa/chapa_api_service.dart';
 import 'package:urs_beauty/api/stripe/stripe_api_service.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
@@ -59,15 +61,6 @@ import 'package:urs_beauty/features/deals/data/datasource/deals_remote_data_sour
 import 'package:urs_beauty/features/deals/data/repository/deals_repository_impl.dart';
 import 'package:urs_beauty/features/deals/domain/repository/deals_repository.dart';
 import 'package:urs_beauty/features/deals/domain/usescases/get_deals.dart';
-import 'package:urs_beauty/features/discover/data/datasources/stylist_recommendation_remote_data_source.dart';
-import 'package:urs_beauty/features/discover/data/datasources/stylist_recommendation_remote_data_source_impl.dart';
-import 'package:urs_beauty/features/discover/data/repositories/stylist_recommendation_repository_impl.dart';
-import 'package:urs_beauty/features/discover/domain/repositories/stylist_recommendation_repository.dart';
-import 'package:urs_beauty/features/discover/domain/usecases/fetch_available_slots.dart';
-import 'package:urs_beauty/features/discover/domain/usecases/fetch_stylist_recommendations.dart';
-import 'package:urs_beauty/features/discover/domain/usecases/get_client_location.dart';
-import 'package:urs_beauty/features/discover/presentation/bloc/stylist_recommendation_bloc.dart'
-    hide SearchStylists;
 import 'package:urs_beauty/features/reviews/data/datasource/review_remote_data_source.dart';
 import 'package:urs_beauty/features/reviews/data/datasource/review_remote_data_source_impl.dart';
 import 'package:urs_beauty/features/reviews/data/repository/review_repository_impl.dart';
@@ -82,21 +75,24 @@ import 'package:urs_beauty/features/stylists/data/datasources/stylists_remote_da
 import 'package:urs_beauty/features/stylists/data/datasources/stylists_remote_datasource_impl.dart';
 import 'package:urs_beauty/features/stylists/data/repository/stylists_repository_impl.dart';
 import 'package:urs_beauty/features/stylists/domain/repository/stylists_repository.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_available_slots.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_client_location.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_nearby_stylists.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_by_service.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_detail.dart';
+import 'package:urs_beauty/features/stylists/domain/usecases/get_stylist_recommendations.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/home/presentation/bloc/home_bloc.dart';
-import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source';
+import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source.dart';
 import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source_impl.dart';
 import 'package:urs_beauty/features/payments/data/repository/payment_repository_impl.dart';
-import 'package:urs_beauty/features/payments/domain/repository/payment_repostiory';
-import 'package:urs_beauty/features/payments/domain/usecases/cancel_pending_card_payment.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/confirm_card_payment.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/create_card_payment.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/get_card_payment_status.dart';
-import 'package:urs_beauty/features/payments/domain/usecases/handle_card_payment_faillure.dart';
+import 'package:urs_beauty/features/payments/domain/repository/payment_repostiory.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/cancel_pending_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/confirm_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/create_payment.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/get_payment_status.dart';
+import 'package:urs_beauty/features/payments/domain/usecases/handle_payment_faillure.dart';
 import 'package:urs_beauty/features/payments/presentation/bloc/payment_bloc.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability.dart';
 import 'package:urs_beauty/features/stylists/domain/usecases/get_stylists_availability_by_day.dart';
@@ -121,9 +117,6 @@ void initDependency() {
   getit.registerLazySingleton<StylistsRemoteDataSource>(
     () => StylistsRemoteDataSourceImpl(),
   );
-  getit.registerLazySingleton<StylistRecommendationRemoteDataSource>(
-    () => StylistRecommendationRemoteDataSourceImpl(),
-  );
   getit.registerLazySingleton<DealsRemoteDataSource>(
     () => DealsRemoteDataSourceImpl(),
   );
@@ -137,8 +130,14 @@ void initDependency() {
     () => ReviewRemoteDataSourceImpl(),
   );
   getit.registerLazySingleton(() => StripeApiService());
+  getit.registerLazySingleton(() => ChapaApiService());
+  getit.registerLazySingleton(() => CashPaymentApiService());
   getit.registerLazySingleton<PaymentRemoteDataSource>(
-    () => PaymentRemoteDataSourceImpl(apiService: getit()),
+    () => PaymentRemoteDataSourceImpl(
+      stripeApiService: getit(),
+      chapaApiService: getit(),
+      cashPaymentApiService: getit(),
+    ),
   );
 
   //================== injecting  repository===================
@@ -153,9 +152,6 @@ void initDependency() {
   );
   getit.registerLazySingleton<StylistsRepository>(
     () => StylistsRepositoryImpl(remoteDataSource: getit()),
-  );
-  getit.registerLazySingleton<StylistRecommendationRepository>(
-    () => StylistRecommendationRepositoryImpl(remoteDataSource: getit()),
   );
   getit.registerLazySingleton<DealsRepository>(
     () => DealsRepositoryImpl(remoteDataSource: getit()),
@@ -215,8 +211,8 @@ void initDependency() {
 
   // Discover use cases
   getit.registerLazySingleton(() => GetClientLocation(getit()));
-  getit.registerLazySingleton(() => FetchStylistRecommendations(getit()));
-  getit.registerLazySingleton(() => FetchAvailableSlots(getit()));
+  getit.registerLazySingleton(() => GetStylistRecommendations(getit()));
+  getit.registerLazySingleton(() => GetAvailableSlots(getit()));
 
   // Booking use cases
   getit.registerLazySingleton(() => CreateBooking(getit()));
@@ -246,10 +242,31 @@ void initDependency() {
     () => HandleCardPaymentFailureUseCase(paymentRepository: getit()),
   );
   getit.registerLazySingleton(
-    () => GetCardPaymentStatusUseCase(paymentRepository: getit()),
+    () => GetPaymentStatusUseCase(paymentRepository: getit()),
   );
   getit.registerLazySingleton(
     () => CancelPendingCardPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => CancelPendingWalletPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => ConfirmWalletPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => CreateWalletPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => CreateCashPaymentUseCase(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => CustomerConfirmCashPayment(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => CustomerDisputeCashPayment(paymentRepository: getit()),
+  );
+  getit.registerLazySingleton(
+    () => HandleWalletPaymentFailureUseCase(paymentRepository: getit()),
   );
 
   // Review use cases
@@ -299,12 +316,8 @@ void initDependency() {
       getit(), // GetStylistDetail
       getit(), // SearchStylists
       getit(), // GetNearbyStylists
-    ),
-  );
-  getit.registerFactory(
-    () => StylistRecommendationBloc(
-      getClientLocation: getit(),
-      fetchStylistRecommendations: getit(),
+      getit(), // GetClientLocation
+      getit(), // GetStylistRecommendations
     ),
   );
   getit.registerFactory(
@@ -343,8 +356,15 @@ void initDependency() {
       createCardPayment: getit(),
       confirmCardPayment: getit(),
       handleCardPaymentFailure: getit(),
-      getCardPaymentStatus: getit(),
+      getPaymentStatus: getit(),
       cancelPendingCardPayment: getit(),
+      cancelPendingWalletPayment: getit(),
+      confirmWalletPayment: getit(),
+      createWalletPayment: getit(),
+      handleWalletPaymentFailure: getit(),
+      createCashPayment: getit(),
+      customerConfirmCashPayment: getit(),
+      customerDisputeCashPayment: getit(),
     ),
   );
 

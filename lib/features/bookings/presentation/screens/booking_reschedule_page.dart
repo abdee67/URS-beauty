@@ -297,8 +297,9 @@ class _BookingReschedulePageState extends State<BookingReschedulePage> {
   }
 
   void _handleStylistsStateChange(BuildContext context, StylistsState state) {
-    if (state.status == StylistsStatus.stylistsError &&
-        state.errorMessage.isNotEmpty) {
+    if (state.errorMessage.isNotEmpty &&
+        (state.status == StylistsStatus.stylistsError ||
+            state.status == StylistsStatus.stylistsAvailabilityError)) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(state.errorMessage)));
@@ -385,14 +386,22 @@ class _BookingReschedulePageState extends State<BookingReschedulePage> {
   }
 
   void _loadSlotsFor(DateTime date) {
-    if (_selectedStylist == null || _serviceId == null) {
+    final stylist = _selectedStylist;
+    final serviceId = _serviceId;
+    if (stylist == null || serviceId == null) {
+      return;
+    }
+
+    final stylistId = stylist.id.trim();
+    final trimmedServiceId = serviceId.trim();
+    if (stylistId.isEmpty || trimmedServiceId.isEmpty) {
       return;
     }
 
     context.read<StylistsBloc>().add(
       GetStylistsAvailabilityByTimeEvent(
-        _selectedStylist!.id,
-        _serviceId!,
+        stylistId,
+        trimmedServiceId,
         date,
         ignoredBookingId: widget.booking.id,
       ),

@@ -1,14 +1,14 @@
 import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
-import 'package:urs_beauty/features/discover/data/models/stylist_card_model.dart';
-import 'package:urs_beauty/features/discover/domain/repositories/stylist_recommendation_repository.dart';
+import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
+import 'package:urs_beauty/features/stylists/domain/repository/stylists_repository.dart';
 
-class FetchStylistRecommendations {
-  const FetchStylistRecommendations(this.repository);
+class GetStylistRecommendations {
+  const GetStylistRecommendations(this.repository);
 
-  final StylistRecommendationRepository repository;
+  final StylistsRepository repository;
 
-  Future<Either<Failures, List<StylistCardModel>>> call({
+  Future<Either<Failures, List<Stylist>>> call({
     required String serviceId,
     required double clientLat,
     required double clientLng,
@@ -16,7 +16,7 @@ class FetchStylistRecommendations {
     int limit = 20,
     int offset = 0,
   }) {
-    return repository.fetchStylists(
+    return repository.fetchStylistsForService(
       serviceId: serviceId,
       clientLat: clientLat,
       clientLng: clientLng,

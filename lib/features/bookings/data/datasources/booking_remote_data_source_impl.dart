@@ -76,14 +76,14 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       _requireValue(bookingId, 'Booking id is required to cancel a booking');
 
       final response = await _client.functions.invoke(
-        'cancel-booking',
+        'cancel-card-booking',
         body: {'booking_id': bookingId},
       );
 
       final data = response.data;
       if (data is! Map && data is! Map<String, dynamic>) {
         throw Failures(
-          message: 'Unexpected response from cancel-booking function.',
+          message: 'Unexpected response from cancel-card-booking function.',
         );
       }
 
@@ -91,7 +91,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       final booking = payload['booking'];
       if (booking is! Map && booking is! Map<String, dynamic>) {
         throw Failures(
-          message: 'cancel-booking did not return an updated booking.',
+          message: 'cancel-card-booking did not return an updated booking.',
         );
       }
 

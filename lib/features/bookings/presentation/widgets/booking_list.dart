@@ -11,6 +11,7 @@ class BookingListItem extends StatelessWidget {
     required this.booking,
     this.isHistory = false,
     this.isCompleted = false,
+    this.isInProgress = false,
     this.isBusy = false,
     this.onCancel,
     this.onReschedule,
@@ -22,6 +23,7 @@ class BookingListItem extends StatelessWidget {
   final BookingEntity booking;
   final bool isHistory;
   final bool isCompleted;
+  final bool isInProgress;
   final bool isBusy;
   final VoidCallback? onCancel;
   final VoidCallback? onReschedule;
@@ -108,7 +110,16 @@ class BookingListItem extends StatelessWidget {
               value: booking.notes!.trim(),
             ),
           ],
-          if (isHistory) ...[
+          if (isInProgress) ...[
+            //can not reschedule or cancle the booking
+            Text(
+              'You can not reschedule or cancle the booking',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: const Color(0xFF7B6156),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ] else if (isHistory) ...[
             const SizedBox(height: 18),
             if (review != null &&
                 booking.status == BookingStatus.completed &&
@@ -207,7 +218,9 @@ class BookingListItem extends StatelessWidget {
                 ),
               ),
             ],
-          ] else if (!isCompleted && !isHistory) ...[
+          ] else if (!isCompleted &&
+              !isHistory &&
+              booking.status != BookingStatus.inProgress) ...[
             const SizedBox(height: 18),
             Row(
               children: [
@@ -265,6 +278,8 @@ class BookingListItem extends StatelessWidget {
         return 'Paid ${booking.currency ?? 'ETB'} ${paidAmount.toStringAsFixed(2)}';
       case PaymentStatus.failed:
         return 'Payment failed';
+      case PaymentStatus.disputed:
+        return 'Payment disouted';
       case PaymentStatus.pendingVerification:
         return 'Awaiting verification';
       case PaymentStatus.refunded:
@@ -279,7 +294,7 @@ class BookingListItem extends StatelessWidget {
   }
 
   String _paymentButtonLabel(BookingEntity booking) {
-    return booking.paymentStatus == PaymentStatus.failed
+    return booking.paymentStatus == PaymentStatus.failed || booking.paymentStatus == PaymentStatus.disputed
         ? 'Retry payment'
         : 'Pay now';
   }

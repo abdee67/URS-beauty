@@ -1,3 +1,6 @@
+import 'dart:developer' as developer;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/core/widgets/header.dart';
@@ -61,6 +64,10 @@ class _BookingScheduleScreenState extends State<BookingScheduleScreen> {
         return;
       }
       _loadSlotsForDate(initialDate);
+
+      if (kDebugMode) {
+        developer.log('loaded availability for stylist: ${widget.stylist.id}');
+      }
     });
   }
 
@@ -84,12 +91,14 @@ class _BookingScheduleScreenState extends State<BookingScheduleScreen> {
   }
 
   void _loadSlotsForDate(DateTime date) {
+    final stylistId = widget.stylist.id.trim();
+    final serviceId = widget.serviceId.trim();
+    if (stylistId.isEmpty || serviceId.isEmpty) {
+      return;
+    }
+
     context.read<StylistsBloc>().add(
-      GetStylistsAvailabilityByTimeEvent(
-        widget.stylist.id,
-        widget.serviceId,
-        date,
-      ),
+      GetStylistsAvailabilityByTimeEvent(stylistId, serviceId, date),
     );
   }
 
@@ -135,8 +144,10 @@ class _BookingScheduleScreenState extends State<BookingScheduleScreen> {
 
     return BlocConsumer<StylistsBloc, StylistsState>(
       listener: (context, stylistsState) {
-        if (stylistsState.status == StylistsStatus.stylistsError &&
-            stylistsState.errorMessage.isNotEmpty) {
+        if (stylistsState.errorMessage.isNotEmpty &&
+            (stylistsState.status == StylistsStatus.stylistsError ||
+                stylistsState.status ==
+                    StylistsStatus.stylistsAvailabilityError)) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(SnackBar(content: Text(stylistsState.errorMessage)));

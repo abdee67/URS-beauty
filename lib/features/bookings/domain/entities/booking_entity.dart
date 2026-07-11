@@ -1,4 +1,12 @@
-enum BookingStatus { pending, completed, cancelled, noShow }
+enum BookingStatus {
+  pending,
+  completed,
+  cancelled,
+  noShow,
+  inProgress,
+  confirmed,
+  rejected,
+}
 
 enum PaymentStatus {
   pending,
@@ -7,6 +15,7 @@ enum PaymentStatus {
   failed,
   partialRefunded,
   pendingVerification,
+  disputed,
 }
 
 class BookingEntity {
@@ -21,6 +30,10 @@ class BookingEntity {
   final double totalAmount;
   final DateTime scheduledAt;
   final DateTime endAt;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
+  final DateTime? paymentDueAt;
+  final DateTime? cashReceivedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isReviewed;
@@ -59,6 +72,10 @@ class BookingEntity {
     required this.totalAmount,
     required this.scheduledAt,
     required this.endAt,
+    this.startedAt,
+    this.completedAt,
+    this.paymentDueAt,
+    this.cashReceivedAt,
     required this.createdAt,
     required this.updatedAt,
     this.isReviewed = false,

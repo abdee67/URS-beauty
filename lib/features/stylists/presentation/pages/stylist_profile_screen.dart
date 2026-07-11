@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_schedule_screen.dart';
-import 'package:urs_beauty/features/discover/presentation/widgets/distance_badge.dart';
 import 'package:urs_beauty/features/reviews/domain/entity/review_entity.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_bloc.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_state.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/distance_badge.dart';
 import 'package:urs_beauty/injection_container.dart';
 
 class StylistProfileScreen extends StatefulWidget {
@@ -250,7 +250,7 @@ class _ProfileHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = stylist.imageUrl.trim().isNotEmpty;
+    final hasImage = stylist.imageUrl?.trim().isNotEmpty ?? false;
 
     return Container(
       width: double.infinity,
@@ -268,7 +268,7 @@ class _ProfileHeroCard extends StatelessWidget {
                 radius: 34,
                 backgroundColor: const Color(0xFFFFE7D5),
                 backgroundImage: hasImage
-                    ? NetworkImage(stylist.imageUrl)
+                    ? NetworkImage(stylist.imageUrl!)
                     : null,
                 child: hasImage
                     ? null

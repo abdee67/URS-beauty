@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:urs_beauty/features/discover/presentation/bloc/stylist_recommendation_bloc.dart';
+import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 
 class SortFilterBar extends StatelessWidget {
   const SortFilterBar({

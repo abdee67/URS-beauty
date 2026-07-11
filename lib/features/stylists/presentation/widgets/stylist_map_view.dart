@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:urs_beauty/features/discover/data/models/stylist_card_model.dart';
+import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 
 class StylistMapView extends StatelessWidget {
   const StylistMapView({super.key, required this.stylists, this.onStylistTap});
 
-  final List<StylistCardModel> stylists;
-  final ValueChanged<StylistCardModel>? onStylistTap;
+  final List<Stylist> stylists;
+  final ValueChanged<Stylist>? onStylistTap;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class StylistMapView extends StatelessWidget {
 
     final markers = stylists.map((stylist) {
       return Marker(
-        markerId: MarkerId(stylist.stylistId),
+        markerId: MarkerId(stylist.id),
         position: LatLng(stylist.latitude, stylist.longitude),
         infoWindow: InfoWindow(
           title: stylist.businessName,
