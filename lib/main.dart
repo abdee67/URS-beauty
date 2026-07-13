@@ -24,12 +24,14 @@ void main() async {
   if (merchantIdentifier != null && merchantIdentifier.trim().isNotEmpty) {
     Stripe.merchantIdentifier = merchantIdentifier.trim();
   }
-   // ONLY initialize Stripe on mobile and web platforms
+  // ONLY initialize Stripe on mobile and web platforms
   if (kIsWeb || Platform.isAndroid || Platform.isIOS) {
-  Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY']!;
-  await Stripe.instance.applySettings();
+    Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY']!;
+    await Stripe.instance.applySettings();
   } else {
-    debugPrint("Stripe is not initialized: Desktop platforms are not natively supported.");
+    debugPrint(
+      "Stripe is not initialized: Desktop platforms are not natively supported.",
+    );
   }
   initDependency(); //initializing getit for dependency injection
   runApp(const URSBEAUTY());
@@ -41,7 +43,7 @@ class URSBEAUTY extends StatefulWidget {
   State<URSBEAUTY> createState() => _URSBEAUTYState();
 }
 
-class _URSBEAUTYState extends State<URSBEAUTY> {
+class _URSBEAUTYState extends State<URSBEAUTY> with WidgetsBindingObserver {
   bool showOnboarding = true;
   bool isLoading = true;
   late GoRouter _router;
@@ -49,7 +51,21 @@ class _URSBEAUTYState extends State<URSBEAUTY> {
   @override
   void initState() {
     super.initState();
-    _checkOnboardingStatus();///this suppose to be in splash screen but for now i will put it here to avoid creating another screen just for this purpose
+    WidgetsBinding.instance.addObserver(this);
+    _checkOnboardingStatus();
+
+    ///this suppose to be in splash screen but for now i will put it here to avoid creating another screen just for this purpose
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    print('AppLifecycleState: $state');
   }
 
   Future<void> _checkOnboardingStatus() async {
@@ -81,16 +97,9 @@ class _URSBEAUTYState extends State<URSBEAUTY> {
     return MultiProvider(
       providers: [
         // Bloc providers
-        BlocProvider(
-          create: (context) => getit<AuthBloc>(),
-        ),
-           BlocProvider(
-          create: (context) => getit<HomeBloc>(),
-        ),
-        BlocProvider(
-          create: (context) => getit<BookingBloc>(),
-        ),
-  
+        BlocProvider(create: (context) => getit<AuthBloc>()),
+        BlocProvider(create: (context) => getit<HomeBloc>()),
+        BlocProvider(create: (context) => getit<BookingBloc>()),
       ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,

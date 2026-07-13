@@ -6,7 +6,7 @@ class CashPaymentApiService extends ApiService {
   CashPaymentApiService({super.client});
 
   Future<PaymentModel> receiveCashPayment(String bookingId) {
-    return run(() async {
+    return serviceError(() async {
       requireValue(bookingId, 'Booking id is required');
 
       final response = await invokeFunction(
@@ -21,7 +21,7 @@ class CashPaymentApiService extends ApiService {
     String customerId,
     String bookingId,
   ) {
-    return run(() async {
+    return serviceError(() async {
       requireValue(bookingId, 'Booking id is required');
       requireValue(customerId, 'Customer id is required');
 
@@ -38,7 +38,7 @@ class CashPaymentApiService extends ApiService {
     String bookingId,
     String? note,
   ) {
-    return run(() async {
+    return serviceError(() async {
       requireValue(bookingId, 'Booking id is required');
       requireValue(customerId, 'Customer id is required');
 
