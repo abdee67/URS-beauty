@@ -60,3 +60,5 @@ class ResetPasswordRequested extends AuthEvent {
 
   ResetPasswordRequested(this.email, this.password);
 }
+class CheckStartupSessionRequested extends AuthEvent {}
+

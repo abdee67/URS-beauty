@@ -5,6 +5,7 @@ import 'package:urs_beauty/core/constants/app_routes.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_state.dart';
+import 'package:urs_beauty/features/auth/presentation/widgets/session_checking_splash.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,15 +18,42 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isCheckingSession = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkStartupSession();
+  }
+
+  Future<void> _checkStartupSession() async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    context.read<AuthBloc>().add(CheckStartupSessionRequested());
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+        if (_isCheckingSession) {
+      return const SessionCheckingSplash();
+    }
     return Scaffold(
       backgroundColor: Colors.pink[50],
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthSuccess) {
             context.go(AppRoutes.homeScreen);
+           } else if (state is AuthLoggedOut) {
+            setState(() {
+              _isCheckingSession = false;
+            });
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -33,6 +61,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 backgroundColor: Colors.red[400],
               ),
             );
+               setState(() {
+              _isCheckingSession = false;
+            });
           }
         },
         builder: (context, state) {
