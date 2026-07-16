@@ -19,11 +19,11 @@ class CustomBottomNavBar extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       height: 70,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9), // Glassmorphism base
+        color: Colors.white.withValues(alpha: 0.9), // Glassmorphism base
         borderRadius: BorderRadius.circular(35),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -117,7 +117,7 @@ class CustomBottomNavBar extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.pink.withOpacity(0.3),
+              color: Colors.pink.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),

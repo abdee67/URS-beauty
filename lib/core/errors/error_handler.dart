@@ -14,7 +14,7 @@ extension ErrorHandler on Object {
         throw Failures(message: details['message'].toString());
       }
       throw Failures(
-        message: friendlyMessage(e) ?? 'Function invocation failed',
+        message: friendlyMessage(e),
       );
     } on PostgrestException catch (e) {
       throw Failures(message: friendlyMessage(e));

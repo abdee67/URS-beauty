@@ -1,5 +1,4 @@
 import 'package:get_it/get_it.dart';
-import 'package:http/http.dart';
 import 'package:urs_beauty/api/cash/cash_payment_api_service.dart';
 import 'package:urs_beauty/api/chapa/chapa_api_service.dart';
 import 'package:urs_beauty/api/stripe/stripe_api_service.dart';

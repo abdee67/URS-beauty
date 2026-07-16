@@ -86,12 +86,12 @@ class _GreetingHeaderState extends State<GreetingHeader>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.purple.withOpacity(0.3),
+                    color: Colors.purple.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
                   BoxShadow(
-                    color: Colors.pink.withOpacity(0.2),
+                    color: Colors.pink.withValues(alpha: 0.2),
                     blurRadius: 30,
                     offset: const Offset(0, 15),
                   ),
@@ -112,7 +112,7 @@ class _GreetingHeaderState extends State<GreetingHeader>
                               end: Alignment(_shimmerAnimation.value + 1, 0),
                               colors: [
                                 Colors.transparent,
-                                Colors.white.withOpacity(0.1),
+                                Colors.white.withValues(alpha: 0.1),
                                 Colors.transparent,
                               ],
                             ),
@@ -134,10 +134,10 @@ class _GreetingHeaderState extends State<GreetingHeader>
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
+                                color: Colors.white.withValues(alpha: 0.3),
                                 width: 1,
                               ),
                             ),
@@ -163,7 +163,7 @@ class _GreetingHeaderState extends State<GreetingHeader>
                           ),
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: IconButton(
@@ -211,7 +211,7 @@ class _GreetingHeaderState extends State<GreetingHeader>
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.15),
+                                    color: Colors.white.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: const Text(

@@ -1,6 +1,5 @@
 import 'package:dartz/dartz.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:urs_beauty/config/supabase_config.dart';
 import 'package:urs_beauty/core/errors/error_handler.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';

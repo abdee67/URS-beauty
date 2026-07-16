@@ -461,7 +461,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         if (isStylist) {
           return 'success';
         } else {
-          await _client.auth.signOut();
+          await _client.auth.signOut(scope: SignOutScope.local);
           return 'This account is not a stylist account. Please use the UR Beauty app.';
         }
       }

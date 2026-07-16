@@ -25,7 +25,6 @@ class CustomTextField extends StatelessWidget {
   final int maxLines;
   final Widget? suffixIcon;
   final String? errorText;
-  
 
   @override
   Widget build(BuildContext context) {
