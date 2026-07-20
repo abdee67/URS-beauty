@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/star_row.dart';
 import 'package:urs_beauty/features/reviews/domain/entity/review_entity.dart';
 

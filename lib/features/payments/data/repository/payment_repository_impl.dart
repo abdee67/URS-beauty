@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:urs_beauty/core/errors/error_handler.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source.dart';
 import 'package:urs_beauty/features/payments/data/models/payment_model.dart';
@@ -15,7 +16,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     String bookingId,
     PaymentEntity payment,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.createCardPayment(
         bookingId,
         PaymentModel.fromEntity(payment),
@@ -28,7 +29,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failures, PaymentEntity>> confirmCardPayment(
     String transactionReference,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.confirmCardPayment(
         transactionReference,
       );
@@ -40,7 +41,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failures, PaymentEntity>> handleCardPaymentFailure(
     String transactionReference,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.handleCardPaymentFailure(
         transactionReference,
       );
@@ -53,7 +54,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     String bookingId,
     PaymentEntity payment,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.createWalletPayment(
         bookingId,
         PaymentModel.fromEntity(payment),
@@ -66,7 +67,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failures, PaymentEntity>> confirmWalletPayment(
     String transactionReference,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.confirmWalletPayment(
         transactionReference,
       );
@@ -78,7 +79,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failures, PaymentEntity>> handleWalletPaymentFailure(
     String transactionReference,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.handleWalletPaymentFailure(
         transactionReference,
       );
@@ -90,7 +91,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failures, PaymentEntity>> receiveCashPayment(
     String bookingId,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.receiveCashPayment(
         bookingId,
       );
@@ -103,7 +104,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     String customerId,
     String bookingId,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.customerConfirmCashPayment(
         customerId,
         bookingId,
@@ -118,7 +119,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     String bookingId,
     String? note,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.customerDisputeCashPayment(
         customerId,
         bookingId,
@@ -133,7 +134,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     String paymentId,
     String bookingId,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.getPaymentStatus(
         paymentId,
         bookingId,
@@ -146,7 +147,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failures, PaymentEntity>> canclePendingCardPayment(
     String paymentId,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.canclePendingCardPayment(
         paymentId,
       );
@@ -158,7 +159,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failures, PaymentEntity>> canclePendingWalletPayment(
     String paymentId,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.canclePendingWalletPayment(
         paymentId,
       );
@@ -172,7 +173,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     String proofUrl,
     String reference,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.createBankTransferPayment(
         bookingId,
         proofUrl,
@@ -187,7 +188,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     String paymentId,
     bool isVerified,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.verfiyBankTransferPayment(
         paymentId,
         isVerified,
@@ -200,7 +201,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failures, PaymentEntity>> calculateRefund(
     String paymentId,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.calculateRefund(paymentId);
       return result.toEntity();
     });
@@ -210,7 +211,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failures, PaymentEntity>> processRefundCardPayment(
     String paymentId,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.processRefundCardPayment(
         paymentId,
       );
@@ -222,7 +223,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failures, PaymentEntity>> processRefundWalletPayment(
     String paymentId,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.processRefundWalletPayment(
         paymentId,
       );
@@ -235,7 +236,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     String bookingId,
     String newServiceId,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.calculateRescheduleCost(
         bookingId,
         newServiceId,
@@ -250,7 +251,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
     DateTime newDateTime,
     String newServiceId,
   ) async {
-    return _runOperation(() async {
+    return repoErrorHnadler(() async {
       final result = await paymentRemoteDataSource.processReschedulePayment(
         bookingId,
         newDateTime,
@@ -260,15 +261,4 @@ class PaymentRepositoryImpl implements PaymentRepository {
     });
   }
 
-  Future<Either<Failures, T>> _runOperation<T>(
-    Future<T> Function() operation,
-  ) async {
-    try {
-      return Right(await operation());
-    } on Failures catch (failure) {
-      return Left(failure);
-    } catch (error) {
-      return Left(Failures(message: error.toString()));
-    }
-  }
 }

@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
@@ -7,6 +9,8 @@ import 'package:urs_beauty/features/auth/data/models/customer_address_model.dart
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+  SupabaseClient get _client => SupabaseConfig.client;
+
   static const String _customerTable = 'customers';
   static const String _customerAddressTable = 'customer_addresses';
   static const String _customerColumns =
@@ -16,7 +20,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<Session> signIn(String email, String password) async {
     try {
-      final result = await SupabaseConfig.client.auth.signInWithPassword(
+      final result = await _client.auth.signInWithPassword(
         email: email,
         password: password,
       );
@@ -24,7 +28,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw Exception('Failed to sign in: No session returned');
       }
 
-      final user = result.user ?? SupabaseConfig.client.auth.currentUser;
+      final user = result.user ?? _client.auth.currentUser;
       if (user == null) {
         await _signOutQuietly();
         throw Exception('Failed to sign in: No user returned');
@@ -55,7 +59,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     CustomerAddressInput address,
   ) async {
     try {
-      final result = await SupabaseConfig.client.auth.signUp(
+      final result = await _client.auth.signUp(
         email: email,
         password: password,
         data: {
@@ -84,7 +88,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> sendOtp(String email) async {
     try {
-      final result = await SupabaseConfig.client.auth.resend(
+      final result = await _client.auth.resend(
         type: OtpType.signup,
         email: email,
       );
@@ -93,7 +97,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
     } catch (_) {
       try {
-        await SupabaseConfig.client.auth.signInWithOtp(
+        await _client.auth.signInWithOtp(
           email: email,
           shouldCreateUser: true,
           data: const {'app_role': 'customer'},
@@ -107,7 +111,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> verifyOTP(String email, String otp) async {
     try {
-      final result = await SupabaseConfig.client.auth.verifyOTP(
+      final result = await _client.auth.verifyOTP(
         email: email,
         token: otp,
         type: OtpType.email,
@@ -116,8 +120,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw Exception('Failed to verify OTP: No session returned');
       }
 
-      final verifiedUser =
-          result.user ?? SupabaseConfig.client.auth.currentUser;
+      final verifiedUser = result.user ?? _client.auth.currentUser;
       if (verifiedUser == null) {
         throw Exception('Failed to verify OTP: No user returned');
       }
@@ -138,7 +141,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> signOut() async {
     try {
-      await SupabaseConfig.client.auth.signOut();
+      await _client.auth.signOut();
     } catch (e) {
       throw Exception('Failed to sign out: $e');
     }
@@ -147,7 +150,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<CustomerModel> getCurrentCustomer() async {
     try {
-      final user = SupabaseConfig.client.auth.currentUser;
+      final user = _client.auth.currentUser;
       if (user == null) {
         throw Exception('No authenticated user found');
       }
@@ -201,7 +204,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       await _requireCurrentCustomerAccount();
 
-      await SupabaseConfig.client.auth.updateUser(
+      await _client.auth.updateUser(
         UserAttributes(
           email: customer.email,
           data: {
@@ -212,7 +215,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         ),
       );
 
-      await SupabaseConfig.client.from(_customerTable).upsert({
+      await _client.from(_customerTable).upsert({
         'id': customer.id,
         'email': customer.email,
         'first_name': customer.firstName,
@@ -230,7 +233,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   Future<void> _ensureCustomerRecord(CustomerModel customer) async {
     try {
-      await SupabaseConfig.client.from(_customerTable).upsert({
+      await _client.from(_customerTable).upsert({
         'id': customer.id,
         'email': customer.email,
         'first_name': customer.firstName,
@@ -296,7 +299,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   Future<bool> _isCurrentCustomerAccount() async {
     try {
-      final response = await SupabaseConfig.client.rpc('is_current_customer');
+      final response = await _client.rpc('is_current_customer');
       return response == true;
     } catch (e) {
       if (kDebugMode) {
@@ -326,7 +329,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   Future<void> _claimCustomerRoleForCurrentUser() async {
     try {
-      await SupabaseConfig.client.rpc('claim_customer_role');
+      await _client.rpc('claim_customer_role');
     } catch (e) {
       await _signOutQuietly();
       throw Exception(
@@ -338,7 +341,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   Future<void> _signOutQuietly() async {
     try {
-      await SupabaseConfig.client.auth.signOut();
+      await _client.auth.signOut();
     } catch (_) {}
   }
 
@@ -351,7 +354,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return;
     }
 
-    final existingAddress = await SupabaseConfig.client
+    final existingAddress = await _client
         .from(_customerAddressTable)
         .select('id')
         .eq('customer_id', customerId)
@@ -371,7 +374,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   Future<dynamic> _fetchCustomerResponse(String userId) async {
     try {
-      return await SupabaseConfig.client
+      return await _client
           .from(_customerTable)
           .select(_customerColumns)
           .eq('id', userId)
@@ -387,7 +390,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> forgotPassword(String email) async {
     try {
-      await SupabaseConfig.client.auth.resetPasswordForEmail(
+      await _client.auth.resetPasswordForEmail(
         email,
         redirectTo: 'ursbeauty://reset-password/',
       );
@@ -399,7 +402,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> resetPassword(String email, String password) async {
     try {
-      await SupabaseConfig.client.auth.updateUser(
+      await _client.auth.updateUser(
         UserAttributes(email: email, password: password),
       );
     } catch (e) {
@@ -414,7 +417,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       await _requireCurrentCustomerAccount();
 
-      final currentUser = SupabaseConfig.client.auth.currentUser;
+      final currentUser = _client.auth.currentUser;
       final payloadWithCustomer = Map<String, dynamic>.from(payload);
       final resolvedCustomerId =
           (payloadWithCustomer['customer_id'] ?? currentUser?.id ?? '')
@@ -428,7 +431,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       payloadWithCustomer['customer_id'] = resolvedCustomerId;
 
       if (payloadWithCustomer['is_default'] == null) {
-        final existingAddress = await SupabaseConfig.client
+        final existingAddress = await _client
             .from(_customerAddressTable)
             .select('id')
             .eq('customer_id', resolvedCustomerId)
@@ -437,7 +440,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         payloadWithCustomer['is_default'] = existingAddress == null;
       }
 
-      final response = await SupabaseConfig.client
+      final response = await _client
           .from(_customerAddressTable)
           .insert(payloadWithCustomer)
           .select()
@@ -446,6 +449,40 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return CustomerAddressModel.fromJson(Map<String, dynamic>.from(response));
     } catch (e) {
       throw Exception('Failed to create customer address: $e');
+    }
+  }
+
+  @override
+  Future<String> checkStartupSession() async {
+    try {
+      final session = _client.auth.currentSession;
+      if (session != null) {
+        final isStylist = await isCurrentStylistAccount();
+        if (isStylist) {
+          return 'success';
+        } else {
+          await _client.auth.signOut(scope: SignOutScope.local);
+          return 'This account is not a stylist account. Please use the UR Beauty app.';
+        }
+      }
+      return 'no_session';
+    } catch (e) {
+      if (kDebugMode) {
+        developer.log("checkUserSession error: ${e.toString()}");
+      }
+      return 'Something went wrong. Please try again.';
+    }
+  }
+
+  Future<bool> isCurrentStylistAccount() async {
+    try {
+      final response = await _client.rpc('is_current_customer');
+      return response == true;
+    } catch (e) {
+      if (kDebugMode) {
+        developer.log("isCurrentStylistAccount error: ${e.toString()}");
+      }
+      return false;
     }
   }
 }

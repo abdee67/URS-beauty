@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:urs_beauty/config/supabase_config.dart';
+import 'package:urs_beauty/core/errors/error_handler.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
@@ -9,23 +9,24 @@ import 'package:urs_beauty/features/auth/data/models/customer_address_model.dart
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_entity.dart';
 import 'package:urs_beauty/features/auth/domain/repositories/auth_repository.dart';
- class AuthRepositoryImpl implements AuthRepository {
+
+class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final AuthLocationDataSource locationDataSource;
-  AuthRepositoryImpl(this.remoteDataSource, this.locationDataSource);  
-@override
-Future<Either<Failures, Session>> signIn(
-  String email,
-  String password,
-) async {
-  try {
-    // Attempt to sign in with email and password
-    final result = await remoteDataSource.signIn(email, password);
-    return Right(result);
+  AuthRepositoryImpl(this.remoteDataSource, this.locationDataSource);
+  @override
+  Future<Either<Failures, Session>> signIn(
+    String email,
+    String password,
+  ) async {
+    try {
+      // Attempt to sign in with email and password
+      final result = await remoteDataSource.signIn(email, password);
+      return Right(result);
     } catch (e) {
-    return Left(Failures(message: e.toString()));
+      return Left(Failures(message: e.toString()));
+    }
   }
-}
 
   @override
   Future<Either<Failures, void>> signUp(
@@ -37,31 +38,33 @@ Future<Either<Failures, Session>> signIn(
     CustomerAddressInput address,
   ) async {
     try {
-     await remoteDataSource.signUp(
-       email,
-       password,
-       firstName,
-       lastName,
-       phone,
-       address,
-     );
+      await remoteDataSource.signUp(
+        email,
+        password,
+        firstName,
+        lastName,
+        phone,
+        address,
+      );
       return const Right(null);
     } catch (e) {
       return Left(Failures(message: e.toString()));
     }
   }
- @override
+
+  @override
   Future<Either<Failures, void>> sendOtp(String email) async {
     try {
       // Try resend first (for existing users)
       await remoteDataSource.sendOtp(email);
-   
-    return const Right(null);
-    }  catch (otpError) {
-        return Left(Failures(message: otpError.toString()));
-      }
+
+      return const Right(null);
+    } catch (otpError) {
+      return Left(Failures(message: otpError.toString()));
     }
- @override
+  }
+
+  @override
   Future<Either<Failures, void>> verifyOtp(String email, String otp) async {
     try {
       await remoteDataSource.verifyOTP(email, otp);
@@ -70,15 +73,17 @@ Future<Either<Failures, Session>> signIn(
       return Left(Failures(message: e.toString()));
     }
   }
- @override
+
+  @override
   Future<Either<Failures, void>> signOut() async {
     try {
-     await remoteDataSource.signOut();
+      await remoteDataSource.signOut();
       return const Right(null);
     } catch (e) {
       return Left(Failures(message: e.toString()));
     }
   }
+
   @override
   Future<Either<Failures, CustomerModel>> getCurrentCustomer() async {
     try {
@@ -88,8 +93,11 @@ Future<Either<Failures, Session>> signIn(
       return Left(Failures(message: e.toString()));
     }
   }
+
   @override
-  Future<Either<Failures, CustomerEntity>> updateCustomerProfile(CustomerEntity client) async {
+  Future<Either<Failures, CustomerEntity>> updateCustomerProfile(
+    CustomerEntity client,
+  ) async {
     try {
       final clientModel = CustomerModel(
         id: client.id,
@@ -104,26 +112,33 @@ Future<Either<Failures, Session>> signIn(
       return Left(Failures(message: e.toString()));
     }
   }
+
   @override
   Future<Either<Failures, void>> forgotPassword(String email) async {
     try {
-      await SupabaseConfig.client.auth.resetPasswordForEmail(email, redirectTo: 'ursbeauty://reset-password/');
+      await remoteDataSource.forgotPassword(email);
       return const Right(null);
     } catch (e) {
       return Left(Failures(message: e.toString()));
     }
   }
+
   @override
-  Future<Either<Failures, void>> resetPassword(String email, String password) async {
+  Future<Either<Failures, void>> resetPassword(
+    String email,
+    String password,
+  ) async {
     try {
-   await remoteDataSource.resetPassword(email, password);
+      await remoteDataSource.resetPassword(email, password);
       return const Right(null);
     } catch (e) {
       return Left(Failures(message: e.toString()));
     }
   }
+
   @override
-  Future<Either<Failures, CustomerAddressInput>> getCurrentLocationAddress() async {
+  Future<Either<Failures, CustomerAddressInput>>
+  getCurrentLocationAddress() async {
     try {
       final address = await locationDataSource.getCurrentLocationAddress();
       return Right(address);
@@ -131,14 +146,24 @@ Future<Either<Failures, Session>> signIn(
       return Left(Failures(message: e.toString()));
     }
   }
+
   @override
   Future<Either<Failures, CustomerAddressModel>> createCustomerAddress(
-      CustomerAddressInput input) async {
-    try {
-      final saved = await remoteDataSource.createCustomerAddress(input.toJson());
-      return Right(saved);
-    } catch (e) {
-      return Left(Failures(message: e.toString()));
-    }
+    CustomerAddressInput input,
+  ) async {
+    return repoErrorHnadler(() async {
+      final saved = await remoteDataSource.createCustomerAddress(
+        input.toJson(),
+      );
+      return saved;
+    });
+  }
+
+  @override
+  Future<Either<Failures, String>> checkStartupSession() async {
+    return repoErrorHnadler(() async {
+      final status = await remoteDataSource.checkStartupSession();
+      return status;
+    });
   }
 }

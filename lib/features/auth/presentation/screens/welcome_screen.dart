@@ -228,7 +228,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 blurRadius: 30,
                 offset: const Offset(0, 15),
               ),
@@ -246,7 +246,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: double.infinity,
                   height: 300,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(32),
                   ),
                   child: Icon(
@@ -288,7 +288,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(4),
                   color: _currentPage == index
                       ? _pages[_currentPage].color
-                      : _pages[_currentPage].color.withOpacity(0.3),
+                      : _pages[_currentPage].color.withValues(alpha: 0.3),
                 ),
               ),
             ),
@@ -309,7 +309,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 8,
-                shadowColor: _pages[_currentPage].color.withOpacity(0.3),
+                shadowColor: _pages[_currentPage].color.withValues(alpha: 0.3),
               ),
               child: Text(
                 _currentPage == _pages.length - 1

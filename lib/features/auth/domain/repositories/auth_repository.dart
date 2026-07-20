@@ -26,5 +26,7 @@ Future<Either<Failures, CustomerAddressInput>> getCurrentLocationAddress();
 Future<Either<Failures, CustomerAddressEntity>> createCustomerAddress(
   CustomerAddressInput input,
 );
+  Future<Either<Failures, String>> checkStartupSession();
+
 
 }

@@ -23,4 +23,6 @@ Future< void> resetPassword(String email, String password);
 Future<void> forgotPassword(String email);
   
   Future<CustomerAddressModel> createCustomerAddress(Map<String, dynamic> payload);
+    Future<String> checkStartupSession();
+
 }

@@ -634,7 +634,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       return;
     }
 
-    // context.read<PaymentBloc>().add(ReceiveCashPaymentEvent(booking));
+    // The stylist's scan already triggered receive-cash-payment (stylist-only
+    // function). Here the customer records their own confirmation.
+    context.read<PaymentBloc>().add(
+      CustomerConfirmCashPaymentEvent(booking.customerId, booking.id),
+    );
   }
 
   Future<void> _showCashOtpSheet(
@@ -658,7 +662,12 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       return;
     }
 
-    //context.read<PaymentBloc>().add(ReceiveCashPaymentEvent(booking));
+    // The stylist entering this OTP already triggered receive-cash-payment
+    // (stylist-only function). Here the customer records their own
+    // confirmation.
+    context.read<PaymentBloc>().add(
+      CustomerConfirmCashPaymentEvent(booking.customerId, booking.id),
+    );
   }
 
   String _cashVerificationPayload(BookingEntity booking, String mode) {

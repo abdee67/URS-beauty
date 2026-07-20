@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/check_startup_session.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/forgot_password.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/get_current_location_address.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/get_current_client.dart';
@@ -23,16 +24,42 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final UpdateCustomerProfile updateCustomerProfile;
   final ForgotPassword forgotPassword;
   final ResetPassword resetPassword;
-  AuthBloc( this.signIn, this.signOut, this.signUp, this.sendOtp, this.verifyOTP, this.getCurrentLocationAddress, this.getCurrentCustomer, this.updateCustomerProfile, this.forgotPassword, this.resetPassword) : super(AuthInitial()) {
+  final CheckStartupSession checkStartupSession;
+  AuthBloc(
+    this.signIn,
+    this.signOut,
+    this.signUp,
+    this.sendOtp,
+    this.verifyOTP,
+    this.getCurrentLocationAddress,
+    this.getCurrentCustomer,
+    this.updateCustomerProfile,
+    this.forgotPassword,
+    this.resetPassword,
+    this.checkStartupSession,
+  ) : super(AuthInitial()) {
+    on<CheckStartupSessionRequested>((event, emit) async {
+      emit(AuthLoading());
+      final result = await checkStartupSession();
+      result.fold((failure) => emit(AuthFailure(failure.message)), (status) {
+        if (status == 'success') {
+          emit(AuthSuccess());
+        } else if (status == 'no_session') {
+          emit(AuthLoggedOut());
+        } else {
+          emit(AuthFailure(status));
+        }
+      });
+    });
+
     on<SignInRequested>((event, emit) async {
       emit(AuthLoading());
-      final result = await signIn(event.email, event.password,);
+      final result = await signIn(event.email, event.password);
       result.fold(
         (failure) => emit(AuthFailure(failure.message)),
-      (_)  =>  emit(AuthSuccess()),
+        (_) => emit(AuthSuccess()),
       );
-      });
-
+    });
 
     on<SignUpRequested>((event, emit) async {
       emit(AuthLoading());

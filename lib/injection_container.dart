@@ -8,6 +8,7 @@ import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_sou
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source_impl.dart';
 import 'package:urs_beauty/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:urs_beauty/features/auth/domain/repositories/auth_repository.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/check_startup_session.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/forgot_password.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/get_current_location_address.dart'
     as auth_usecases;
@@ -179,6 +180,8 @@ void initDependency() {
   getit.registerLazySingleton(
     () => auth_usecases.GetCurrentLocationAddress(getit()),
   );
+  getit.registerLazySingleton(() => CheckStartupSession(getit()));
+
   getit.registerLazySingleton(() => ForgotPassword(getit()));
   getit.registerLazySingleton(() => ResetPassword(getit()));
   getit.registerLazySingleton(() => GetCurrentCustomer(getit()));
@@ -279,6 +282,7 @@ void initDependency() {
   // ===========injectin bloc=================
   getit.registerFactory(
     () => AuthBloc(
+      getit(),
       getit(),
       getit(),
       getit(),
