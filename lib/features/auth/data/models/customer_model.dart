@@ -22,25 +22,39 @@ class CustomerModel extends CustomerEntity {
         json['addresses'] ?? json['customer_address'] ?? const [];
     final addresses = addressesJson is List
         ? addressesJson
-            .whereType<Map>()
-            .map(
-              (item) => CustomerAddressModel.fromJson(
-                Map<String, dynamic>.from(item),
-              ),
-            )
-            .toList()
+              .whereType<Map>()
+              .map(
+                (item) => CustomerAddressModel.fromJson(
+                  Map<String, dynamic>.from(item),
+                ),
+              )
+              .toList()
         : <CustomerAddressModel>[];
 
     return CustomerModel(
       id: (json['id'] ?? '').toString(),
       email: (json['email'] ?? '').toString(),
-      firstName: (json['first_name'] ?? metadata['first_name'] ?? '').toString(),
+      firstName: (json['first_name'] ?? metadata['first_name'] ?? '')
+          .toString(),
       lastName: (json['last_name'] ?? metadata['last_name'] ?? '').toString(),
       phone: _asInt(json['phone_number'] ?? metadata['phone_number']),
       profileImage: (json['profile_image_url'] ?? '').toString(),
       addresses: addresses,
       createdAt: _asDateTime(json['created_at']),
       updatedAt: _asDateTime(json['updated_at']),
+    );
+  }
+  factory CustomerModel.fromEntity(CustomerEntity entity) {
+    return CustomerModel(
+      id: entity.id,
+      email: entity.email,
+      firstName: entity.firstName,
+      lastName: entity.lastName,
+      phone: entity.phone,
+      profileImage: entity.profileImage,
+      addresses: entity.addresses,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
     );
   }
 
@@ -59,6 +73,19 @@ class CustomerModel extends CustomerEntity {
           .map((address) => address.toJson())
           .toList(),
     };
+  }
+
+  CustomerEntity toEntity() {
+    return CustomerEntity(
+      id: id,
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+      phone: phone,
+      profileImage: profileImage,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
   }
 
   static int _asInt(dynamic value) {

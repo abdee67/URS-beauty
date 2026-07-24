@@ -19,13 +19,11 @@ class AuthRepositoryImpl implements AuthRepository {
     String email,
     String password,
   ) async {
-    try {
+    return repoErrorHnadler(() async {
       // Attempt to sign in with email and password
       final result = await remoteDataSource.signIn(email, password);
-      return Right(result);
-    } catch (e) {
-      return Left(Failures(message: e.toString()));
-    }
+      return result;
+    });
   }
 
   @override
@@ -37,8 +35,8 @@ class AuthRepositoryImpl implements AuthRepository {
     String phone,
     CustomerAddressInput address,
   ) async {
-    try {
-      await remoteDataSource.signUp(
+    return repoErrorHnadler(() async {
+      final signup = await remoteDataSource.signUp(
         email,
         password,
         firstName,
@@ -46,59 +44,46 @@ class AuthRepositoryImpl implements AuthRepository {
         phone,
         address,
       );
-      return const Right(null);
-    } catch (e) {
-      return Left(Failures(message: e.toString()));
-    }
+      return signup;
+    });
   }
 
   @override
   Future<Either<Failures, void>> sendOtp(String email) async {
-    try {
+    return repoErrorHnadler(() async {
       // Try resend first (for existing users)
-      await remoteDataSource.sendOtp(email);
-
-      return const Right(null);
-    } catch (otpError) {
-      return Left(Failures(message: otpError.toString()));
-    }
+      return await remoteDataSource.sendOtp(email);
+    });
   }
 
   @override
   Future<Either<Failures, void>> verifyOtp(String email, String otp) async {
-    try {
-      await remoteDataSource.verifyOTP(email, otp);
-      return const Right(null);
-    } catch (e) {
-      return Left(Failures(message: e.toString()));
-    }
+    return repoErrorHnadler(() async {
+      return await remoteDataSource.verifyOTP(email, otp);
+    });
   }
 
   @override
   Future<Either<Failures, void>> signOut() async {
-    try {
-      await remoteDataSource.signOut();
-      return const Right(null);
-    } catch (e) {
-      return Left(Failures(message: e.toString()));
-    }
+    return repoErrorHnadler(() async {
+      final signout = await remoteDataSource.signOut();
+      return signout;
+    });
   }
 
   @override
-  Future<Either<Failures, CustomerModel>> getCurrentCustomer() async {
-    try {
-      final user = remoteDataSource.getCurrentCustomer();
-      return Right(await user);
-    } catch (e) {
-      return Left(Failures(message: e.toString()));
-    }
+  Future<Either<Failures, CustomerEntity>> getCurrentCustomer() async {
+    return repoErrorHnadler(() async {
+      final user = await remoteDataSource.getCurrentCustomer();
+      return user.toEntity();
+    });
   }
 
   @override
   Future<Either<Failures, CustomerEntity>> updateCustomerProfile(
     CustomerEntity client,
   ) async {
-    try {
+    return repoErrorHnadler(() async {
       final clientModel = CustomerModel(
         id: client.id,
         email: client.email,
@@ -106,21 +91,17 @@ class AuthRepositoryImpl implements AuthRepository {
         lastName: client.lastName,
         phone: client.phone,
       );
-      await remoteDataSource.updateCustomerProfile(clientModel);
-      return Right(client);
-    } catch (e) {
-      return Left(Failures(message: e.toString()));
-    }
+      final update = await remoteDataSource.updateCustomerProfile(clientModel);
+      return update;
+    });
   }
 
   @override
   Future<Either<Failures, void>> forgotPassword(String email) async {
-    try {
-      await remoteDataSource.forgotPassword(email);
-      return const Right(null);
-    } catch (e) {
-      return Left(Failures(message: e.toString()));
-    }
+    return repoErrorHnadler(() async {
+      final forgotPassword = await remoteDataSource.forgotPassword(email);
+      return forgotPassword;
+    });
   }
 
   @override
@@ -128,23 +109,19 @@ class AuthRepositoryImpl implements AuthRepository {
     String email,
     String password,
   ) async {
-    try {
-      await remoteDataSource.resetPassword(email, password);
-      return const Right(null);
-    } catch (e) {
-      return Left(Failures(message: e.toString()));
-    }
+    return repoErrorHnadler(() async {
+      final reset = await remoteDataSource.resetPassword(email, password);
+      return reset;
+    });
   }
 
   @override
   Future<Either<Failures, CustomerAddressInput>>
   getCurrentLocationAddress() async {
-    try {
+    return repoErrorHnadler(() async {
       final address = await locationDataSource.getCurrentLocationAddress();
-      return Right(address);
-    } catch (e) {
-      return Left(Failures(message: e.toString()));
-    }
+      return address;
+    });
   }
 
   @override
