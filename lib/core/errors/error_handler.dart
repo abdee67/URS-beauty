@@ -1,4 +1,7 @@
+import 'dart:developer' as developer;
+
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 
@@ -17,8 +20,14 @@ extension ErrorHandler on Object {
         message: friendlyMessage(e),
       );
     } on PostgrestException catch (e) {
+      if(kDebugMode) {
+        developer.log(e.toString());
+      }
       throw Failures(message: friendlyMessage(e));
     } catch (e) {
+      if(kDebugMode) {
+        developer.log(e.toString());
+      }
       throw Failures(message: friendlyMessage(e));
     }
   }
@@ -29,8 +38,12 @@ extension ErrorHandler on Object {
     try {
       return Right(await operation());
     } on Failures catch (failure) {
+
       return Left(failure);
     } catch (error) {
+      if(kDebugMode) {
+        developer.log(error.toString());
+      }
       return Left(Failures(message: friendlyMessage(error)));
     }
   }
