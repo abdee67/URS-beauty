@@ -21,6 +21,7 @@ import 'package:urs_beauty/features/auth/domain/usecases/sign_out.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/sign_up.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/update_client_profile.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/verify_otp.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/verify_password_reset_otp.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/beauty_services/data/datasources/service_categories_remote_data_source.dart';
 import 'package:urs_beauty/features/beauty_services/data/datasources/service_categories_remote_data_source_impl.dart';
@@ -177,6 +178,7 @@ void initDependency() {
   getit.registerLazySingleton(() => SignOut(getit()));
   getit.registerLazySingleton(() => SendOtp(getit()));
   getit.registerLazySingleton(() => VerifyOTP(getit()));
+  getit.registerLazySingleton(() => VerifyPasswordResetOtp(getit()));
   getit.registerLazySingleton(
     () => auth_usecases.GetCurrentLocationAddress(getit()),
   );
@@ -282,6 +284,7 @@ void initDependency() {
   // ===========injectin bloc=================
   getit.registerFactory(
     () => AuthBloc(
+      getit(),
       getit(),
       getit(),
       getit(),

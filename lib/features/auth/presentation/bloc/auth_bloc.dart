@@ -10,6 +10,7 @@ import 'package:urs_beauty/features/auth/domain/usecases/sign_out.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/sign_up.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/update_client_profile.dart';
 import 'package:urs_beauty/features/auth/domain/usecases/verify_otp.dart';
+import 'package:urs_beauty/features/auth/domain/usecases/verify_password_reset_otp.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
@@ -19,6 +20,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SignUp signUp;
   final SendOtp sendOtp;
   final VerifyOTP verifyOTP;
+  final VerifyPasswordResetOtp verifyPasswordResetOtp;
   final GetCurrentLocationAddress getCurrentLocationAddress;
   final GetCurrentCustomer getCurrentCustomer;
   final UpdateCustomerProfile updateCustomerProfile;
@@ -31,6 +33,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     this.signUp,
     this.sendOtp,
     this.verifyOTP,
+    this.verifyPasswordResetOtp,
     this.getCurrentLocationAddress,
     this.getCurrentCustomer,
     this.updateCustomerProfile,
@@ -115,6 +118,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       result.fold(
         (failure) => emit(AuthFailure(failure.message)),
         (_) => emit(ForgotPasswordSent()),
+      );
+    });
+    on<VerifyPasswordResetOtpRequested>((event, emit) async {
+      emit(AuthLoading());
+      final result = await verifyPasswordResetOtp(event.email, event.otp);
+      result.fold(
+        (failure) => emit(AuthFailure(failure.message)),
+        (_) => emit(PasswordResetOtpVerified()),
       );
     });
     on<ResetPasswordRequested>((event, emit) async {

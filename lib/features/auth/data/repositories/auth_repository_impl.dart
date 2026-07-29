@@ -64,6 +64,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failures, void>> verifyPasswordResetOtp(
+    String email,
+    String otp,
+  ) async {
+    return repoErrorHnadler(() async {
+      return await remoteDataSource.verifyPasswordResetOtp(email, otp);
+    });
+  }
+
+  @override
   Future<Either<Failures, void>> signOut() async {
     return repoErrorHnadler(() async {
       final signout = await remoteDataSource.signOut();

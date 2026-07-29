@@ -139,6 +139,22 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
+  Future<void> verifyPasswordResetOtp(String email, String otp) async {
+    try {
+      final result = await _client.auth.verifyOTP(
+        email: email,
+        token: otp,
+        type: OtpType.recovery,
+      );
+      if (result.session == null) {
+        throw Exception('Failed to verify password reset code');
+      }
+    } catch (e) {
+      throw Exception('Failed to verify password reset code: $e');
+    }
+  }
+
+  @override
   Future<void> signOut() async {
     try {
       await _client.auth.signOut();
@@ -390,10 +406,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> forgotPassword(String email) async {
     try {
-      await _client.auth.resetPasswordForEmail(
-        email,
-        redirectTo: 'ursbeauty://reset-password/',
-      );
+      await _client.auth.resetPasswordForEmail(email);
     } catch (e) {
       throw Exception('Failed to send password reset email: $e');
     }
@@ -402,9 +415,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> resetPassword(String email, String password) async {
     try {
-      await _client.auth.updateUser(
-        UserAttributes(email: email, password: password),
-      );
+      await _client.auth.updateUser(UserAttributes(password: password));
     } catch (e) {
       throw Exception('Failed to reset password: $e');
     }
