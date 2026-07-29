@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:urs_beauty/core/constants/app_button_styles.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 import 'package:urs_beauty/core/constants/app_routes.dart';
+import 'package:urs_beauty/core/constants/app_sizes.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_event.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_state.dart';
@@ -18,18 +21,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _isCheckingSession = false;
+  bool _isCheckingSession = true;
 
   @override
   void initState() {
     super.initState();
-    _checkStartupSession();
-  }
-
-  Future<void> _checkStartupSession() async {
-    await Future<void>.delayed(Duration.zero);
-    if (!mounted) return;
-    context.read<AuthBloc>().add(CheckStartupSessionRequested());
+    Future<void>.delayed(Duration.zero, () {
+      if (mounted) context.read<AuthBloc>().add(CheckStartupSessionRequested());
+    });
   }
 
   @override
@@ -41,213 +40,106 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-        if (_isCheckingSession) {
-      return const SessionCheckingSplash();
-    }
     return Scaffold(
-      backgroundColor: Colors.pink[50],
+      backgroundColor: AppColors.paper,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthSuccess) {
             context.go(AppRoutes.homeScreen);
-           } else if (state is AuthLoggedOut) {
-            setState(() {
-              _isCheckingSession = false;
-            });
+          } else if (state is AuthLoggedOut) {
+            setState(() => _isCheckingSession = false);
           } else if (state is AuthFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red[400],
-              ),
-            );
-               setState(() {
-              _isCheckingSession = false;
-            });
+            setState(() => _isCheckingSession = false);
+            _message(state.message, true);
           }
         },
         builder: (context, state) {
-          return SingleChildScrollView(
-            child: Container(
-              height: MediaQuery.of(context).size.height,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.pink[100]!, Colors.purple[100]!],
-                ),
-              ),
-              child: Column(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      padding: const EdgeInsets.only(top: 60),
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            'assets/images/logo.png', // Replace with your logo
-                            height: 120,
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'URS Beauty',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purple[800],
-                              fontFamily: 'PlayfairDisplay',
-                            ),
-                          ),
-                          const Text(
-                            'Your beauty journey starts here',
-                            style: TextStyle(
-                              color: Colors.purple,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ),
+          if (_isCheckingSession) return const SessionCheckingSplash();
+          return _AuthBackdrop(
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSizes.screenPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _LogoLockup(),
+                    const SizedBox(height: 58),
+                    const Text('Welcome\nback', style: _headingStyle),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Sign in to continue your beauty journey.',
+                      style: TextStyle(color: AppColors.muted, fontSize: 16),
                     ),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(40),
-                          topRight: Radius.circular(40),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple.withValues(alpha: 0.1),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 36),
+                    _AuthCard(
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            'Login',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purple[800],
-                            ),
-                          ),
-                          const SizedBox(height: 30),
-                          TextField(
+                          _input(
                             controller: _emailController,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              prefixIcon: Icon(
-                                Icons.email,
-                                color: Colors.purple[300],
-                              ),
-                              filled: true,
-                              fillColor: Colors.pink[50],
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide.none,
-                              ),
-                            ),
+                            label: 'Email address',
+                            icon: Icons.mail_outline_rounded,
                             keyboardType: TextInputType.emailAddress,
                           ),
-                          const SizedBox(height: 20),
-                          TextField(
+                          const SizedBox(height: AppSizes.fieldGap),
+                          _input(
                             controller: _passwordController,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              prefixIcon: Icon(
-                                Icons.lock,
-                                color: Colors.purple[300],
+                            label: 'Password',
+                            icon: Icons.lock_outline_rounded,
+                            obscureText: _obscurePassword,
+                            suffix: IconButton(
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
                               ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: Colors.purple[300],
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
-                              ),
-                              filled: true,
-                              fillColor: Colors.pink[50],
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                borderSide: BorderSide.none,
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
                               ),
                             ),
-                            obscureText: _obscurePassword,
                           ),
-
-                          const SizedBox(height: 20),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () =>
+                                  context.go(AppRoutes.forgotPasswordScreen),
+                              child: const Text(
+                                'Forgot password?',
+                                style: TextStyle(
+                                  color: AppColors.clay,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
                           SizedBox(
                             width: double.infinity,
-                            height: 50,
+                            height: AppSizes.buttonHeight,
                             child: ElevatedButton(
-                              onPressed: () {
-                                context.read<AuthBloc>().add(
-                                  SignInRequested(
-                                    _emailController.text.trim(),
-                                    _passwordController.text.trim(),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.purple[600],
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                ),
-                                elevation: 5,
-                              ),
+                              onPressed: state is AuthLoading ? null : _login,
+                              style: AppButtonStyles.primary,
                               child: state is AuthLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                    )
-                                  : const Text(
-                                      'LOGIN',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                                  ? const _Loader()
+                                  : const Text('Sign in', style: _buttonText),
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Don't have an account?",
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                              TextButton(
-                                onPressed: () => context.go('/signup'),
-                                child: Text(
-                                  'Sign Up',
-                                  style: TextStyle(
-                                    color: Colors.purple[600],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => context.go(AppRoutes.signupScreen),
+                        child: const Text(
+                          'New to URS Beauty?  Create an account',
+                          style: TextStyle(
+                            color: AppColors.clay,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -255,4 +147,142 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+  void _login() {
+    if (_emailController.text.trim().isEmpty ||
+        _passwordController.text.isEmpty) {
+      _message('Enter your email and password.', true);
+      return;
+    }
+    context.read<AuthBloc>().add(
+      SignInRequested(_emailController.text.trim(), _passwordController.text),
+    );
+  }
+
+  void _message(String message, bool error) =>
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: error ? AppColors.error : AppColors.clay,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+}
+
+const _headingStyle = TextStyle(
+  color: AppColors.ink,
+  fontSize: AppSizes.headingSize,
+  height: 1.08,
+  fontWeight: FontWeight.w800,
+);
+const _buttonText = TextStyle(fontWeight: FontWeight.w700, fontSize: 16);
+
+class _AuthBackdrop extends StatelessWidget {
+  const _AuthBackdrop({required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      Positioned(top: -110, right: -100, child: _circle(AppColors.peach, 285)),
+      Positioned(bottom: -135, left: -90, child: _circle(AppColors.blush, 265)),
+      child,
+    ],
+  );
+  Widget _circle(Color color, double size) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
+}
+
+class _LogoLockup extends StatelessWidget {
+  const _LogoLockup();
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Container(
+        width: 48,
+        height: 48,
+        padding: const EdgeInsets.all(7),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: const [
+            BoxShadow(color: Color(0x16000000), blurRadius: 14),
+          ],
+        ),
+        child: Image.asset('assets/images/logo.png'),
+      ),
+      const SizedBox(width: 12),
+      const Text(
+        'URS Beauty',
+        style: TextStyle(
+          color: AppColors.ink,
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ],
+  );
+}
+
+class _AuthCard extends StatelessWidget {
+  const _AuthCard({required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(AppSizes.cardPadding),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: .93),
+      borderRadius: BorderRadius.circular(AppSizes.pageRadius),
+      border: Border.all(color: AppColors.border),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x14000000),
+          blurRadius: 28,
+          offset: Offset(0, 12),
+        ),
+      ],
+    ),
+    child: child,
+  );
+}
+
+Widget _input({
+  required TextEditingController controller,
+  required String label,
+  required IconData icon,
+  TextInputType? keyboardType,
+  bool obscureText = false,
+  Widget? suffix,
+}) => TextField(
+  controller: controller,
+  keyboardType: keyboardType,
+  obscureText: obscureText,
+  decoration: InputDecoration(
+    labelText: label,
+    labelStyle: const TextStyle(color: AppColors.muted),
+    prefixIcon: Icon(icon, color: AppColors.clay),
+    suffixIcon: suffix,
+    filled: true,
+    fillColor: AppColors.field,
+    border: _border(),
+    enabledBorder: _border(),
+    focusedBorder: _border(AppColors.clay),
+  ),
+);
+OutlineInputBorder _border([Color color = Colors.transparent]) =>
+    OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppSizes.fieldRadius),
+      borderSide: BorderSide(color: color, width: 1.4),
+    );
+
+class _Loader extends StatelessWidget {
+  const _Loader();
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+    width: 22,
+    height: 22,
+    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+  );
 }

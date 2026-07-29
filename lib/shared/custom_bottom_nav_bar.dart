@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 
 import 'package:iconsax/iconsax.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -84,14 +85,14 @@ class CustomBottomNavBar extends StatelessWidget {
           children: [
             Icon(
               isSelected ? activeIcon : inactiveIcon,
-              color: isSelected ? Colors.pink : Colors.grey.shade400,
+              color: isSelected ? AppColors.sage : Colors.grey.shade400,
               size: 26,
             ),
             const SizedBox(height: 4),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
-                color: isSelected ? Colors.pink : Colors.grey.shade400,
+                color: isSelected ? AppColors.sage : Colors.grey.shade400,
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 fontFamily: 'Montserrat',
@@ -113,11 +114,11 @@ class CustomBottomNavBar extends StatelessWidget {
         height: 45,
         width: 45,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.pink : Colors.pink.shade50,
+          color: isSelected ? AppColors.sage : AppColors.muted,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.pink.withValues(alpha: 0.3),
+              color: AppColors.sage,
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -125,7 +126,7 @@ class CustomBottomNavBar extends StatelessWidget {
         ),
         child: Icon(
           Icons.calendar_month_rounded,
-          color: isSelected ? Colors.white : Colors.pink,
+          color: isSelected ? Colors.white : AppColors.sage,
           size: 24,
         ),
       ),

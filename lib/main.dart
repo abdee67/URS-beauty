@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 import 'package:urs_beauty/core/constants/app_routes.dart';
 import 'package:urs_beauty/core/utils/session_expiry_policy.dart';
 import 'package:urs_beauty/features/auth/presentation/bloc/auth_bloc.dart';
@@ -47,8 +48,7 @@ class URSBEAUTY extends StatefulWidget {
   State<URSBEAUTY> createState() => _URSBEAUTYState();
 }
 
-class _URSBEAUTYState extends State<URSBEAUTY>
-    with WidgetsBindingObserver {
+class _URSBEAUTYState extends State<URSBEAUTY> with WidgetsBindingObserver {
   bool showOnboarding = true;
   bool isLoading = true;
   late GoRouter _router;
@@ -124,7 +124,6 @@ class _URSBEAUTYState extends State<URSBEAUTY>
     }
   }
 
-
   Future<void> _checkOnboardingStatus() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -144,7 +143,7 @@ class _URSBEAUTYState extends State<URSBEAUTY>
     _router = AppRouter(showOnboarding: showOnboarding).router;
     _routerReady = true;
   }
-  
+
   @override
   void dispose() {
     _authSub?.cancel();
@@ -171,9 +170,8 @@ class _URSBEAUTYState extends State<URSBEAUTY>
         title: 'URS BEAUTY',
         routerConfig: _router,
         theme: ThemeData(
-          primarySwatch: Colors.pink,
           appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.pink,
+            backgroundColor: AppColors.clay,
             foregroundColor: Colors.white,
             elevation: 0,
           ),

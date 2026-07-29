@@ -134,7 +134,9 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.resetPasswordScreen,
-        builder: (_, __) => ResetPasswordScreen(),
+        builder: (_, state) => ResetPasswordScreen(
+          email: state.uri.queryParameters['email'] ?? '',
+        ),
       ),
       GoRoute(
         path: AppRoutes.searchScreen,
