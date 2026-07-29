@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/section_header.dart';
 
 class StylistsWidget extends StatelessWidget {
   const StylistsWidget({super.key, required this.stylists, this.onStylistTap});
@@ -12,55 +13,14 @@ class StylistsWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Top stylists',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: const Color(0xFF2E2420),
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Highly rated beauty professionals near you.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF78665F),
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (stylists.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0E8),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '${stylists.length} pros',
-                  style: const TextStyle(
-                    color: Color(0xFF9F624F),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-          ],
+        SectionHeader(
+          title: 'Top Stylists',
+          subtitle: 'Highly rated professionals near you',
+          badge: stylists.isNotEmpty ? '${stylists.length} pros' : null,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         if (stylists.isEmpty)
-          const _EmptyStylistsCard()
+          const _EmptyState()
         else
           LayoutBuilder(
             builder: (context, constraints) {
@@ -73,9 +33,9 @@ class StylistsWidget extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: crossAxisCount,
-                  childAspectRatio: isWide ? 0.78 : 0.72,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
+                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
                 ),
                 itemCount: stylists.length,
                 itemBuilder: (context, index) {
@@ -105,125 +65,124 @@ class _StylistCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(26),
+      borderRadius: BorderRadius.circular(20),
+      elevation: 2,
+      shadowColor: const Color(0xFF6C5CE7).withValues(alpha: 0.1),
       child: InkWell(
-        borderRadius: BorderRadius.circular(26),
         onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: const Color(0xFFF0D8CA)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x12000000),
-                blurRadius: 18,
-                offset: Offset(0, 10),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFF0F0F0)),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
+                  flex: 5,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      _StylistImage(imageUrl: stylist.imageUrl),
-                      DecoratedBox(
+                      _StylistAvatar(imageUrl: stylist.imageUrl),
+                      Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              Colors.black.withValues(alpha: 0.34),
+                              Colors.black.withValues(alpha: 0.4),
                             ],
                           ),
                         ),
                       ),
-                      Positioned(
-                        top: 10,
-                        left: 10,
-                        child: _RatingChip(
-                          rating: stylist.averageRating,
-                          reviews: stylist.totalReview,
-                        ),
-                      ),
                       if (stylist.isVerified)
                         Positioned(
-                          top: 10,
-                          right: 10,
+                          top: 8,
+                          right: 8,
                           child: Container(
-                            width: 32,
-                            height: 32,
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF70866D),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: const [
+                              color: const Color(0xFF00B894),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
                                 BoxShadow(
-                                  color: Color(0x30000000),
+                                  color: const Color(0xFF00B894).withValues(alpha: 0.3),
                                   blurRadius: 8,
-                                  offset: Offset(0, 4),
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
                             child: const Icon(
                               Icons.verified_rounded,
                               color: Colors.white,
-                              size: 18,
+                              size: 14,
                             ),
                           ),
                         ),
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        child: _RatingBadge(
+                          rating: stylist.averageRating,
+                          reviews: stylist.totalReview,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        stylist.businessName.isEmpty
-                            ? 'Beauty stylist'
-                            : stylist.businessName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: const Color(0xFF2E2420),
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        stylist.description.trim().isEmpty
-                            ? 'At-home beauty specialist'
-                            : stylist.description.trim(),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF78665F),
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          _MiniStat(
-                            icon: Icons.location_on_rounded,
-                            label:
-                                '${stylist.serviceRadiusKm.toStringAsFixed(0)} km',
+                Expanded(
+                  flex: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          stylist.businessName.isNotEmpty
+                              ? stylist.businessName
+                              : 'Beauty Professional',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: const Color(0xFF2D3436),
+                            fontWeight: FontWeight.w700,
                           ),
-                          const SizedBox(width: 8),
-                          const _MiniStat(
-                            icon: Icons.home_repair_service_rounded,
-                            label: 'Mobile',
+                        ),
+                        const SizedBox(height: 4),
+                        Expanded(
+                          child: Text(
+                            stylist.description.isNotEmpty
+                                ? stylist.description
+                                : 'Professional beauty services at your doorstep',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF636E72),
+                              height: 1.3,
+                            ),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _InfoChip(
+                              icon: Icons.location_on_rounded,
+                              label:
+                                  '${stylist.serviceRadiusKm.toStringAsFixed(0)} km',
+                            ),
+                            const SizedBox(width: 6),
+                            _InfoChip(
+                              icon: Icons.home_rounded,
+                              label: 'Mobile',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -235,79 +194,83 @@ class _StylistCard extends StatelessWidget {
   }
 }
 
-class _StylistImage extends StatelessWidget {
-  const _StylistImage({this.imageUrl});
-
+class _StylistAvatar extends StatelessWidget {
   final String? imageUrl;
 
+  const _StylistAvatar({this.imageUrl});
+
   @override
   Widget build(BuildContext context) {
-    if (imageUrl == null || imageUrl!.trim().isEmpty) {
-      return const _StylistFallback();
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return Image.network(
+        imageUrl!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => const _StylistPlaceholder(),
+      );
     }
-
-    return Image.network(
-      imageUrl!,
-      fit: BoxFit.cover,
-      width: double.infinity,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) {
-          return child;
-        }
-        return const _StylistFallback();
-      },
-      errorBuilder: (_, __, ___) => const _StylistFallback(),
-    );
+    return const _StylistPlaceholder();
   }
 }
 
-class _StylistFallback extends StatelessWidget {
-  const _StylistFallback();
-
-  @override
-  Widget build(BuildContext context) {
-    return CircleAvatar(
-      backgroundImage: const AssetImage('assets/images/stylist.png'),
-      radius: 28,
-    );
-  }
-}
-
-class _RatingChip extends StatelessWidget {
-  const _RatingChip({required this.rating, required this.reviews});
-
-  final double rating;
-  final int reviews;
+class _StylistPlaceholder extends StatelessWidget {
+  const _StylistPlaceholder();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      color: const Color(0xFF6C5CE7).withValues(alpha: 0.1),
+      child: Center(
+        child: CircleAvatar(
+          radius: 30,
+          backgroundColor: const Color(0xFF6C5CE7).withValues(alpha: 0.2),
+          child: const Icon(
+            Icons.person_rounded,
+            color: Color(0xFF6C5CE7),
+            size: 30,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RatingBadge extends StatelessWidget {
+  final double rating;
+  final int reviews;
+
+  const _RatingBadge({required this.rating, required this.reviews});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(999),
+        color: Colors.white.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star_rounded, color: Color(0xFFC28A5E), size: 15),
-          const SizedBox(width: 3),
+          const Icon(Icons.star_rounded, color: Color(0xFFFDCB6E), size: 14),
+          const SizedBox(width: 2),
           Text(
             rating.toStringAsFixed(1),
             style: const TextStyle(
-              color: Color(0xFF2E2420),
+              color: Color(0xFF2D3436),
               fontSize: 11,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
           if (reviews > 0) ...[
-            const SizedBox(width: 4),
+            const SizedBox(width: 2),
             Text(
               '($reviews)',
-              style: const TextStyle(
-                color: Color(0xFF78665F),
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
+              style: TextStyle(
+                color: const Color(0xFF636E72).withValues(alpha: 0.7),
+                fontSize: 9,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -317,35 +280,35 @@ class _RatingChip extends StatelessWidget {
   }
 }
 
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({required this.icon, required this.label});
-
+class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
 
+  const _InfoChip({required this.icon, required this.label});
+
   @override
   Widget build(BuildContext context) {
-    return Flexible(
+    return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF3EC),
-          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFF6C5CE7).withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: const Color(0xFF9F624F), size: 14),
-            const SizedBox(width: 4),
+            Icon(icon, color: const Color(0xFF6C5CE7), size: 12),
+            const SizedBox(width: 2),
             Flexible(
               child: Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: Color(0xFF4B332C),
+                  color: Color(0xFF6C5CE7),
                   fontSize: 10,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -356,38 +319,55 @@ class _MiniStat extends StatelessWidget {
   }
 }
 
-class _EmptyStylistsCard extends StatelessWidget {
-  const _EmptyStylistsCard();
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF0D6C9)),
+        border: Border.all(color: const Color(0xFFF0F0F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6C5CE7).withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              color: const Color(0xFFEAF0E5),
-              borderRadius: BorderRadius.circular(18),
+              color: const Color(0xFF6C5CE7).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.groups_2_rounded, color: Color(0xFF70866D)),
+            child: const Icon(
+              Icons.people_outline_rounded,
+              color: Color(0xFF6C5CE7),
+              size: 32,
+            ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              'Stylists near you will appear here once they are available.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF78665F),
-                fontWeight: FontWeight.w600,
-              ),
+          const SizedBox(height: 16),
+          Text(
+            'No stylists available',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: const Color(0xFF2D3436),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Professional stylists will appear here once they join.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF636E72),
             ),
           ),
         ],

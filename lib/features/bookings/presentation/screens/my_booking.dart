@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 import 'package:urs_beauty/core/widgets/retry_button.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
@@ -22,243 +23,277 @@ class MyBookingScreen extends StatefulWidget {
   State<MyBookingScreen> createState() => _MyBookingScreenState();
 }
 
-class _MyBookingScreenState extends State<MyBookingScreen> {
+class _MyBookingScreenState extends State<MyBookingScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   String? _loadedReviewsForCustomerId;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      if (!mounted) {
-        return;
+    _tabController = TabController(length: 3, vsync: this);
+    // Load bookings on first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<BookingBloc>().add(const LoadMyBookingsEvent());
       }
-      context.read<BookingBloc>().add(const LoadMyBookingsEvent());
     });
   }
 
   @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: MultiBlocListener(
-        listeners: [
-          BlocListener<BookingBloc, BookingState>(
-            listener: (context, state) {
-              final customerId = state.customer?.id;
-              if (customerId != null &&
-                  customerId != _loadedReviewsForCustomerId) {
-                _loadedReviewsForCustomerId = customerId;
-                context.read<ReviewBloc>().add(
-                  GetReviewsByCustomerIdEvent(customerId),
-                );
-              }
-
-              if ((state.status == BookingBlocStatus.cancelled ||
-                      state.status == BookingBlocStatus.failure) &&
-                  (state.message?.isNotEmpty == true ||
-                      state.errorMessage.isNotEmpty)) {
-                final message = state.status == BookingBlocStatus.failure
-                    ? state.errorMessage
-                    : (state.message ?? '');
-                ScaffoldMessenger.of(context)
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(SnackBar(content: Text(message)));
-              }
-            },
-          ),
-          BlocListener<ReviewBloc, ReviewState>(
-            listener: (context, state) {
-              if (state.status == ReviewBlocStatus.failure &&
-                  state.errorMessage.isNotEmpty) {
-                ScaffoldMessenger.of(context)
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(SnackBar(content: Text(state.errorMessage)));
-              }
-            },
-          ),
-        ],
-        child: BlocBuilder<BookingBloc, BookingState>(
-          builder: (context, bookingState) {
-            return BlocBuilder<ReviewBloc, ReviewState>(
-              builder: (context, reviewState) {
-                final bookings = bookingState.customerBookings;
-                final reviewsByBookingId = {
-                  for (final review in reviewState.customerReviews)
-                    review.bookingId: review,
-                };
-                final upcomingBookings = _sortUpcoming(bookings);
-                final completedBookings = _sortCompleted(
-                  bookings,
-                  reviewsByBookingId,
-                );
-                final historyBookings = _sortHistory(
-                  bookings,
-                  reviewsByBookingId,
-                );
-                final isInitialLoading =
-                    bookingState.status == BookingBlocStatus.loading &&
-                    bookings.isEmpty;
-                final hasInitialFailure =
-                    bookingState.status == BookingBlocStatus.failure &&
-                    bookings.isEmpty;
-
-                return Scaffold(
-                  backgroundColor: const Color(0xFFFFFBF6),
-                  appBar: AppBar(
-                    elevation: 0,
-                    backgroundColor: const Color(0xFFFFFBF6),
-                    surfaceTintColor: Colors.transparent,
-                    bottom: PreferredSize(
-                      preferredSize: const Size.fromHeight(20),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF7E7DA),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: TabBar(
-                            indicator: BoxDecoration(
-                              color: const Color(0xFF6B3F32),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            dividerColor: Colors.transparent,
-                            labelColor: Colors.white,
-                            unselectedLabelColor: const Color(0xFF7B6156),
-                            labelStyle: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                            ),
-                            tabs: const [
-                              Tab(text: 'Upcoming'),
-                              Tab(text: 'Completed'),
-                              Tab(text: 'History'),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  body: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xFFFFF7F0), Color(0xFFFFE5D2)],
-                      ),
-                    ),
-                    child: SafeArea(
-                      top: false,
-                      child: isInitialLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : hasInitialFailure
-                          ? RetryButton(
-                              message: bookingState.errorMessage,
-                              onRetry: _reloadBookings,
-                            )
-                          : TabBarView(
-                              children: [
-                                BookingTabContent(
-                                  bookings: upcomingBookings,
-                                  emptyTitle: 'No upcoming bookings yet',
-                                  emptySubtitle:
-                                      'Your scheduled appointments will appear here.',
-                                  onRefresh: _reloadBookings,
-                                  itemBuilder: (booking) => BookingListItem(
-                                    booking: booking,
-                                    isBusy:
-                                        bookingState.status ==
-                                        BookingBlocStatus.cancelling,
-                                    onCancel: () =>
-                                        _confirmCancellation(booking),
-                                    onReschedule: () =>
-                                        _openRescheduleFlow(booking),
-                                  ),
-                                ),
-                                BookingTabContent(
-                                  bookings: completedBookings,
-                                  emptyTitle: 'No completed bookings yet',
-                                  emptySubtitle:
-                                      'Completed appointments show up here so you can pay after service and leave a review.',
-                                  onRefresh: _reloadBookings,
-                                  itemBuilder: (booking) => BookingListItem(
-                                    booking: booking,
-                                    isCompleted: true,
-                                    review: reviewsByBookingId[booking.id],
-                                    onPayNow:
-                                        booking.canCollectPostServicePayment
-                                        ? () => _openPaymentFlow(booking)
-                                        : null,
-                                    onReviewTap: () => _openReviewFlow(
-                                      booking,
-                                      existingReview:
-                                          reviewsByBookingId[booking.id],
-                                    ),
-                                  ),
-                                ),
-                                BookingTabContent(
-                                  bookings: historyBookings,
-                                  emptyTitle:
-                                      'No Completed/Passed/Cancelled bookings yet',
-                                  emptySubtitle:
-                                      'Completed,Cancelled or older unfinished appointments will appear here.',
-                                  onRefresh: _reloadBookings,
-                                  itemBuilder: (booking) => BookingListItem(
-                                    booking: booking,
-                                    isHistory: true,
-                                    review: reviewsByBookingId[booking.id],
-                                    onReschedule: () =>
-                                        _openRescheduleFlow(booking),
-                                    onReviewTap: () => _openReviewFlow(
-                                      booking,
-                                      existingReview:
-                                          reviewsByBookingId[booking.id],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _reloadBookings() async {
     context.read<BookingBloc>().add(const LoadMyBookingsEvent());
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<BookingBloc, BookingState>(
+          listener: _onBookingStateChanged,
+        ),
+        BlocListener<ReviewBloc, ReviewState>(listener: _onReviewStateChanged),
+      ],
+      child: Scaffold(
+        backgroundColor: AppColors.blush,
+        appBar: AppBar(
+          title: Text(
+            'My Bookings',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: AppColors.ink,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          bottom: _buildModernTabBar(),
+        ),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppColors.paper, Color(0xFFFFF0E6)],
+            ),
+          ),
+          child: BlocBuilder<BookingBloc, BookingState>(
+            builder: (context, bookingState) {
+              return BlocBuilder<ReviewBloc, ReviewState>(
+                builder: (context, reviewState) {
+                  final bookings = bookingState.customerBookings;
+                  final reviewsByBookingId = {
+                    for (final review in reviewState.customerReviews)
+                      review.bookingId: review,
+                  };
+                  final upcoming = _sortUpcoming(bookings);
+                  final completed = _sortCompleted(
+                    bookings,
+                    reviewsByBookingId,
+                  );
+                  final history = _sortHistory(bookings, reviewsByBookingId);
+                  final isLoadingInitial =
+                      bookingState.status == BookingBlocStatus.loading &&
+                      bookings.isEmpty;
+                  final hasInitialError =
+                      bookingState.status == BookingBlocStatus.failure &&
+                      bookings.isEmpty;
+
+                  if (isLoadingInitial) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: AppColors.clay),
+                    );
+                  }
+                  if (hasInitialError) {
+                    return RetryButton(
+                      message: bookingState.errorMessage,
+                      onRetry: _reloadBookings,
+                    );
+                  }
+
+                  return TabBarView(
+                    controller: _tabController,
+                    children: [
+                      BookingTabContent(
+                        bookings: upcoming,
+                        emptyTitle: 'No upcoming bookings',
+                        emptySubtitle:
+                            'Your scheduled appointments will appear here.',
+                        onRefresh: _reloadBookings,
+                        itemBuilder: (booking) => BookingListItem(
+                          booking: booking,
+                          isBusy:
+                              bookingState.status ==
+                              BookingBlocStatus.cancelling,
+                          onCancel: () => _confirmCancellation(booking),
+                          onReschedule: () => _openRescheduleFlow(booking),
+                        ),
+                      ),
+                      BookingTabContent(
+                        bookings: completed,
+                        emptyTitle: 'No completed bookings yet',
+                        emptySubtitle:
+                            'Completed appointments show up here so you can pay after service and leave a review.',
+                        onRefresh: _reloadBookings,
+                        itemBuilder: (booking) => BookingListItem(
+                          booking: booking,
+                          isCompleted: true,
+                          review: reviewsByBookingId[booking.id],
+                          onPayNow: booking.canCollectPostServicePayment
+                              ? () => _openPaymentFlow(booking)
+                              : null,
+                          onReviewTap: () => _openReviewFlow(
+                            booking,
+                            existingReview: reviewsByBookingId[booking.id],
+                          ),
+                        ),
+                      ),
+                      BookingTabContent(
+                        bookings: history,
+                        emptyTitle: 'No history',
+                        emptySubtitle:
+                            'Completed, cancelled or older appointments will appear here.',
+                        onRefresh: _reloadBookings,
+                        itemBuilder: (booking) => BookingListItem(
+                          booking: booking,
+                          isHistory: true,
+                          review: reviewsByBookingId[booking.id],
+                          onReschedule: () => _openRescheduleFlow(booking),
+                          onReviewTap: () => _openReviewFlow(
+                            booking,
+                            existingReview: reviewsByBookingId[booking.id],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Modern Tab Bar ─────────────────────────────────────────────────────
+  PreferredSizeWidget _buildModernTabBar() {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(70),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(40),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.clay.withValues(alpha: 0.06),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          //padding: const EdgeInsets.all(4),
+          child: TabBar(
+            controller: _tabController,
+            indicator: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.clay, AppColors.clay],
+              ),
+              borderRadius: BorderRadius.circular(40),
+            ),
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerColor: Colors.transparent,
+            labelColor: Colors.white,
+            unselectedLabelColor: AppColors.muted,
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+            tabs: const [
+              Tab(text: 'Upcoming'),
+              Tab(text: 'Completed'),
+              Tab(text: 'History'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Bloc Listeners ─────────────────────────────────────────────────────
+  void _onBookingStateChanged(BuildContext context, BookingState state) {
+    // Load reviews when customer ID is available
+    final customerId = state.customer?.id;
+    if (customerId != null && customerId != _loadedReviewsForCustomerId) {
+      _loadedReviewsForCustomerId = customerId;
+      context.read<ReviewBloc>().add(GetReviewsByCustomerIdEvent(customerId));
+    }
+
+    // Show feedback for cancellation or failure
+    if ((state.status == BookingBlocStatus.cancelled ||
+            state.status == BookingBlocStatus.failure) &&
+        (state.message?.isNotEmpty == true || state.errorMessage.isNotEmpty)) {
+      final message = state.status == BookingBlocStatus.failure
+          ? state.errorMessage
+          : (state.message ?? '');
+      _showSnackbar(message);
+    }
+  }
+
+  void _onReviewStateChanged(BuildContext context, ReviewState state) {
+    if (state.status == ReviewBlocStatus.failure &&
+        state.errorMessage.isNotEmpty) {
+      _showSnackbar(state.errorMessage);
+    }
+  }
+
+  void _showSnackbar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // ─── Booking Actions ────────────────────────────────────────────────────
   Future<void> _confirmCancellation(BookingEntity booking) async {
     final shouldCancel = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Cancel booking?'),
-          content: Text(
-            'This will cancel ${booking.serviceName.isEmpty ? 'this appointment' : booking.serviceName} '
-            'scheduled for ${MaterialLocalizations.of(context).formatMediumDate(booking.scheduledAt)}.',
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Cancel booking?'),
+        content: Text(
+          'This will cancel your ${booking.serviceName.isNotEmpty ? booking.serviceName : 'appointment'} '
+          'scheduled for ${_formatDate(booking.scheduledAt)}.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Keep', style: TextStyle(color: AppColors.muted)),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Keep'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9B3D2E),
-                foregroundColor: Colors.white,
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.clay,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text('Cancel booking'),
             ),
-          ],
-        );
-      },
+            child: const Text('Cancel booking'),
+          ),
+        ],
+      ),
     );
 
     if (shouldCancel == true && mounted) {
@@ -270,10 +305,8 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
     BookingEntity booking, {
     ReviewEntity? existingReview,
   }) async {
-    final bookingBloc = context.read<BookingBloc>();
-    final reviewBloc = context.read<ReviewBloc>();
-    final submittedReview = await Navigator.of(context).push<ReviewEntity>(
-      MaterialPageRoute<ReviewEntity>(
+    final submitted = await Navigator.of(context).push<ReviewEntity>(
+      MaterialPageRoute(
         builder: (_) => BlocProvider(
           create: (_) => getit<ReviewBloc>(),
           child: WriteReviewScreen(
@@ -284,31 +317,23 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
       ),
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
-    final customerId = bookingBloc.state.customer?.id ?? booking.customerId;
-    if (submittedReview != null) {
-      await _reloadBookings();
-      if (!mounted) {
-        return;
+    final customerId = booking.customerId;
+    // Refresh bookings and reviews after submitting
+    if (submitted != null) {
+      _reloadBookings();
+      if (!mounted) return;
+      context.read<ReviewBloc>().add(GetReviewsByCustomerIdEvent(customerId));
+      if (existingReview == null) {
+        _showSnackbar('Review submitted successfully.');
       }
-    }
-    reviewBloc.add(GetReviewsByCustomerIdEvent(customerId));
-
-    if (submittedReview != null && existingReview == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Review submitted successfully.')),
-        );
     }
   }
 
   Future<void> _openPaymentFlow(BookingEntity booking) async {
-    final didCompletePayment = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
+    final paid = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
         builder: (_) => BlocProvider(
           create: (_) => getit<PaymentBloc>(),
           child: PaymentMethodsScreen(
@@ -320,24 +345,17 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
       ),
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
-    if (didCompletePayment == true) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Payment completed successfully.')),
-        );
+    if (paid == true) {
+      _showSnackbar('Payment completed successfully.');
     }
-
-    await _reloadBookings();
+    _reloadBookings();
   }
 
   Future<void> _openRescheduleFlow(BookingEntity booking) async {
     final rescheduled = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
+      MaterialPageRoute(
         builder: (_) => MultiBlocProvider(
           providers: [
             BlocProvider(create: (_) => getit<BookingBloc>()),
@@ -348,77 +366,84 @@ class _MyBookingScreenState extends State<MyBookingScreen> {
       ),
     );
 
-    if (rescheduled != true || !mounted) {
-      return;
-    }
+    if (!mounted) return;
 
-    await _reloadBookings();
-    if (!mounted) {
-      return;
+    if (rescheduled == true) {
+      _reloadBookings();
+      if (!mounted) return;
+      _showSnackbar('Booking rescheduled successfully.');
     }
+  }
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text('Booking rescheduled successfully.')),
-      );
+  // ─── Helper Methods ─────────────────────────────────────────────────────
+  String _formatDate(DateTime date) {
+    // Use a simple locale-independent format
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   List<BookingEntity> _sortUpcoming(List<BookingEntity> bookings) {
     final now = DateTime.now();
-    final filtered = bookings.where((booking) {
-      return _isScheduled(booking.status) && !booking.scheduledAt.isBefore(now);
-    }).toList();
-
-    filtered.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-    return filtered;
+    return bookings
+        .where((b) => _isScheduled(b.status) && !b.scheduledAt.isBefore(now))
+        .toList()
+      ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
   }
 
   List<BookingEntity> _sortCompleted(
     List<BookingEntity> bookings,
     Map<String, ReviewEntity> reviewsByBookingId,
   ) {
-    final filtered = bookings
+    return bookings
         .where(
-          (booking) =>
-              booking.status == BookingStatus.completed &&
-              (booking.canCollectPostServicePayment ||
-                  booking.isPaymentAwaitingVerification ||
-                  !_hasReview(booking, reviewsByBookingId)),
+          (b) =>
+              b.status == BookingStatus.completed &&
+              (b.canCollectPostServicePayment ||
+                  b.isPaymentAwaitingVerification ||
+                  !_hasReview(b, reviewsByBookingId)),
         )
-        .toList();
-
-    filtered.sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
-    return filtered;
+        .toList()
+      ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
   }
 
   List<BookingEntity> _sortHistory(
     List<BookingEntity> bookings,
     Map<String, ReviewEntity> reviewsByBookingId,
   ) {
-    final filtered = bookings.where((booking) {
-      return (booking.status == BookingStatus.completed &&
-              _hasReview(booking, reviewsByBookingId) &&
-              !booking.canCollectPostServicePayment &&
-              !booking.isPaymentAwaitingVerification) ||
-          booking.status == BookingStatus.cancelled ||
-          booking.status == BookingStatus.noShow;
-    }).toList();
-
-    filtered.sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
-    return filtered;
+    return bookings
+        .where(
+          (b) =>
+              (b.status == BookingStatus.completed &&
+                  _hasReview(b, reviewsByBookingId) &&
+                  !b.canCollectPostServicePayment &&
+                  !b.isPaymentAwaitingVerification) ||
+              b.status == BookingStatus.cancelled ||
+              b.status == BookingStatus.noShow,
+        )
+        .toList()
+      ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
   }
 
-  bool _isScheduled(BookingStatus status) {
-    return status == BookingStatus.pending ||
-        status == BookingStatus.inProgress ||
-        status == BookingStatus.confirmed;
-  }
+  bool _isScheduled(BookingStatus status) =>
+      status == BookingStatus.pending ||
+      status == BookingStatus.inProgress ||
+      status == BookingStatus.confirmed;
 
   bool _hasReview(
     BookingEntity booking,
     Map<String, ReviewEntity> reviewsByBookingId,
-  ) {
-    return booking.isReviewed || reviewsByBookingId.containsKey(booking.id);
-  }
+  ) => booking.isReviewed || reviewsByBookingId.containsKey(booking.id);
 }

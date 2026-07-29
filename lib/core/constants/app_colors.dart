@@ -6,6 +6,7 @@ class AppColors {
   static const paper = Color(0xFFFFF8F2);
   static const surface = Colors.white;
   static const ink = Color(0xFF2E2420);
+  static const black = Color(0xFF000000);
   static const muted = Color(0xFF78665F);
   static const clay = Color(0xFF9F624F);
   static const rose = Color(0xFFE9B7A6);

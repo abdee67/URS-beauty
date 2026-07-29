@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:urs_beauty/features/beauty_services/domain/entities/service_category_entity.dart';
+import 'package:urs_beauty/features/stylists/presentation/widgets/section_header.dart';
 
 class ServicesCarousel extends StatelessWidget {
   const ServicesCarousel({
@@ -15,25 +16,34 @@ class ServicesCarousel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SectionShell(
-      title: 'Featured services',
-      subtitle: 'Pick a category and we will match you with available pros.',
-      trailing: services.isEmpty ? null : '${services.length} categories',
-      onViewAll: services.isEmpty ? null : onViewAll,
-      child: services.isEmpty
-          ? const _EmptyServicesCard()
-          : SizedBox(
-              height: 230,
-              child: ListView.separated(
-                clipBehavior: Clip.none,
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: services.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 14),
-                itemBuilder: (context, index) {
-                  final service = services[index];
-                  return SizedBox(
-                    width: MediaQuery.sizeOf(context).width * 0.72,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Featured Services',
+          subtitle: 'Choose from our curated collection',
+          actionLabel: services.isNotEmpty ? 'View All' : null,
+          onAction: onViewAll,
+          badge: services.isNotEmpty ? '${services.length}+' : null,
+        ),
+        const SizedBox(height: 16),
+        if (services.isEmpty)
+          const _EmptyState()
+        else
+          SizedBox(
+            height: 260,
+            child: ListView.builder(
+              clipBehavior: Clip.none,
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: services.length,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              itemBuilder: (context, index) {
+                final service = services[index];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: SizedBox(
+                    width: 280,
                     child: _ServiceCard(
                       service: service,
                       index: index,
@@ -41,101 +51,16 @@ class ServicesCarousel extends StatelessWidget {
                           ? null
                           : () => onServiceTap!(service),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-    );
-  }
-}
-
-class _SectionShell extends StatelessWidget {
-  const _SectionShell({
-    required this.title,
-    required this.subtitle,
-    required this.child,
-    this.trailing,
-    this.onViewAll,
-  });
-
-  final String title;
-  final String subtitle;
-  final Widget child;
-  final String? trailing;
-  final VoidCallback? onViewAll;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: const Color(0xFF2E2420),
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF78665F),
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (onViewAll != null) ...[
-              const SizedBox(width: 12),
-              TextButton(
-                onPressed: onViewAll,
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF9F624F),
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                ),
-                child: const Text(
-                  'View all',
-                  style: TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ),
-            ] else if (trailing != null) ...[
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF0E5),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  trailing!,
-                  style: const TextStyle(
-                    color: Color(0xFF52664F),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 14),
-        child,
+          ),
       ],
     );
   }
 }
+
 
 class _ServiceCard extends StatelessWidget {
   const _ServiceCard({required this.service, required this.index, this.onTap});
@@ -144,111 +69,150 @@ class _ServiceCard extends StatelessWidget {
   final int index;
   final VoidCallback? onTap;
 
-  static const _palette = [
-    Color(0xFF9F624F),
-    Color(0xFF70866D),
-    Color(0xFFC28A5E),
-    Color(0xFF8C6F9E),
+  static const _gradients = [
+    [Color(0xFF6C5CE7), Color(0xFFA855F7)],
+    [Color(0xFF00B894), Color(0xFF55EFC4)],
+    [Color(0xFFE17055), Color(0xFFFDCB6E)],
+    [Color(0xFF0984E3), Color(0xFF74B9FF)],
+    [Color(0xFF6C5CE7), Color(0xFFA8E6CF)],
   ];
 
   @override
   Widget build(BuildContext context) {
-    final accent = _palette[index % _palette.length];
+    final gradient = _gradients[index % _gradients.length];
 
     return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(28),
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+      elevation: 4,
+      shadowColor: gradient[0].withValues(alpha: 0.3),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: accent.withValues(alpha: 0.18),
-                blurRadius: 18,
-                offset: const Offset(0, 12),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFF0F0F0)),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: Stack(
-              fit: StackFit.expand,
+            borderRadius: BorderRadius.circular(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _NetworkImageFill(
-                  imageUrl: service.iconUrl,
-                  fallbackColor: accent,
-                  icon: Icons.spa_rounded,
-                ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.02),
-                        Colors.black.withValues(alpha: 0.12),
-                        Colors.black.withValues(alpha: 0.72),
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: gradient,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        if (service.iconUrl.isNotEmpty)
+                          Positioned.fill(
+                            child: Opacity(
+                              opacity: 0.1,
+                              child: Image.network(
+                                service.iconUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const SizedBox(),
+                              ),
+                            ),
+                          ),
+                        Center(
+                          child: Icon(
+                            _getServiceIcon(service.name),
+                            color: Colors.white.withValues(alpha: 0.9),
+                            size: 64,
+                          ),
+                        ),
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.favorite_border_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
-                Positioned(
-                  left: 18,
-                  right: 18,
-                  bottom: 18,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.22),
-                          ),
-                        ),
-                        child: const Text(
-                          'Explore services',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        service.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      if (service.description.trim().isNotEmpty) ...[
-                        const SizedBox(height: 5),
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          service.description.trim(),
-                          maxLines: 2,
+                          service.name,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
+                          style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.86),
-                                height: 1.25,
-                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF2D3436),
+                                fontWeight: FontWeight.w700,
                               ),
                         ),
+                        const SizedBox(height: 4),
+                        Expanded(
+                          child: Text(
+                            service.description.isNotEmpty
+                                ? service.description
+                                : 'Professional beauty services at your doorstep',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: const Color(0xFF636E72),
+                                  height: 1.3,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: gradient[0].withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Popular',
+                                style: TextStyle(
+                                  color: gradient[0],
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: gradient[0],
+                              size: 20,
+                            ),
+                          ],
+                        ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -258,101 +222,70 @@ class _ServiceCard extends StatelessWidget {
       ),
     );
   }
-}
 
-class _NetworkImageFill extends StatelessWidget {
-  const _NetworkImageFill({
-    required this.imageUrl,
-    required this.fallbackColor,
-    required this.icon,
-  });
-
-  final String imageUrl;
-  final Color fallbackColor;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    if (imageUrl.trim().isEmpty) {
-      return _ImageFallback(color: fallbackColor, icon: icon);
+  IconData _getServiceIcon(String serviceName) {
+    final name = serviceName.toLowerCase();
+    if (name.contains('hair')) return Icons.face_retouching_natural_rounded;
+    if (name.contains('nail')) return Icons.auto_awesome_rounded;
+    if (name.contains('makeup') || name.contains('make-up')) {
+      return Icons.brush_rounded;
     }
-
-    return Image.network(
-      imageUrl,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) {
-          return child;
-        }
-        return _ImageFallback(color: fallbackColor, icon: icon);
-      },
-      errorBuilder: (_, __, ___) {
-        return _ImageFallback(color: fallbackColor, icon: icon);
-      },
-    );
+    if (name.contains('spa')) return Icons.spa_rounded;
+    if (name.contains('massage')) return Icons.air_rounded;
+    return Icons.auto_awesome_mosaic_rounded;
   }
 }
 
-class _ImageFallback extends StatelessWidget {
-  const _ImageFallback({required this.color, required this.icon});
-
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color.withValues(alpha: 0.82), const Color(0xFF2E2420)],
-        ),
-      ),
-      child: Center(
-        child: Icon(
-          icon,
-          color: Colors.white.withValues(alpha: 0.78),
-          size: 52,
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyServicesCard extends StatelessWidget {
-  const _EmptyServicesCard();
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF0D6C9)),
+        border: Border.all(color: const Color(0xFFF0F0F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6C5CE7).withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF1EA),
-              borderRadius: BorderRadius.circular(18),
+              color: const Color(0xFF6C5CE7).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.spa_outlined, color: Color(0xFF9F624F)),
+            child: const Icon(
+              Icons.spa_outlined,
+              color: Color(0xFF6C5CE7),
+              size: 32,
+            ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              'Services will appear here as soon as they are available.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF78665F),
-                fontWeight: FontWeight.w600,
-              ),
+          const SizedBox(height: 16),
+          Text(
+            'No services available yet',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: const Color(0xFF2D3436),
+              fontWeight: FontWeight.w600,
             ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Services will appear here as soon as they are available.',
+            textAlign: TextAlign.center,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF636E72)),
           ),
         ],
       ),
