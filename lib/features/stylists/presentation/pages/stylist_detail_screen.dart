@@ -341,7 +341,7 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
                 ),
               ),
             ),
-            if (loadedState != null)
+            /* if (loadedState != null)
               IconButton(
                 tooltip: loadedState.isMapView ? 'Show list' : 'Show map',
                 onPressed: () {
@@ -353,7 +353,8 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
                       : Icons.map_rounded,
                   color: const Color(0xFF6B3F32),
                 ),
-              ),
+              ),*/
+            //it need google map api key from google cloud console(which it needs a payment) and set up in in androidmanifest.xml     android:name="com.google.android.geo.API_KEY"
           ],
         ),
         const SizedBox(height: 6),
