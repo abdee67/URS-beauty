@@ -3,6 +3,8 @@ import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
+import 'package:urs_beauty/core/errors/error_handler.dart';
+import 'package:urs_beauty/core/errors/exceptions.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:urs_beauty/features/auth/data/models/customer_model.dart';
 import 'package:urs_beauty/features/auth/data/models/customer_address_model.dart';
@@ -25,27 +27,31 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         password: password,
       );
       if (result.session == null) {
-        throw Exception('Failed to sign in: No session returned');
+        throw const AuthExceptions(
+          message: 'We could not start your session. Please try again.',
+        );
       }
 
       final user = result.user ?? _client.auth.currentUser;
       if (user == null) {
         await _signOutQuietly();
-        throw Exception('Failed to sign in: No user returned');
+        throw const AuthExceptions(
+          message: 'We could not find your account. Please try again.',
+        );
       }
 
       final isCustomerAccount = await _isCurrentCustomerAccount();
       if (!isCustomerAccount) {
         await _signOutQuietly();
-        throw Exception(
+        throw const AuthException(
           'This account is not a customer account. Please use the UR Stylist '
           'app or sign up as a customer.',
         );
       }
 
       return result.session!;
-    } catch (e) {
-      throw Exception('Failed to sign in: $e');
+    } catch (error, stackTrace) {
+      throw ErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -72,7 +78,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         emailRedirectTo: 'ursbeauty://login/',
       );
       if (result.user == null) {
-        throw Exception('Failed to sign up: No user returned');
+        throw const AuthExceptions(
+          message: 'We could not create your account. Please try again.',
+        );
       }
 
       await _ensureCustomerProfileFromUser(
@@ -80,8 +88,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         fallbackEmail: email,
         rethrowErrors: false,
       );
-    } catch (e) {
-      throw Exception('Failed to sign up: $e');
+    } catch (error, stackTrace) {
+      throw ErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -93,7 +101,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         email: email,
       );
       if (result.messageId == null) {
-        throw Exception('Failed to resend OTP: No message ID returned');
+        throw const AuthExceptions(
+          message: 'We could not send a verification code. Please try again.',
+        );
       }
     } catch (_) {
       try {
@@ -102,8 +112,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           shouldCreateUser: true,
           data: const {'app_role': 'customer'},
         );
-      } catch (otpError) {
-        throw Exception('Failed to send OTP: $otpError');
+      } catch (error, stackTrace) {
+        throw ErrorMapper.toException(error, stackTrace);
       }
     }
   }
@@ -117,12 +127,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         type: OtpType.email,
       );
       if (result.session == null) {
-        throw Exception('Failed to verify OTP: No session returned');
+        throw const InvalidOtpException();
       }
 
       final verifiedUser = result.user ?? _client.auth.currentUser;
       if (verifiedUser == null) {
-        throw Exception('Failed to verify OTP: No user returned');
+        throw const InvalidOtpException();
       }
 
       await _claimCustomerRoleForCurrentUser();
@@ -133,8 +143,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         rethrowErrors: true,
       );
       await _requireCurrentCustomerAccountForLogin();
-    } catch (e) {
-      throw Exception('Failed to verify OTP: $e');
+    } catch (error, stackTrace) {
+      throw ErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -147,10 +157,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         type: OtpType.recovery,
       );
       if (result.session == null) {
-        throw Exception('Failed to verify password reset code');
+        throw const InvalidOtpException();
       }
-    } catch (e) {
-      throw Exception('Failed to verify password reset code: $e');
+    } catch (error, stackTrace) {
+      throw ErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -158,8 +168,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> signOut() async {
     try {
       await _client.auth.signOut();
-    } catch (e) {
-      throw Exception('Failed to sign out: $e');
+    } catch (error, stackTrace) {
+      throw ErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -207,11 +217,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
 
       return fallbackCustomer;
-    } catch (e) {
+    } catch (error, stackTrace) {
       if (kDebugMode) {
-        print('Error retrieving current customer: $e');
+        print('Error retrieving current customer: $error');
       }
-      throw Exception('Failed to retrieve customer information: $e');
+      throw ErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -407,8 +417,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> forgotPassword(String email) async {
     try {
       await _client.auth.resetPasswordForEmail(email);
-    } catch (e) {
-      throw Exception('Failed to send password reset email: $e');
+    } catch (error, stackTrace) {
+      throw ErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -416,8 +426,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> resetPassword(String email, String password) async {
     try {
       await _client.auth.updateUser(UserAttributes(password: password));
-    } catch (e) {
-      throw Exception('Failed to reset password: $e');
+    } catch (error, stackTrace) {
+      throw ErrorMapper.toException(error, stackTrace);
     }
   }
 
