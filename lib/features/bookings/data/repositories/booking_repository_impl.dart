@@ -1,7 +1,10 @@
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 import 'package:dartz/dartz.dart';
-import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/core/errors/failures.dart' hide BookingFailure;
+import 'package:urs_beauty/core/errors/error_handler.dart';
+import 'package:urs_beauty/features/bookings/data/errors/booking_exceptions.dart';
+import 'package:urs_beauty/features/bookings/domain/errors/booking_failures.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source.dart';
 import 'package:urs_beauty/features/bookings/data/models/booking_model.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
@@ -59,7 +62,9 @@ class BookingRepositoryImpl implements BookingRepository {
   }
 
   @override
-  Future<Either<Failures, BookingEntity>> cancelBooking(String bookingId) async {
+  Future<Either<Failures, BookingEntity>> cancelBooking(
+    String bookingId,
+  ) async {
     return _runOperation(() async {
       final result = await remoteDataSource.cancelBooking(bookingId);
       return result.toEntity();
@@ -197,11 +202,39 @@ class BookingRepositoryImpl implements BookingRepository {
   ) async {
     try {
       return Right(await operation());
-    } on Failures catch (failure) {
-      return Left(failure);
+    } on BookingException catch (exception) {
+      return Left(_toBookingFailure(exception));
     } catch (error) {
-      return Left(Failures(message: error.toString()));
+      final exception = ErrorMapper.toException(error);
+      return Left(Failures(message: exception.message, code: exception.code));
     }
+  }
+
+  BookingFailure _toBookingFailure(BookingException exception) {
+    if (exception is BookingValidationException)
+      return BookingValidationFailure(
+        message: exception.message,
+        code: exception.code,
+      );
+    if (exception is BookingConflictException)
+      return BookingConflictFailure(
+        message: exception.message,
+        code: exception.code,
+      );
+    if (exception is BookingNotFoundException)
+      return BookingNotFoundFailure(
+        message: exception.message,
+        code: exception.code,
+      );
+    if (exception is BookingPermissionException)
+      return BookingPermissionFailure(
+        message: exception.message,
+        code: exception.code,
+      );
+    return BookingResponseFailure(
+      message: exception.message,
+      code: exception.code,
+    );
   }
 
   BookingModel _mapBookingEntityToModel(BookingEntity booking) {

@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
-import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/core/errors/error_handler.dart';
+import 'package:urs_beauty/core/errors/exceptions.dart';
+import 'package:urs_beauty/features/bookings/data/errors/booking_exceptions.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source.dart';
 import 'package:urs_beauty/features/bookings/data/models/booking_model.dart';
 import 'package:urs_beauty/features/bookings/data/models/booking_services_model.dart';
@@ -82,7 +84,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
       final data = response.data;
       if (data is! Map && data is! Map<String, dynamic>) {
-        throw Failures(
+        throw const BookingResponseException(
           message: 'Unexpected response from cancel-card-booking function.',
         );
       }
@@ -90,7 +92,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       final payload = Map<String, dynamic>.from(data as Map);
       final booking = payload['booking'];
       if (booking is! Map && booking is! Map<String, dynamic>) {
-        throw Failures(
+        throw const BookingResponseException(
           message: 'cancel-card-booking did not return an updated booking.',
         );
       }
@@ -258,18 +260,10 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   Future<T> _run<T>(Future<T> Function() operation) async {
     try {
       return await operation();
-    } on Failures {
+    } on AppExceptions {
       rethrow;
-    } on FunctionException catch (e) {
-      final details = e.details;
-      if (details is Map && details['message'] != null) {
-        throw Failures(message: details['message'].toString());
-      }
-      throw Failures(message: e.reasonPhrase ?? 'Function invocation failed');
-    } on PostgrestException catch (e) {
-      throw Failures(message: e.message);
-    } catch (e) {
-      throw Failures(message: e.toString());
+    } catch (error, stackTrace) {
+      throw _mapBookingException(error, stackTrace);
     }
   }
 
@@ -299,7 +293,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   Future<BookingModel> _mapRpcBooking(dynamic response) async {
     if (response is List) {
       if (response.isEmpty) {
-        throw Failures(message: 'Booking creation returned no data');
+        throw const BookingResponseException(
+          message: 'Booking creation returned no data.',
+        );
       }
       return _mapRpcBooking(response.first);
     }
@@ -319,7 +315,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       return getBookingById(response.trim());
     }
 
-    throw Failures(
+    throw const BookingResponseException(
       message: 'Unexpected response from create_booking_with_services',
     );
   }
@@ -382,7 +378,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     _requireValue(normalizedStatus, 'Booking status is required');
 
     if (!BookingStatus.values.any((value) => value.name == normalizedStatus)) {
-      throw Failures(message: 'Invalid booking status: $status');
+      throw BookingValidationException(
+        message: 'Invalid booking status: $status',
+      );
     }
 
     return normalizedStatus;
@@ -394,20 +392,24 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     _requireValue(request.addressId, 'Booking address is required');
 
     if (request.items.isEmpty) {
-      throw Failures(message: 'At least one service item is required');
+      throw const BookingValidationException(
+        message: 'At least one service item is required',
+      );
     }
 
     for (final item in request.items) {
       if (item.serviceId.trim().isEmpty) {
-        throw Failures(message: 'Each booking item must have a valid service');
+        throw const BookingValidationException(
+          message: 'Each booking item must have a valid service',
+        );
       }
       if (item.stylistServiceId.trim().isEmpty) {
-        throw Failures(
+        throw const BookingValidationException(
           message: 'Each booking item must have a valid stylist service',
         );
       }
       if (item.quantity <= 0) {
-        throw Failures(
+        throw const BookingValidationException(
           message: 'Each booking item must have a quantity greater than zero',
         );
       }
@@ -416,7 +418,27 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   void _requireValue(String value, String message) {
     if (value.trim().isEmpty) {
-      throw Failures(message: message);
+      throw BookingValidationException(message: message);
     }
+  }
+
+  BookingException _mapBookingException(Object error, StackTrace stackTrace) {
+    if (error is BookingException) return error;
+    if (error is PostgrestException) {
+      if (error.code == '42501')
+        return BookingPermissionException(cause: error, code: error.code);
+      if (error.code == 'P0001' || error.code == '23P01')
+        return BookingConflictException(cause: error, code: error.code);
+      if (error.code == 'PGRST116')
+        return BookingNotFoundException(cause: error, code: error.code);
+    }
+    final mapped = ErrorMapper.toException(error, stackTrace);
+    if (mapped is PermissionException)
+      return BookingPermissionException(cause: error, code: mapped.code);
+    return BookingResponseException(
+      message: mapped.message,
+      code: mapped.code,
+      cause: error,
+    );
   }
 }
