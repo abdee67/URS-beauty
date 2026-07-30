@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 import 'package:urs_beauty/features/beauty_services/domain/entities/service_entity.dart';
 import 'package:urs_beauty/features/beauty_services/presentation/bloc/service_bloc.dart';
 import 'package:urs_beauty/features/beauty_services/presentation/bloc/service_event.dart';
@@ -85,11 +86,43 @@ class _SearchViewState extends State<_SearchView> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBF6),
-      appBar: AppBar(
-        title: const Text('Search'),
-        backgroundColor: const Color(0xFFFFFBF6),
-        foregroundColor: const Color(0xFF2E2420),
+       appBar: AppBar(
+        backgroundColor: AppColors.clay.withValues(alpha: 0.5),
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              color: AppColors.ink,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Search',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              'Find the perfect stylist or service',
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: AppColors.muted),
+            ),
+          ],
+        ),
       ),
       body: Container(
         decoration: const BoxDecoration(

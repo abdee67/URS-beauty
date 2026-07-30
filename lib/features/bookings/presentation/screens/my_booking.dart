@@ -62,15 +62,42 @@ class _MyBookingScreenState extends State<MyBookingScreen>
       child: Scaffold(
         backgroundColor: AppColors.blush,
         appBar: AppBar(
-          title: Text(
-            'My Bookings',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: AppColors.ink,
-              fontWeight: FontWeight.bold,
+          backgroundColor: AppColors.clay.withValues(alpha: 0.5),
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.border),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                color: AppColors.ink,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
             ),
           ),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'My Bookings',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.ink,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                'Manage your upcoming and past appointments',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.successSurface,
+                ),
+              ),
+            ],
+          ),
           surfaceTintColor: Colors.transparent,
           bottom: _buildModernTabBar(),
         ),

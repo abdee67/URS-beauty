@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 import 'package:urs_beauty/core/widgets/empty_state.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_entity.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
@@ -332,35 +333,53 @@ class _StylistDetailScreenState extends State<StylistDetailScreen> {
       children: [
         Row(
           children: [
-            Expanded(
-              child: Text(
-                serviceTitle,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF5C2E1F),
-                ),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.ink.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                color: AppColors.ink,
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ),
-            /* if (loadedState != null)
-              IconButton(
-                tooltip: loadedState.isMapView ? 'Show list' : 'Show map',
-                onPressed: () {
-                  context.read<StylistsBloc>().add(const ToggleMapView());
-                },
-                icon: Icon(
-                  loadedState.isMapView
-                      ? Icons.view_list_rounded
-                      : Icons.map_rounded,
-                  color: const Color(0xFF6B3F32),
-                ),
-              ),*/
-            //it need google map api key from google cloud console(which it needs a payment) and set up in in androidmanifest.xml     android:name="com.google.android.geo.API_KEY"
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    serviceTitle,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppColors.ink,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
           ],
-        ),
-        const SizedBox(height: 6),
-        Text(
-          subtitle,
-          style: const TextStyle(color: Color(0xFF744534), height: 1.4),
         ),
       ],
     );

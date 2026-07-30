@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 import 'package:urs_beauty/core/constants/app_routes.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/forgotPassword.dart';
 import 'package:urs_beauty/features/auth/presentation/screens/resetPassword.dart';
@@ -145,7 +146,44 @@ class AppRouter {
     ],
     errorBuilder: (context, state) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Error')),
+         appBar: AppBar(
+        backgroundColor: AppColors.clay.withValues(alpha: 0.5),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              color: AppColors.ink,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'erRoR',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              '',
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: AppColors.muted),
+            ),
+          ],
+        ),
+      ),
         body: Center(child: Text('Error: ${state.error}')),
       );
     },

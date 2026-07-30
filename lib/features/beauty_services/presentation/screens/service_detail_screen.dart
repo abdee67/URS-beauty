@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 import 'package:urs_beauty/features/beauty_services/domain/entities/service_entity.dart';
 import 'package:urs_beauty/features/stylists/presentation/bloc/bloc/stylists_bloc.dart';
 import 'package:urs_beauty/features/stylists/presentation/pages/stylist_detail_screen.dart';
@@ -20,10 +21,36 @@ class ServiceDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBF6),
       appBar: AppBar(
-        title: const Text('Service details'),
-        backgroundColor: const Color(0xFFFFFBF6),
-        foregroundColor: const Color(0xFF2E2420),
+        backgroundColor: AppColors.clay.withValues(alpha: 0.5),
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              color: AppColors.ink,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Service Details',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -119,9 +146,7 @@ class ServiceDetailScreen extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => MultiBlocProvider(
-          providers: [
-            BlocProvider(create: (_) => getit<StylistsBloc>()),
-          ],
+          providers: [BlocProvider(create: (_) => getit<StylistsBloc>())],
           child: StylistDetailScreen(
             serviceId: service.id,
             serviceName: service.name,
