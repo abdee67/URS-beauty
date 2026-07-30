@@ -1,10 +1,9 @@
+import 'package:urs_beauty/core/errors/exceptions/booking_exceptions.dart';
+import 'package:urs_beauty/core/errors/failures/booking_failures.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
 import 'package:dartz/dartz.dart';
-import 'package:urs_beauty/core/errors/failures.dart' hide BookingFailure;
-import 'package:urs_beauty/core/errors/error_handler.dart';
-import 'package:urs_beauty/features/bookings/data/errors/booking_exceptions.dart';
-import 'package:urs_beauty/features/bookings/domain/errors/booking_failures.dart';
+import 'package:urs_beauty/core/errors/failures.dart';
 import 'package:urs_beauty/features/bookings/data/datasources/booking_remote_data_source.dart';
 import 'package:urs_beauty/features/bookings/data/models/booking_model.dart';
 import 'package:urs_beauty/features/bookings/data/models/create_booking_request_model.dart';
@@ -29,7 +28,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> createBooking(
     BookingEntity booking,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.createBooking(
         _mapBookingEntityToModel(booking),
       );
@@ -41,7 +40,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> createBookingWithServices(
     CreateBookingRequestEntity request,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.createBookingWithServices(
         _mapCreateBookingRequestToModel(request),
       );
@@ -53,7 +52,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> updateBooking(
     BookingEntity booking,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.updateBooking(
         _mapBookingEntityToModel(booking),
       );
@@ -65,7 +64,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> cancelBooking(
     String bookingId,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.cancelBooking(bookingId);
       return result.toEntity();
     });
@@ -73,7 +72,7 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failures, List<BookingEntity>>> getBookings() async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.getBookings();
       return result
           .map<BookingEntity>((booking) => booking.toEntity())
@@ -85,7 +84,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> getBookingById(
     String bookingId,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.getBookingById(bookingId);
       return result.toEntity();
     });
@@ -95,7 +94,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, List<BookingEntity>>> getBookingsByCustomerId(
     String customerId,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.getBookingsByCustomerId(customerId);
       return result
           .map<BookingEntity>((booking) => booking.toEntity())
@@ -107,7 +106,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, List<BookingServicesEntity>>> getBookingServices(
     String bookingId,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.getBookingServices(bookingId);
       return result
           .map<BookingServicesEntity>((service) => service.toEntity())
@@ -119,7 +118,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, List<BookingEntity>>> getBookingsByStylistId(
     String stylistId,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.getBookingsByStylistId(stylistId);
       return result
           .map<BookingEntity>((booking) => booking.toEntity())
@@ -131,7 +130,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, List<BookingEntity>>> getBookingsByStatus(
     BookingStatus status,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.getBookingsByStatus(status);
       return result
           .map<BookingEntity>((booking) => booking.toEntity())
@@ -143,7 +142,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, BookingEntity>> rescheduleBooking(
     RescheduleBookingRequestEntity request,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.rescheduleBooking(
         RescheduleBookingRequestModel(
           bookingId: request.bookingId,
@@ -160,7 +159,7 @@ class BookingRepositoryImpl implements BookingRepository {
     String bookingId,
     String notes,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.addNotesToBooking(bookingId, notes);
       return result.toEntity();
     });
@@ -171,7 +170,7 @@ class BookingRepositoryImpl implements BookingRepository {
     String bookingId,
     String status,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.updateBookingStatus(
         bookingId,
         status,
@@ -184,7 +183,7 @@ class BookingRepositoryImpl implements BookingRepository {
   Future<Either<Failures, List<BookingEntity>>> searchBookings(
     String query,
   ) async {
-    return _runOperation(() async {
+    return bookingRepositoryOperation(() async {
       final result = await remoteDataSource.searchBookings(query);
       return result
           .map<BookingEntity>((booking) => booking.toEntity())
@@ -194,48 +193,10 @@ class BookingRepositoryImpl implements BookingRepository {
 
   @override
   Future<Either<Failures, CustomerAddressInput>> getCurrentLocationAddress() {
-    return _runOperation(() => locationDataSource.getCurrentLocationAddress());
+    return bookingRepositoryOperation(() => locationDataSource.getCurrentLocationAddress());
   }
 
-  Future<Either<Failures, T>> _runOperation<T>(
-    Future<T> Function() operation,
-  ) async {
-    try {
-      return Right(await operation());
-    } on BookingException catch (exception) {
-      return Left(_toBookingFailure(exception));
-    } catch (error) {
-      final exception = ErrorMapper.toException(error);
-      return Left(Failures(message: exception.message, code: exception.code));
-    }
-  }
-
-  BookingFailure _toBookingFailure(BookingException exception) {
-    if (exception is BookingValidationException)
-      return BookingValidationFailure(
-        message: exception.message,
-        code: exception.code,
-      );
-    if (exception is BookingConflictException)
-      return BookingConflictFailure(
-        message: exception.message,
-        code: exception.code,
-      );
-    if (exception is BookingNotFoundException)
-      return BookingNotFoundFailure(
-        message: exception.message,
-        code: exception.code,
-      );
-    if (exception is BookingPermissionException)
-      return BookingPermissionFailure(
-        message: exception.message,
-        code: exception.code,
-      );
-    return BookingResponseFailure(
-      message: exception.message,
-      code: exception.code,
-    );
-  }
+ 
 
   BookingModel _mapBookingEntityToModel(BookingEntity booking) {
     return BookingModel(

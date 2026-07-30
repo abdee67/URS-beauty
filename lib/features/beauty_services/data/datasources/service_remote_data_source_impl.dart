@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
-import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/core/errors/failures/service_failures.dart';
 import 'package:urs_beauty/features/beauty_services/data/datasources/service_remote_data_source.dart';
 import 'package:urs_beauty/features/beauty_services/data/models/service_model.dart';
 
@@ -17,7 +19,7 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
   @override
   Future<List<ServiceModel>> getServices() {
-    return _run(() async {
+    return serviceDataSourceOperation(() async {
       final response = await _client
           .from(_serviceTable)
           .select(_serviceColumns)
@@ -30,8 +32,8 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
   @override
   Future<List<ServiceModel>> getServiceByCategory(String categoryId) {
-    return _run(() async {
-      _requireValue(categoryId, 'Category id is required');
+    return serviceDataSourceOperation(() async {
+      requireValue(categoryId, 'Category id is required');
 
       final response = await _client
           .from(_serviceTable)
@@ -46,8 +48,8 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
   @override
   Future<ServiceModel> getServiceDetail(String serviceId) {
-    return _run(() async {
-      _requireValue(serviceId, 'Service id is required');
+    return serviceDataSourceOperation(() async {
+      requireValue(serviceId, 'Service id is required');
 
       final response = await _client
           .from(_serviceTable)
@@ -62,8 +64,8 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
   @override
   Future<List<ServiceModel>> getServiceByStylists(String stylistsId) {
-    return _run(() async {
-      _requireValue(stylistsId, 'Stylist id is required');
+    return serviceDataSourceOperation(() async {
+      requireValue(stylistsId, 'Stylist id is required');
 
       final response = await _client
           .from(_serviceTable)
@@ -78,7 +80,7 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
   @override
   Future<List<ServiceModel>> searchServices(String query) {
-    return _run(() async {
+    return serviceDataSourceOperation(() async {
       final normalizedQuery = query.trim();
       if (normalizedQuery.isEmpty) {
         return getServices();
@@ -98,18 +100,6 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
     });
   }
 
-  Future<T> _run<T>(Future<T> Function() operation) async {
-    try {
-      return await operation();
-    } on Failures {
-      rethrow;
-    } on PostgrestException catch (e) {
-      throw Failures(message: e.message);
-    } catch (e) {
-      throw Failures(message: e.toString());
-    }
-  }
-
   List<ServiceModel> _mapServiceList(dynamic response) {
     return (response as List)
         .map(
@@ -121,11 +111,5 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
 
   ServiceModel _mapService(dynamic response) {
     return ServiceModel.fromJson(Map<String, dynamic>.from(response as Map));
-  }
-
-  void _requireValue(String value, String message) {
-    if (value.trim().isEmpty) {
-      throw Failures(message: message);
-    }
   }
 }

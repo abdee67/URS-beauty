@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
@@ -34,6 +35,7 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
   static const String _serviceColumns =
       'id, name, description, category_id, duration_minutes, base_price, '
       'min_price, created_at, updated_at, is_active, icon_url';
+  static const Duration _recommendationTimeout = Duration(seconds: 8);
 
   @override
   Future<List<StylistModel>> getStylists() {
@@ -288,19 +290,32 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     return _run(() async {
       _requireValue(serviceId, 'Service id is required');
 
-      final response = await _client.rpc(
-        'get_stylists_for_service',
-        params: <String, dynamic>{
-          'p_service_id': serviceId,
-          'p_client_lat': clientLat,
-          'p_client_lng': clientLng,
-          'p_requested_day': DateFormat('EEE').format(requestedDateTime),
-          'p_requested_time': DateFormat('HH:mm:ss').format(requestedDateTime),
-          'p_requested_date': _dateParam(requestedDateTime),
-          'p_limit': limit,
-          'p_offset': offset,
-        },
-      );
+      final response = await _client
+          .rpc(
+            'get_stylists_for_service',
+            params: <String, dynamic>{
+              'p_service_id': serviceId,
+              'p_client_lat': clientLat,
+              'p_client_lng': clientLng,
+              'p_requested_day': DateFormat('EEE').format(requestedDateTime),
+              'p_requested_time': DateFormat(
+                'HH:mm:ss',
+              ).format(requestedDateTime),
+              'p_requested_date': _dateParam(requestedDateTime),
+              'p_limit': limit,
+              'p_offset': offset,
+            },
+          )
+          .timeout(
+            _recommendationTimeout,
+            onTimeout: () async {
+              developer.log(
+                'Recommendation query timed out; loading all stylists for service.',
+                name: 'StylistsRemoteDataSourceImpl',
+              );
+              return getStylistsByService(serviceId);
+            },
+          );
       if (kDebugMode) {
         developer.log('stylists for service: $response');
       }

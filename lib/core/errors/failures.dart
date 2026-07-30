@@ -14,10 +14,6 @@ class LocationFailure extends Failures {
   const LocationFailure({required super.message, super.code});
 }
 
-class AuthFailure extends Failures {
-  const AuthFailure({required super.message, super.code});
-}
-
 class NetworkFailure extends Failures {
   const NetworkFailure({required super.message, super.code});
 }
@@ -28,14 +24,6 @@ class ValidationFailure extends Failures {
 
 class PermissionFailure extends Failures {
   const PermissionFailure({required super.message, super.code});
-}
-
-class PaymentFailure extends Failures {
-  const PaymentFailure({required super.message, super.code});
-}
-
-class BookingFailure extends Failures {
-  const BookingFailure({required super.message, super.code});
 }
 
 class ServerFailure extends Failures {

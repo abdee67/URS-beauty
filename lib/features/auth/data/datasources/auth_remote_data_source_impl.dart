@@ -3,8 +3,8 @@ import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
-import 'package:urs_beauty/core/errors/error_handler.dart';
-import 'package:urs_beauty/core/errors/exceptions.dart';
+import 'package:urs_beauty/core/errors/exceptions/auth_exceptions.dart';
+import 'package:urs_beauty/core/errors/failures/auth_failures.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:urs_beauty/features/auth/data/models/customer_model.dart';
 import 'package:urs_beauty/features/auth/data/models/customer_address_model.dart';
@@ -43,15 +43,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final isCustomerAccount = await _isCurrentCustomerAccount();
       if (!isCustomerAccount) {
         await _signOutQuietly();
-        throw const AuthException(
-          'This account is not a customer account. Please use the UR Stylist '
-          'app or sign up as a customer.',
+        throw const AuthExceptions(
+          message: 'This account is not a customer account. Please use the UR '
+              'Stylist app or sign up as a customer.',
         );
       }
 
       return result.session!;
     } catch (error, stackTrace) {
-      throw ErrorMapper.toException(error, stackTrace);
+      throw AuthErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -89,7 +89,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         rethrowErrors: false,
       );
     } catch (error, stackTrace) {
-      throw ErrorMapper.toException(error, stackTrace);
+      throw AuthErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -113,7 +113,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           data: const {'app_role': 'customer'},
         );
       } catch (error, stackTrace) {
-        throw ErrorMapper.toException(error, stackTrace);
+        throw AuthErrorMapper.toException(error, stackTrace);
       }
     }
   }
@@ -144,7 +144,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
       await _requireCurrentCustomerAccountForLogin();
     } catch (error, stackTrace) {
-      throw ErrorMapper.toException(error, stackTrace);
+      throw AuthErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -160,7 +160,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw const InvalidOtpException();
       }
     } catch (error, stackTrace) {
-      throw ErrorMapper.toException(error, stackTrace);
+      throw AuthErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -169,7 +169,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       await _client.auth.signOut();
     } catch (error, stackTrace) {
-      throw ErrorMapper.toException(error, stackTrace);
+      throw AuthErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -221,7 +221,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (kDebugMode) {
         print('Error retrieving current customer: $error');
       }
-      throw ErrorMapper.toException(error, stackTrace);
+      throw AuthErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -418,7 +418,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       await _client.auth.resetPasswordForEmail(email);
     } catch (error, stackTrace) {
-      throw ErrorMapper.toException(error, stackTrace);
+      throw AuthErrorMapper.toException(error, stackTrace);
     }
   }
 
@@ -427,7 +427,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       await _client.auth.updateUser(UserAttributes(password: password));
     } catch (error, stackTrace) {
-      throw ErrorMapper.toException(error, stackTrace);
+      throw AuthErrorMapper.toException(error, stackTrace);
     }
   }
 

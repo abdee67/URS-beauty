@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:urs_beauty/api/cash/cash_payment_api_service.dart';
 import 'package:urs_beauty/api/stripe/stripe_api_service.dart';
 import 'package:urs_beauty/api/chapa/chapa_api_service.dart';
+import 'package:urs_beauty/core/errors/failures/payment_failures.dart';
 import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source.dart';
 import 'package:urs_beauty/features/payments/data/models/payment_model.dart';
 
@@ -21,22 +24,22 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     String bookingId,
     PaymentModel payment,
   ) {
-    return stripeApiService.createCardPayment(bookingId, payment);
+    return paymentDataSourceOperation(() => stripeApiService.createCardPayment(bookingId, payment));
   }
 
   @override
   Future<PaymentModel> confirmCardPayment(String transactionReference) {
-    return stripeApiService.confirmCardPayment(transactionReference);
+    return paymentDataSourceOperation(() => stripeApiService.confirmCardPayment(transactionReference));
   }
 
   @override
   Future<PaymentModel> handleCardPaymentFailure(String transactionReference) {
-    return stripeApiService.handleCardPaymentFailure(transactionReference);
+    return paymentDataSourceOperation(() => stripeApiService.handleCardPaymentFailure(transactionReference));
   }
 
   @override
   Future<PaymentModel> canclePendingCardPayment(String paymentId) {
-    return stripeApiService.canclePendingCardPayment(paymentId);
+    return paymentDataSourceOperation(() => stripeApiService.canclePendingCardPayment(paymentId));
   }
 
   //WALLET(CHAPA) PAYMENT
@@ -46,28 +49,28 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     String bookingId,
     PaymentModel payment,
   ) {
-    return chapaApiService.createWalletPayment(bookingId, payment);
+    return paymentDataSourceOperation(() => chapaApiService.createWalletPayment(bookingId, payment));
   }
 
   @override
   Future<PaymentModel> canclePendingWalletPayment(String paymentId) {
-    return chapaApiService.canclePendingWalletPayment(paymentId);
+    return paymentDataSourceOperation(() => chapaApiService.canclePendingWalletPayment(paymentId));
   }
 
   @override
   Future<PaymentModel> confirmWalletPayment(String transactionReference) {
-    return chapaApiService.confirmWalletPayment(transactionReference);
+    return paymentDataSourceOperation(() => chapaApiService.confirmWalletPayment(transactionReference));
   }
 
   @override
   Future<PaymentModel> handleWalletPaymentFailure(String transactionReference) {
-    return chapaApiService.handleWalletPaymentFailure(transactionReference);
+    return paymentDataSourceOperation(() => chapaApiService.handleWalletPaymentFailure(transactionReference));
   }
   //===CASH PAYMENT===
 
   @override
   Future<PaymentModel> receiveCashPayment(String bookingId) {
-    return cashPaymentApiService.receiveCashPayment(bookingId);
+    return paymentDataSourceOperation(() => cashPaymentApiService.receiveCashPayment(bookingId));
   }
 
   @override
@@ -75,10 +78,10 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     String customerId,
     String bookingId,
   ) {
-    return cashPaymentApiService.customerConfirmCashPayment(
+    return paymentDataSourceOperation(() => cashPaymentApiService.customerConfirmCashPayment(
       customerId,
       bookingId,
-    );
+    ));
   }
 
   @override
@@ -87,11 +90,11 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     String bookingId,
     String? note,
   ) {
-    return cashPaymentApiService.customerDisputeCashPayment(
+    return paymentDataSourceOperation(() => cashPaymentApiService.customerDisputeCashPayment(
       customerId,
       bookingId,
       note,
-    );
+    ));
   }
   //====BANK TRANSFER PAYMENT====
 
@@ -101,11 +104,11 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     String proofUrl,
     String reference,
   ) {
-    return stripeApiService.createBankTransferPayment(
+    return paymentDataSourceOperation(() => stripeApiService.createBankTransferPayment(
       bookingId,
       proofUrl,
       reference,
-    );
+    ));
   }
 
   @override
@@ -113,27 +116,27 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     String paymentId,
     bool isVerified,
   ) {
-    return stripeApiService.verfiyBankTransferPayment(paymentId, isVerified);
+    return paymentDataSourceOperation(() => stripeApiService.verfiyBankTransferPayment(paymentId, isVerified));
   }
 
   @override
   Future<PaymentModel> getPaymentStatus(String paymentId, String bookingId) {
-    return stripeApiService.getPaymentStatus(paymentId, bookingId);
+    return paymentDataSourceOperation(() => stripeApiService.getPaymentStatus(paymentId, bookingId));
   }
 
   @override
   Future<PaymentModel> calculateRefund(String paymentId) {
-    return stripeApiService.calculateRefund(paymentId);
+    return paymentDataSourceOperation(() => stripeApiService.calculateRefund(paymentId));
   }
 
   @override
   Future<PaymentModel> processRefundCardPayment(String paymentId) {
-    return stripeApiService.processRefundCardPayment(paymentId);
+    return paymentDataSourceOperation(() => stripeApiService.processRefundCardPayment(paymentId));
   }
 
   @override
   Future<PaymentModel> processRefundWalletPayment(String paymentId) {
-    return chapaApiService.processRefundWalletPayment(paymentId);
+    return paymentDataSourceOperation(() => chapaApiService.processRefundWalletPayment(paymentId));
   }
 
   @override
@@ -141,7 +144,7 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     String bookingId,
     String newServiceId,
   ) {
-    return stripeApiService.calculateRescheduleCost(bookingId, newServiceId);
+    return paymentDataSourceOperation(() => stripeApiService.calculateRescheduleCost(bookingId, newServiceId));
   }
 
   @override
@@ -150,10 +153,12 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     DateTime newDateTime,
     String newServiceId,
   ) {
-    return stripeApiService.processReschedulePayment(
+    return paymentDataSourceOperation(() => stripeApiService.processReschedulePayment(
       bookingId,
       newDateTime,
       newServiceId,
-    );
+    ));
   }
+
+
 }

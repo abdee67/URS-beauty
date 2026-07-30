@@ -6,10 +6,15 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/core/errors/exceptions.dart';
+import 'package:urs_beauty/core/errors/exceptions/auth_exceptions.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 
-class ErrorMapper {
-  ErrorMapper._();
+class AuthFailure extends Failures {
+  const AuthFailure({required super.message, super.code});
+}
+
+class AuthErrorMapper {
+  AuthErrorMapper._();
 
   static AppExceptions toException(Object error, [StackTrace? stackTrace]) {
     if (error is AppExceptions) return error;
@@ -31,7 +36,8 @@ class ErrorMapper {
   static AppExceptions _fromAuth(AuthApiException error) {
     final code = error.code;
     final text = '${error.message} $code'.toLowerCase();
-    if (text.contains('invalid login') || text.contains('invalid credentials')) {
+    if (text.contains('invalid login') ||
+        text.contains('invalid credentials')) {
       return InvalidCredentialsException(code: code, cause: error);
     }
     if (text.contains('otp') ||
@@ -83,7 +89,8 @@ class ErrorMapper {
         text.contains('timed out')) {
       return NetworkException(cause: cause);
     }
-    if (text.contains('invalid login') || text.contains('invalid credentials')) {
+    if (text.contains('invalid login') ||
+        text.contains('invalid credentials')) {
       return InvalidCredentialsException(cause: cause);
     }
     if (text.contains('otp') ||
@@ -105,6 +112,9 @@ class ErrorMapper {
   }
 
   static Failures toFailure(AppExceptions exception) {
+    if (exception is AuthExceptions) {
+      return Failures(message: exception.message, code: exception.code);
+    }
     if (exception is NetworkException) {
       return NetworkFailure(message: exception.message, code: exception.code);
     }
@@ -115,53 +125,51 @@ class ErrorMapper {
       );
     }
     if (exception is PermissionException ||
-        exception is SessionExpiredException){
+        exception is SessionExpiredException) {
       return PermissionFailure(
         message: exception.message,
         code: exception.code,
       );
-        }
-    if (exception is AuthException){
-      return AuthFailure(message: exception.message, code: exception.code);
     }
-
-    if (exception is ServerException){
+    if (exception is ServerException) {
       return ServerFailure(message: exception.message, code: exception.code);
     }
     return Failures(message: exception.message, code: exception.code);
   }
 }
 
-Future<Either<Failures, T>> repositoryGuard<T>(
+Future<Either<Failures, T>> authRepositoryGuard<T>(
   Future<T> Function() operation,
 ) async {
   try {
     return Right(await operation());
   } catch (error, stackTrace) {
-    final exception = ErrorMapper.toException(error, stackTrace);
-    if (kDebugMode){
+    final exception = AuthErrorMapper.toException(error, stackTrace);
+    if (kDebugMode &&
+        exception is! AuthExceptions &&
+        exception is! ValidationException) {
       developer.log(
         exception.message,
-        name: 'repositoryGuard',
+        name: 'authRepositoryGuard',
         error: error,
         stackTrace: stackTrace,
       );
     }
-    return Left(ErrorMapper.toFailure(exception));
+    return Left(AuthErrorMapper.toFailure(exception));
   }
 }
 
 extension LegacyErrorHandler on Object {
-  Future<Either<Failures, T>> repoErrorHnadler<T>(
+  Future<Either<Failures, T>> repoErrorHnadler<T>(//used only in payment repo impl, but shouldnt
     Future<T> Function() operation,
-  ) => repositoryGuard(operation);
+  ) => authRepositoryGuard(operation);
 
   Future<T> serviceError<T>(Future<T> Function() operation) async {
     try {
       return await operation();
     } catch (error, stackTrace) {
-      final exception = ErrorMapper.toException(error, stackTrace);
-      throw ErrorMapper.toFailure(exception);
+      final exception = AuthErrorMapper.toException(error, stackTrace);
+      throw AuthErrorMapper.toFailure(exception);
     }
   }
 
@@ -170,5 +178,5 @@ extension LegacyErrorHandler on Object {
   }
 
   String friendlyMessage(Object error) =>
-      ErrorMapper.toException(error).message;
+      AuthErrorMapper.toException(error).message;
 }

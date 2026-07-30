@@ -1,5 +1,5 @@
 import 'package:urs_beauty/api/api_service.dart';
-import 'package:urs_beauty/core/errors/error_handler.dart';
+import 'package:urs_beauty/core/errors/failures/auth_failures.dart';
 import 'package:urs_beauty/features/payments/data/models/payment_model.dart';
 
 class CashPaymentApiService extends ApiService {

@@ -1,6 +1,6 @@
 import 'package:urs_beauty/core/errors/exceptions.dart';
 
-sealed class BookingException extends AppExceptions {
+abstract class BookingException extends AppExceptions {
   const BookingException({required super.message, super.code, super.cause});
 }
 
@@ -32,6 +32,14 @@ class BookingNotFoundException extends BookingException {
 class BookingPermissionException extends BookingException {
   const BookingPermissionException({
     super.message = 'You do not have access to this booking.',
+    super.code,
+    super.cause,
+  });
+}
+
+class BookingNetworkException extends BookingException {
+  const BookingNetworkException({
+    super.message = 'We could not reach the booking service. Please try again.',
     super.code,
     super.cause,
   });
