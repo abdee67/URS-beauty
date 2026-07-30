@@ -116,6 +116,57 @@ class BookingModel extends BookingEntity {
       stylistEarning: stylistEarning,
     );
   }
+   Map<String, dynamic> updateBookingPayload(BookingModel booking) {
+    return <String, dynamic>{
+      'customer': booking.customerId,
+      'stylist': booking.stylistId,
+      'status': booking.status.name,
+      'notes': booking.notes,
+      'address': booking.addressId,
+      'total_amount': booking.totalAmount,
+      'scheduled_at': booking.scheduledAt.toUtc().toIso8601String(),
+      'end_at': booking.endAt.toUtc().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'is_reviewed': booking.isReviewed,
+      'rescheduled_from': booking.rescheduledFrom,
+      'rescheduled_count': booking.rescheduledCount,
+      'payment_method': booking.paymentMethod,
+      'payment_status': booking.paymentStatus.name,
+      'currency': booking.currency,
+      'paid_amount': booking.paidAmount,
+      'refund_amount': booking.refundAmount,
+      'commission_amount': booking.commissionAmount,
+      'stylist_earning': booking.stylistEarning,
+    };
+  }
+   Map<String, dynamic> createBookingPayload(BookingModel booking) {
+    final payload = <String, dynamic>{
+      'customer': booking.customerId,
+      'stylist': booking.stylistId,
+      'status': booking.status.name,
+      'notes': booking.notes,
+      'address': booking.addressId,
+      'total_amount': booking.totalAmount,
+      'scheduled_at': booking.scheduledAt.toUtc().toIso8601String(),
+      'end_at': booking.endAt.toUtc().toIso8601String(),
+      'is_reviewed': booking.isReviewed,
+      'rescheduled_from': booking.rescheduledFrom,
+      'rescheduled_count': booking.rescheduledCount,
+      'payment_method': booking.paymentMethod,
+      'payment_status': booking.paymentStatus.name,
+      'currency': booking.currency,
+      'paid_amount': booking.paidAmount,
+      'refund_amount': booking.refundAmount,
+      'commission_amount': booking.commissionAmount,
+      'stylist_earning': booking.stylistEarning,
+    };
+
+    if (booking.id.trim().isNotEmpty) {
+      payload['id'] = booking.id;
+    }
+
+    return payload;
+  }
 
   static BookingStatus _bookingStatusFromString(String status) {
     switch (status.toLowerCase()) {
