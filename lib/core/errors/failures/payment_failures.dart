@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/core/errors/exceptions/payment_exceptions.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
 

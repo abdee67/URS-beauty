@@ -1,6 +1,5 @@
 import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
-import 'package:urs_beauty/core/errors/exceptions/service_exceptions.dart';
 import 'package:urs_beauty/core/errors/failures/service_failures.dart';
 import 'package:urs_beauty/features/beauty_services/data/datasources/service_remote_data_source.dart';
 import 'package:urs_beauty/features/beauty_services/domain/entities/service_entity.dart';

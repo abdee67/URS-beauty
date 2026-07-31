@@ -9,6 +9,7 @@ class AppColors {
   static const black = Color(0xFF000000);
   static const muted = Color(0xFF78665F);
   static const clay = Color(0xFF9F624F);
+  static const burgundy = Color(0xFF72175B);
   static const rose = Color(0xFFE9B7A6);
   static const field = Color(0xFFFFF1EA);
   static const border = Color(0xFFF0D6C9);

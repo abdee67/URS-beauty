@@ -1,6 +1,5 @@
 import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
-import 'package:urs_beauty/core/errors/exceptions/payment_exceptions.dart';
 import 'package:urs_beauty/core/errors/failures/payment_failures.dart';
 import 'package:urs_beauty/features/payments/data/dataSources/payment_remote_data_source.dart';
 import 'package:urs_beauty/features/payments/data/models/payment_model.dart';

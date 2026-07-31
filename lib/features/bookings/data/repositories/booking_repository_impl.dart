@@ -1,4 +1,3 @@
-import 'package:urs_beauty/core/errors/exceptions/booking_exceptions.dart';
 import 'package:urs_beauty/core/errors/failures/booking_failures.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_input.dart';
 import 'package:urs_beauty/features/auth/data/datasources/auth_location_data_source.dart';
