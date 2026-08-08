@@ -17,6 +17,12 @@ enum PaymentMethod { card, wallet, bankTransfer, cash }
 
 enum PaymentType { payment, adjustment, refund }
 
+/// Used by the cash payment flow to choose between QR-scan and OTP verification.
+enum CashVerificationMethod { qr, otp }
+
+/// Represents the outcome of a Chapa wallet checkout attempt.
+enum WalletCheckoutStatus { success, pending, failed, cancelled }
+
 extension PaymentStatusX on PaymentStatus {
   String get apiValue {
     switch (this) {
