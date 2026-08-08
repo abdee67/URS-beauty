@@ -170,11 +170,8 @@ class _URSBEAUTYState extends State<URSBEAUTY> with WidgetsBindingObserver {
         title: 'URS BEAUTY',
         routerConfig: _router,
         theme: ThemeData(
-          appBarTheme: const AppBarTheme(
-            backgroundColor: AppColors.clay,
-            foregroundColor: Colors.white,
-            elevation: 0,
-          ),
+          useMaterial3: true,
+          colorSchemeSeed: AppColors.clay,
           fontFamily: 'Montserrat',
         ),
       ),
