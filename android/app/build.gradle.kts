@@ -10,7 +10,7 @@ plugins {
 android {
     namespace = "com.abdee67.urs_beauty"
     compileSdk = 36
-    ndkVersion = "28.2.13676358"
+    ndkVersion = "30.0.16248370"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
