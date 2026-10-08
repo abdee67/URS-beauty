@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/core/errors/failures/stylist_failures.dart';
 import 'package:urs_beauty/features/beauty_services/data/models/service_model.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylist_availability_slot_model.dart';
 import 'package:urs_beauty/features/stylists/data/datasources/stylists_remote_data_source.dart';
@@ -34,10 +36,11 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
   static const String _serviceColumns =
       'id, name, description, category_id, duration_minutes, base_price, '
       'min_price, created_at, updated_at, is_active, icon_url';
+  static const Duration _recommendationTimeout = Duration(seconds: 8);
 
   @override
   Future<List<StylistModel>> getStylists() {
-    return _run(() async {
+    return stylistDataSourceOperation(() async {
       final response = await _client
           .from(_stylistsTable)
           .select(_stylistColumns)
@@ -50,8 +53,8 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
 
   @override
   Future<List<StylistModel>> getStylistsByService(String serviceId) {
-    return _run(() async {
-      _requireValue(serviceId, 'Service id is required');
+    return stylistDataSourceOperation(() async {
+      requireValue(serviceId, 'Service id is required');
 
       final response = await _client
           .from(_stylistsServicesTable)
@@ -65,8 +68,8 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
 
   @override
   Future<StylistModel> getStylistDetail(String stylistId) {
-    return _run(() async {
-      _requireValue(stylistId, 'Stylist id is required');
+    return stylistDataSourceOperation(() async {
+      requireValue(stylistId, 'Stylist id is required');
 
       final response = await _client
           .from(_stylistsTable)
@@ -80,7 +83,7 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
 
   @override
   Future<List<StylistModel>> searchStylists(String query) {
-    return _run(() async {
+    return stylistDataSourceOperation(() async {
       final normalizedQuery = query.trim();
       if (normalizedQuery.isEmpty) {
         return getStylists();
@@ -102,8 +105,8 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
 
   @override
   Future<List<StylistsServiceModel>> getStylistsServices(String stylistId) {
-    return _run(() async {
-      _requireValue(stylistId, 'Stylist id is required');
+    return stylistDataSourceOperation(() async {
+      requireValue(stylistId, 'Stylist id is required');
 
       final response = await _client
           .from(_stylistsServicesTable)
@@ -121,7 +124,7 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     double longitude,
     double radius,
   ) {
-    return _run(() async {
+    return stylistDataSourceOperation(() async {
       if (radius <= 0) {
         throw Failures(message: 'Radius must be greater than zero');
       }
@@ -144,7 +147,7 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
   Future<void> updateStylistsAvailability(
     StylistsAvailabilityModel availability,
   ) {
-    return _run(() async {
+    return stylistDataSourceOperation(() async {
       _validateAvailability(availability);
 
       await _client
@@ -157,8 +160,8 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
   Future<List<StylistsAvailabilityModel>> getStylistsAvailability(
     String stylistId,
   ) {
-    return _run(() async {
-      _requireValue(stylistId, 'Stylist id is required');
+    return stylistDataSourceOperation(() async {
+      requireValue(stylistId, 'Stylist id is required');
 
       final response = await _client
           .from(_stylistsAvailabilityTable)
@@ -176,9 +179,9 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     String stylistId,
     String dayOfWeek,
   ) {
-    return _run(() async {
-      _requireValue(stylistId, 'Stylist id is required');
-      _requireValue(dayOfWeek, 'Day of week is required');
+    return stylistDataSourceOperation(() async {
+      requireValue(stylistId, 'Stylist id is required');
+      requireValue(dayOfWeek, 'Day of week is required');
 
       final response = await _client
           .from(_stylistsAvailabilityTable)
@@ -198,9 +201,9 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     DateTime selectedDate, {
     String? ignoredBookingId,
   }) {
-    return _run(() async {
-      _requireValue(stylistId, 'Stylist id is required');
-      _requireValue(serviceId, 'Service id is required');
+    return stylistDataSourceOperation(() async {
+      requireValue(stylistId, 'Stylist id is required');
+      requireValue(serviceId, 'Service id is required');
 
       final service = await _getService(serviceId);
       final serviceDuration = service.durationMinutes ?? 0;
@@ -240,7 +243,7 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
 
   @override
   Future<Position> getClientLocation() {
-    return _run(() async {
+    return stylistDataSourceOperation(() async {
       loc.Location location = loc.Location();
       bool serviceEnabled = await location.serviceEnabled();
       if (!serviceEnabled) {
@@ -285,22 +288,35 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     int limit = 20,
     int offset = 0,
   }) {
-    return _run(() async {
-      _requireValue(serviceId, 'Service id is required');
+    return stylistDataSourceOperation(() async {
+      requireValue(serviceId, 'Service id is required');
 
-      final response = await _client.rpc(
-        'get_stylists_for_service',
-        params: <String, dynamic>{
-          'p_service_id': serviceId,
-          'p_client_lat': clientLat,
-          'p_client_lng': clientLng,
-          'p_requested_day': DateFormat('EEE').format(requestedDateTime),
-          'p_requested_time': DateFormat('HH:mm:ss').format(requestedDateTime),
-          'p_requested_date': _dateParam(requestedDateTime),
-          'p_limit': limit,
-          'p_offset': offset,
-        },
-      );
+      final response = await _client
+          .rpc(
+            'get_stylists_for_service',
+            params: <String, dynamic>{
+              'p_service_id': serviceId,
+              'p_client_lat': clientLat,
+              'p_client_lng': clientLng,
+              'p_requested_day': DateFormat('EEE').format(requestedDateTime),
+              'p_requested_time': DateFormat(
+                'HH:mm:ss',
+              ).format(requestedDateTime),
+              'p_requested_date': _dateParam(requestedDateTime),
+              'p_limit': limit,
+              'p_offset': offset,
+            },
+          )
+          .timeout(
+            _recommendationTimeout,
+            onTimeout: () async {
+              developer.log(
+                'Recommendation query timed out; loading all stylists for service.',
+                name: 'StylistsRemoteDataSourceImpl',
+              );
+              return getStylistsByService(serviceId);
+            },
+          );
       if (kDebugMode) {
         developer.log('stylists for service: $response');
       }
@@ -321,9 +337,9 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
     required DateTime date,
     String? ignoredBookingId,
   }) {
-    return _run(() async {
-      _requireValue(stylistId, 'Stylist id is required');
-      _requireValue(serviceId, 'Service id is required');
+    return stylistDataSourceOperation(() async {
+      requireValue(stylistId, 'Stylist id is required');
+      requireValue(serviceId, 'Service id is required');
 
       final durationMinutes = await _getServiceDuration(serviceId);
       if (durationMinutes <= 0) {
@@ -374,32 +390,6 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
       return int.tryParse(value.trim()) ?? 0;
     }
     return 0;
-  }
-
-  Future<T> _run<T>(Future<T> Function() operation) async {
-    try {
-      return await operation();
-    } on LocationFailure {
-      rethrow;
-    } on Failures {
-      rethrow;
-    } on PostgrestException catch (e) {
-      if (kDebugMode) {
-        developer.log(
-          'StylistsRemoteDataSourceImpl: ${e.message} ${e.details} ${e.hint}',
-          name: 'StylistsRemoteDataSourceImpl',
-        );
-      }
-      throw Failures(message: e.message);
-    } catch (e) {
-      if (kDebugMode) {
-        developer.log(
-          'StylistsRemoteDataSourceImpl: ${e.toString()}',
-          name: 'StylistsRemoteDataSourceImpl',
-        );
-      }
-      throw Failures(message: e.toString());
-    }
   }
 
   List<StylistModel> _mapStylistList(dynamic response) {
@@ -494,16 +484,10 @@ class StylistsRemoteDataSourceImpl implements StylistsRemoteDataSource {
   }
 
   void _validateAvailability(StylistsAvailabilityModel availability) {
-    _requireValue(availability.stylistsId, 'Stylist id is required');
-    _requireValue(availability.dayOfWeek, 'Day of week is required');
-    _requireValue(availability.startTime, 'Start time is required');
-    _requireValue(availability.endTime, 'End time is required');
-  }
-
-  void _requireValue(String value, String message) {
-    if (value.trim().isEmpty) {
-      throw Failures(message: message);
-    }
+    requireValue(availability.stylistsId, 'Stylist id is required');
+    requireValue(availability.dayOfWeek, 'Day of week is required');
+    requireValue(availability.startTime, 'Start time is required');
+    requireValue(availability.endTime, 'End time is required');
   }
 
   DateTime _combineDateAndTime(DateTime date, String value) {

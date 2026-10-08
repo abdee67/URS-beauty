@@ -297,5 +297,12 @@ class StylistsState extends Equatable {
     message,
     errorMessage,
     query,
+    serviceId,
+    requestedDateTime,
+    isLocationError,
+    hasMore,
+    isMapView,
+    sortBy,
+    sortedStylists,
   ];
 }

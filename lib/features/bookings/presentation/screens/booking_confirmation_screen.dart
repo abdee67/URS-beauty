@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
+import 'package:urs_beauty/core/widgets/error_state.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity.dart';
 import 'package:urs_beauty/features/bookings/presentation/bloc/booking_bloc.dart';
 import 'package:urs_beauty/features/bookings/presentation/screens/booking_page.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/address_option_card_widget.dart';
-import 'package:urs_beauty/core/widgets/error_state.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/empty_address_state_widget.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/selected_address_preview_widget.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/summary_card_widget.dart';
@@ -75,14 +76,24 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(state.errorMessage)));
+            ..showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage),
+                backgroundColor: AppColors.error,
+              ),
+            );
         }
 
         if (state.status == BookingBlocStatus.addressCreated &&
             (state.message?.isNotEmpty ?? false)) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(state.message!)));
+            ..showSnackBar(
+              SnackBar(
+                content: Text(state.message!),
+                backgroundColor: AppColors.clay,
+              ),
+            );
         }
 
         if (state.status == BookingBlocStatus.created &&
@@ -92,15 +103,14 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             ..showSnackBar(
               const SnackBar(
                 content: Text(
-                  'Booking created. Payment will be collected after the service is completed.',
+                  'Booking created successfully! Payment will be collected after completion.',
                 ),
+                backgroundColor: AppColors.sage,
               ),
             );
 
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute<void>(
-              builder: (_) => const BookingPage(),
-            ),
+            MaterialPageRoute<void>(builder: (_) => const BookingPage()),
           );
         }
       },
@@ -108,7 +118,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
         if (_isInitialLoading(state)) {
           return _buildScaffold(
             context,
-            child: const Center(child: CircularProgressIndicator()),
+            child: const Center(
+              child: CircularProgressIndicator(color: AppColors.clay),
+            ),
           );
         }
 
@@ -126,12 +138,31 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
           addresses,
           state.selectedAddressId,
         );
-        final isSavingAddress = state.status == BookingBlocStatus.addressCreating;
+        final isSavingAddress =
+            state.status == BookingBlocStatus.addressCreating;
         final isSubmitting = state.status == BookingBlocStatus.creating;
 
         return _buildScaffold(
           context,
+          bottomNavigationBar: _buildBottomBar(
+            context,
+            priceLabel: stylistService.price.toStringAsFixed(0),
+            isSubmitting: isSubmitting,
+            onPressed: isSubmitting
+                ? null
+                : () {
+                    context.read<BookingBloc>().add(
+                      ConfirmBookingEvent(
+                        serviceId: widget.serviceId,
+                        stylistId: widget.stylist.id,
+                        scheduledAt: scheduledAt,
+                        notes: _notesController.text.trim(),
+                      ),
+                    );
+                  },
+          ),
           child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,22 +170,27 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                 _HeroBanner(
                   serviceName: widget.serviceName,
                   stylistName: widget.stylist.businessName,
-                  dateLabel: localizations.formatMediumDate(widget.selectedDate),
+                  dateLabel: localizations.formatMediumDate(
+                    widget.selectedDate,
+                  ),
                   timeLabel: widget.selectedTime,
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
                 SummaryCard(
                   serviceName: widget.serviceName,
                   stylistName: widget.stylist.businessName,
-                  dateLabel: localizations.formatMediumDate(widget.selectedDate),
+                  dateLabel: localizations.formatMediumDate(
+                    widget.selectedDate,
+                  ),
                   timeLabel: widget.selectedTime,
                   priceLabel: stylistService.price.toStringAsFixed(0),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
                 _SectionCard(
-                  title: 'Service address',
+                  icon: Icons.location_on_rounded,
+                  title: 'Service location',
                   subtitle:
-                      'Choose where your stylist should arrive for this appointment.',
+                      'Select where your stylist will perform the appointment.',
                   child: Column(
                     children: [
                       if (addresses.isEmpty)
@@ -168,20 +204,17 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                         )
                       else ...[
                         ...addresses.map(
-                          (address) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: AddressOptionCard(
-                              address: address,
-                              isSelected: address.id == state.selectedAddressId,
-                              onTap: () {
-                                context.read<BookingBloc>().add(
-                                  SelectBookingAddressEvent(address.id),
-                                );
-                              },
-                            ),
+                          (address) => AddressOptionCard(
+                            address: address,
+                            isSelected: address.id == state.selectedAddressId,
+                            onTap: () {
+                              context.read<BookingBloc>().add(
+                                SelectBookingAddressEvent(address.id),
+                              );
+                            },
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
@@ -198,17 +231,24 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                                     height: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
+                                      color: AppColors.clay,
                                     ),
                                   )
-                                : const Icon(Icons.my_location_rounded),
+                                : const Icon(
+                                    Icons.my_location_rounded,
+                                    size: 18,
+                                  ),
                             label: Text(
                               isSavingAddress
-                                  ? 'Saving current location...'
+                                  ? 'Saving location...'
                                   : 'Use current location as new address',
                             ),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF7A4A39),
-                              side: const BorderSide(color: Color(0xFFD9B7A9)),
+                              foregroundColor: AppColors.clay,
+                              backgroundColor: AppColors.field.withValues(
+                                alpha: 0.5,
+                              ),
+                              side: const BorderSide(color: AppColors.border),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -221,7 +261,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                         const SizedBox(height: 16),
                         SelectedAddressPreview(address: selectedAddress),
                       ],
-                      if (addresses.isNotEmpty && customer.defaultAddress == null)
+                      if (addresses.isNotEmpty &&
+                          customer.defaultAddress == null)
                         const Padding(
                           padding: EdgeInsets.only(top: 12),
                           child: _MutedInfoText(
@@ -231,57 +272,24 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
                 _SectionCard(
+                  icon: Icons.edit_note_rounded,
                   title: 'Appointment notes',
                   subtitle:
-                      'Add any helpful details for the stylist before arrival.',
+                      'Provide gate codes, landmarks, or special instructions.',
                   child: TextField(
                     controller: _notesController,
-                    minLines: 4,
+                    minLines: 3,
                     maxLines: 5,
+                    style: const TextStyle(color: AppColors.ink, fontSize: 14),
                     decoration: _inputDecoration(
                       hintText:
-                          'Gate code, landmark, parking info, or anything else they should know.',
+                          'e.g. Apartment #3B, gate code 4920, park in guest slot...',
                     ),
                   ),
                 ),
-                const SizedBox(height: 22),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isSubmitting
-                        ? null
-                        : () {
-                            context.read<BookingBloc>().add(
-                              ConfirmBookingEvent(
-                                serviceId: widget.serviceId,
-                                stylistId: widget.stylist.id,
-                                scheduledAt: scheduledAt,
-                                notes: _notesController.text.trim(),
-                              ),
-                            );
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6B3F32),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    child: Text(
-                      isSubmitting
-                          ? 'Creating booking...'
-                          : 'Confirm booking',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 12),
               ],
             ),
           ),
@@ -290,26 +298,171 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
     );
   }
 
-  Scaffold _buildScaffold(BuildContext context, {required Widget child}) {
+  Scaffold _buildScaffold(
+    BuildContext context, {
+    required Widget child,
+    Widget? bottomNavigationBar,
+  }) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBF6),
+      backgroundColor: AppColors.paper,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.clay.withValues(alpha: 0.5),
         elevation: 0,
-        title: const Text(
-          'Confirm booking',
-          style: TextStyle(color: Color(0xFF5C2E1F)),
+        scrolledUnderElevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              color: AppColors.ink,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Confirm Booking',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              'Step 2 of 2',
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: AppColors.successSurface),
+            ),
+          ],
         ),
       ),
+      bottomNavigationBar: bottomNavigationBar,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF4EA), Color(0xFFFFE0C7)],
+            colors: [AppColors.paper, AppColors.field],
           ),
         ),
         child: SafeArea(child: child),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar(
+    BuildContext context, {
+    required String priceLabel,
+    required bool isSubmitting,
+    required VoidCallback? onPressed,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(
+          top: BorderSide(color: AppColors.border.withValues(alpha: 0.8)),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.ink.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Total Estimated',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'ETB $priceLabel',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.clay,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: onPressed,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.clay,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppColors.rose,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: isSubmitting
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Creating...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Confirm Booking',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_rounded, size: 20),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -357,9 +510,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
   TimeOfDay _parseTimeLabel(String value) {
     final normalized = value.trim().toUpperCase();
-    final match = RegExp(r'^(\d{1,2}):(\d{2})\s?(AM|PM)$').firstMatch(
-      normalized,
-    );
+    final match = RegExp(
+      r'^(\d{1,2}):(\d{2})\s?(AM|PM)$',
+    ).firstMatch(normalized);
 
     if (match == null) {
       throw FormatException('Invalid time slot: $value');
@@ -381,20 +534,26 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
   InputDecoration _inputDecoration({required String hintText}) {
     return InputDecoration(
       hintText: hintText,
+      hintStyle: const TextStyle(color: AppColors.muted, fontSize: 14),
       filled: true,
-      fillColor: const Color(0xFFFFFAF5),
-      contentPadding: const EdgeInsets.all(18),
+      fillColor: AppColors.field,
+      contentPadding: const EdgeInsets.all(16),
+      prefixIcon: const Icon(
+        Icons.edit_note_rounded,
+        color: AppColors.clay,
+        size: 22,
+      ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: Color(0xFFF1D8CB)),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: AppColors.border),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: Color(0xFFB67C65)),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: AppColors.clay, width: 1.8),
       ),
     );
   }
@@ -417,48 +576,113 @@ class _HeroBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF7A4A39), Color(0xFFA7684F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.clay, Color(0xFF834C3C)],
         ),
         borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.clay.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Almost there',
-            style: TextStyle(
-              color: Color(0xFFFFE9DC),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 13,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'READY TO BOOK',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                child: Text(
+                  stylistName.isNotEmpty ? stylistName[0].toUpperCase() : 'S',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 14),
           Text(
             serviceName,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'with $stylistName',
-            style: const TextStyle(
-              color: Color(0xFFFFE9DC),
-              fontSize: 15,
-            ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Icon(
+                Icons.person_outline_rounded,
+                size: 16,
+                color: AppColors.peach,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'with $stylistName',
+                style: const TextStyle(
+                  color: AppColors.peach,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _InfoChip(icon: Icons.calendar_today_outlined, label: dateLabel),
-              _InfoChip(icon: Icons.access_time_rounded, label: timeLabel),
+              _InfoChip(icon: Icons.calendar_today_rounded, label: dateLabel),
+              _InfoChip(
+                icon: Icons.access_time_filled_rounded,
+                label: timeLabel,
+              ),
             ],
           ),
         ],
@@ -469,11 +693,13 @@ class _HeroBanner extends StatelessWidget {
 
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
+    required this.icon,
     required this.title,
     required this.subtitle,
     required this.child,
   });
 
+  final IconData icon;
   final String title;
   final String subtitle;
   final Widget child;
@@ -482,30 +708,57 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.88),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF0D7CB)),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.clay.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF43261D),
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.field,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: AppColors.clay, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF7B6156),
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           child,
         ],
       ),
@@ -522,21 +775,22 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: Colors.white.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: Colors.white),
+          Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 8),
           Text(
             label,
             style: const TextStyle(
               color: Colors.white,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -555,9 +809,9 @@ class _MutedInfoText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-        color: const Color(0xFF7B6156),
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
     );
   }
 }

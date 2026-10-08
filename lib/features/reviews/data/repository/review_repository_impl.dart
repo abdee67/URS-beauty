@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/core/errors/failures/review_failures.dart';
 import 'package:urs_beauty/features/reviews/data/datasource/review_remote_data_source.dart';
 import 'package:urs_beauty/features/reviews/data/model/review_model.dart';
 import 'package:urs_beauty/features/reviews/domain/entity/review_entity.dart';
@@ -14,8 +15,8 @@ class ReviewRepositoryImpl implements ReviewRepository {
   Future<Either<Failures, ReviewEntity>> submitReview(
     ReviewEntity review,
   ) async {
-    return _runOperation(() async {
-      _validateReview(review);
+    return reviewRepositoryOperation(() async {
+      validateReview(review);
       final result = await remoteDataSource.submitReview(
         _mapReviewEntityToModel(review),
       );
@@ -27,7 +28,7 @@ class ReviewRepositoryImpl implements ReviewRepository {
   Future<Either<Failures, ReviewEntity?>> getReviewByBookingId(
     String bookingId,
   ) async {
-    return _runOperation(() async {
+    return reviewRepositoryOperation(() async {
       final result = await remoteDataSource.getReviewByBookingId(bookingId);
       return result?.toEntity();
     });
@@ -37,7 +38,7 @@ class ReviewRepositoryImpl implements ReviewRepository {
   Future<Either<Failures, List<ReviewEntity>>> getReviewsByStylistId(
     String stylistId,
   ) async {
-    return _runOperation(() async {
+    return reviewRepositoryOperation(() async {
       final result = await remoteDataSource.getReviewsByStylistId(stylistId);
       return result.map((review) => review.toEntity()).toList();
     });
@@ -47,7 +48,7 @@ class ReviewRepositoryImpl implements ReviewRepository {
   Future<Either<Failures, List<ReviewEntity>>> getReviewsByCustomerId(
     String customerId,
   ) async {
-    return _runOperation(() async {
+    return reviewRepositoryOperation(() async {
       final result = await remoteDataSource.getReviewsByCustomerId(customerId
       );
       return result.map((review) => review.toEntity()).toList();
@@ -58,23 +59,13 @@ class ReviewRepositoryImpl implements ReviewRepository {
   Future<Either<Failures, RatingSummary>> getRatingSummary(
     String stylistId,
   ) async {
-    return _runOperation(() async {
+    return reviewRepositoryOperation(() async {
       final result = await remoteDataSource.getRatingSummary(stylistId);
       return result.toSummary();
     });
   }
 
-  Future<Either<Failures, T>> _runOperation<T>(
-    Future<T> Function() operation,
-  ) async {
-    try {
-      return Right(await operation());
-    } on Failures catch (failure) {
-      return Left(failure);
-    } catch (error) {
-      return Left(Failures(message: error.toString()));
-    }
-  }
+
 
   ReviewModel _mapReviewEntityToModel(ReviewEntity review) {
     return ReviewModel(
@@ -88,21 +79,4 @@ class ReviewRepositoryImpl implements ReviewRepository {
     );
   }
 
-  void _validateReview(ReviewEntity review) {
-    if (review.bookingId.trim().isEmpty) {
-      throw Failures(message: 'Booking ID is required');
-    }
-
-    if (review.customerId.trim().isEmpty) {
-      throw Failures(message: 'Customer ID is required');
-    }
-
-    if (review.stylistId.trim().isEmpty) {
-      throw Failures(message: 'Stylist ID is required');
-    }
-
-    if (review.rating < 1 || review.rating > 5) {
-      throw Failures(message: 'Rating must be between 1 and 5');
-    }
-  }
 }

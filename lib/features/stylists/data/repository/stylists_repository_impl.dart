@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/core/errors/failures/stylist_failures.dart';
 import 'package:urs_beauty/features/stylists/data/datasources/stylists_remote_data_source.dart';
 import 'package:urs_beauty/features/stylists/data/models/stylists_model.dart';
 import 'package:urs_beauty/features/stylists/domain/entities/stylist_availability_slot_entity.dart';
@@ -16,72 +17,62 @@ class StylistsRepositoryImpl implements StylistsRepository {
 
   @override
   Future<Either<Failures, List<Stylist>>> getStylists() async {
-    try {
+    return stylistRepositoryOperation(() async {
       final services = await remoteDataSource.getStylists();
       if (services.isEmpty) {
-        return const Right([]);
+        return ([]);
       } else {
-        return Right(services.map((e) => e.toEntity()).toList());
+        return services.map((e) => e.toEntity()).toList();
       }
-    } on Failures catch (e) {
-      return Left(e);
-    }
+    });
   }
 
   @override
   Future<Either<Failures, List<Stylist>>> getStylistsByService(
     String serviceId,
   ) async {
-    try {
+    return stylistRepositoryOperation(() async {
       final stylists = await remoteDataSource.getStylistsByService(serviceId);
       if (stylists.isEmpty) {
-        return const Right([]);
+        return [];
       } else {
-        return Right(stylists.map((e) => e.toEntity()).toList());
+        return stylists.map((e) => e.toEntity()).toList();
       }
-    } on Failures catch (e) {
-      return Left(e);
-    }
+    });
   }
 
   @override
   Future<Either<Failures, Stylist>> getStylistDetail(String stylistId) async {
-    try {
+    return stylistRepositoryOperation(() async {
       final stylist = await remoteDataSource.getStylistDetail(stylistId);
-      return Right(stylist.toEntity());
-    } on Failures catch (e) {
-      return Left(e);
-    }
+      return stylist.toEntity();
+    });
   }
 
   @override
   Future<Either<Failures, List<Stylist>>> searchStylists(String query) async {
-    try {
+    return stylistRepositoryOperation(() async {
       final stylists = await remoteDataSource.searchStylists(query);
       if (stylists.isEmpty) {
-        return const Right([]);
+        return [];
       } else {
-        return Right(stylists.map((e) => e.toEntity()).toList());
+        return stylists.map((e) => e.toEntity()).toList();
       }
-    } on Failures catch (e) {
-      return Left(e);
-    }
+    });
   }
 
   @override
   Future<Either<Failures, List<StylistsServiceModel>>> getStylistsServices(
     String stylistId,
   ) async {
-    try {
+    return stylistRepositoryOperation(() async {
       final services = await remoteDataSource.getStylistsServices(stylistId);
       if (services.isEmpty) {
-        return const Right([]);
+        return [];
       } else {
-        return Right(services);
+        return services;
       }
-    } on Failures catch (e) {
-      return Left(e);
-    }
+    });
   }
 
   @override
@@ -90,60 +81,51 @@ class StylistsRepositoryImpl implements StylistsRepository {
     double longitude,
     double radius,
   ) async {
-    try {
+    return stylistRepositoryOperation(() async {
       final stylists = await remoteDataSource.getNearByStylists(
         latitude,
         longitude,
         radius,
       );
       if (stylists.isEmpty) {
-        return const Right([]);
+        return [];
       } else {
-        return Right(stylists.map((e) => e.toEntity()).toList());
+        return stylists.map((e) => e.toEntity()).toList();
       }
-    } on Failures catch (e) {
-      return Left(e);
-    }
+    });
   }
 
   @override
   Future<Either<Failures, void>> updateStylistsAvailability(
     availability,
   ) async {
-    try {
+    return stylistRepositoryOperation(() async {
       final model = StylistsAvailabilityModel.fromEntity(availability);
       await remoteDataSource.updateStylistsAvailability(model);
-      return const Right(null);
-    } on Failures catch (e) {
-      return Left(e);
-    }
+    });
   }
 
   @override
   Future<Either<Failures, List<StylistsAvailabilityModel>>>
   getStylistsAvailability(String stylistId) async {
-    try {
+    return stylistRepositoryOperation(() async {
       final availability = await remoteDataSource.getStylistsAvailability(
         stylistId,
       );
-      return Right(availability);
-    } on Failures catch (e) {
-      return Left(e);
-    }
+      return availability;
+    });
   }
 
   @override
   Future<Either<Failures, List<StylistsAvailabilityModel>>>
   getStylistsAvailabilityByDay(String stylistId, String dayOfWeek) async {
-    try {
+    return stylistRepositoryOperation(() async {
       final availability = await remoteDataSource.getStylistsAvailabilityByDay(
         stylistId,
         dayOfWeek,
       );
-      return Right(availability);
-    } on Failures catch (e) {
-      return Left(e);
-    }
+      return availability;
+    });
   }
 
   @override
@@ -154,26 +136,22 @@ class StylistsRepositoryImpl implements StylistsRepository {
     DateTime selectedDate, {
     String? ignoredBookingId,
   }) async {
-    try {
+    return stylistRepositoryOperation(() async {
       final availability = await remoteDataSource.getStylistsAvailabilityByTime(
         stylistId,
         serviceId,
         selectedDate,
         ignoredBookingId: ignoredBookingId,
       );
-      return Right(availability);
-    } on Failures catch (e) {
-      return Left(e);
-    }
+      return availability;
+    });
   }
 
   @override
   Future<Either<Failures, Position>> getClientLocation() async {
-    try {
-      return Right(await remoteDataSource.getClientLocation());
-    } on Failures catch (e) {
-      return Left(e);
-    }
+    return stylistRepositoryOperation(() async {
+      return await remoteDataSource.getClientLocation();
+    });
   }
 
   @override
@@ -185,7 +163,7 @@ class StylistsRepositoryImpl implements StylistsRepository {
     int limit = 20,
     int offset = 0,
   }) async {
-    try {
+    return await stylistRepositoryOperation(() async {
       final stylists = await remoteDataSource.fetchStylistsForService(
         serviceId: serviceId,
         clientLat: clientLat,
@@ -194,10 +172,8 @@ class StylistsRepositoryImpl implements StylistsRepository {
         limit: limit,
         offset: offset,
       );
-      return Right(stylists);
-    } on Failures catch (e) {
-      return Left(e);
-    }
+      return stylists;
+    });
   }
 
   @override
@@ -208,16 +184,14 @@ class StylistsRepositoryImpl implements StylistsRepository {
     required DateTime date,
     String? ignoredBookingId,
   }) async {
-    try {
+    return await stylistRepositoryOperation(() async {
       final slots = await remoteDataSource.fetchAvailableSlots(
         stylistId: stylistId,
         serviceId: serviceId,
         date: date,
         ignoredBookingId: ignoredBookingId,
       );
-      return Right(slots);
-    } on Failures catch (e) {
-      return Left(e);
-    }
+      return slots;
+    });
   }
 }

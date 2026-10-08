@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:urs_beauty/config/supabase_config.dart';
 import 'package:urs_beauty/core/errors/failures.dart';
+import 'package:urs_beauty/core/errors/failures/review_failures.dart';
 import 'package:urs_beauty/features/reviews/data/datasource/review_remote_data_source.dart';
 import 'package:urs_beauty/features/reviews/data/dto/rating_summary_dto.dart';
 import 'package:urs_beauty/features/reviews/data/model/review_model.dart';
@@ -18,7 +19,7 @@ class ReviewRemoteDataSourceImpl implements ReviewRemoteDataSource {
 
   @override
   Future<ReviewModel> submitReview(ReviewModel review) {
-    return _run(() async {
+    return reviewDataSourceOperation(() async {
       _validateReview(review);
       final response = await _client.rpc(
         'submit_booking_review',
@@ -35,8 +36,8 @@ class ReviewRemoteDataSourceImpl implements ReviewRemoteDataSource {
 
   @override
   Future<List<ReviewModel>> getReviewsByStylistId(String stylistId) {
-    return _run(() async {
-      _requireValue(stylistId, 'Stylist id is required');
+    return reviewDataSourceOperation(() async {
+      requireValue(stylistId, 'Stylist id is required');
 
       final response = await _client
           .from(_reviewTable)
@@ -50,8 +51,8 @@ class ReviewRemoteDataSourceImpl implements ReviewRemoteDataSource {
 
   @override
   Future<List<ReviewModel>> getReviewsByCustomerId(String customerId) {
-    return _run(() async {
-      _requireValue(customerId, 'Customer id is required');
+    return reviewDataSourceOperation(() async {
+      requireValue(customerId, 'Customer id is required');
 
       final response = await _client
           .from(_reviewTable)
@@ -65,8 +66,8 @@ class ReviewRemoteDataSourceImpl implements ReviewRemoteDataSource {
 
   @override
   Future<ReviewModel?> getReviewByBookingId(String bookingId) {
-    return _run(() async {
-      _requireValue(bookingId, 'Booking id is required');
+    return reviewDataSourceOperation(() async {
+      requireValue(bookingId, 'Booking id is required');
 
       final response = await _client
           .from(_reviewTable)
@@ -84,8 +85,8 @@ class ReviewRemoteDataSourceImpl implements ReviewRemoteDataSource {
 
   @override
   Future<RatingSummaryDto> getRatingSummary(String stylistId) {
-    return _run(() async {
-      _requireValue(stylistId, 'Stylist id is required');
+    return reviewDataSourceOperation(() async {
+      requireValue(stylistId, 'Stylist id is required');
 
       final response = await _client
           .from(_stylistsTable)
@@ -99,18 +100,6 @@ class ReviewRemoteDataSourceImpl implements ReviewRemoteDataSource {
 
       return RatingSummaryDto.fromJson(Map<String, dynamic>.from(response));
     });
-  }
-
-  Future<T> _run<T>(Future<T> Function() operation) async {
-    try {
-      return await operation();
-    } on Failures {
-      rethrow;
-    } on PostgrestException catch (e) {
-      throw Failures(message: e.message);
-    } catch (e) {
-      throw Failures(message: e.toString());
-    }
   }
 
   List<ReviewModel> _mapReviewList(dynamic response) {
@@ -136,18 +125,12 @@ class ReviewRemoteDataSourceImpl implements ReviewRemoteDataSource {
   }
 
   void _validateReview(ReviewModel review) {
-    _requireValue(review.bookingId, 'Booking id is required');
-    _requireValue(review.customerId, 'Customer id is required');
-    _requireValue(review.stylistId, 'Stylist id is required');
+    requireValue(review.bookingId, 'Booking id is required');
+    requireValue(review.customerId, 'Customer id is required');
+    requireValue(review.stylistId, 'Stylist id is required');
 
     if (review.rating < 1 || review.rating > 5) {
       throw Failures(message: 'Rating must be between 1 and 5');
-    }
-  }
-
-  void _requireValue(String value, String message) {
-    if (value.trim().isEmpty) {
-      throw Failures(message: message);
     }
   }
 }

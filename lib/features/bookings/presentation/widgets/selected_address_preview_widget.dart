@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity.dart';
 import 'package:urs_beauty/features/bookings/presentation/widgets/address_option_card_widget.dart';
 
@@ -13,36 +14,58 @@ class SelectedAddressPreview extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(220),
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.field.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.rose.withValues(alpha: 0.5)),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Selected address',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: const Color(0xFF7C5342),
-                  fontWeight: FontWeight.w700,
-                ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.sage.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle_rounded,
+              size: 20,
+              color: AppColors.sage,
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            address.addressLine1,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF43261D),
-                  fontWeight: FontWeight.w700,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Selected Destination',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppColors.clay,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
                 ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            AddressOptionCard.formatAddress(address),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF7C5342),
+                const SizedBox(height: 4),
+                Text(
+                  address.addressLine1,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: AppColors.ink,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  AddressOptionCard.formatAddress(address),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
-}
+}

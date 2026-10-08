@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 
 class SessionCheckingSplash extends StatelessWidget {
   const SessionCheckingSplash({super.key});
@@ -6,14 +7,14 @@ class SessionCheckingSplash extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.pink[50],
+      backgroundColor: AppColors.sage,
       body: Container(
         width: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.pink[100]!, Colors.purple[100]!],
+            colors: [AppColors.sage, Colors.purple[100]!],
           ),
         ),
         child: SafeArea(

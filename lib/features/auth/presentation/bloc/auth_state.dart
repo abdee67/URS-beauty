@@ -20,6 +20,8 @@ class OtpVerified extends AuthState {}
 
 class ForgotPasswordSent extends AuthState {}
 
+class PasswordResetOtpVerified extends AuthState {}
+
 class ResetPasswordSent extends AuthState {}
 
 class AuthAddressAutofilled extends AuthState {

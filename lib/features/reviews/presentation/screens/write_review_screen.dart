@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:urs_beauty/core/constants/app_colors.dart';
 import 'package:urs_beauty/features/bookings/domain/entities/booking_entity.dart';
 import 'package:urs_beauty/features/reviews/domain/entity/review_entity.dart';
 import 'package:urs_beauty/features/reviews/presentation/bloc/review_bloc.dart';
@@ -93,7 +94,7 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
           backgroundColor: const Color(0xFFFFFBF6),
           appBar: AppBar(
             elevation: 0,
-            backgroundColor: const Color(0xFFFFFBF6),
+        backgroundColor: AppColors.clay.withValues(alpha: 0.5),
             surfaceTintColor: Colors.transparent,
             title: Text(
               _existingReview == null ? 'Leave Review' : 'Your Review',

@@ -6,27 +6,31 @@ import 'package:urs_beauty/features/auth/domain/entities/customer_address_entity
 import 'package:urs_beauty/features/auth/domain/entities/customer_entity.dart';
 
 abstract class AuthRepository {
-Future <Either<Failures, void>> signUp(
-  String email,
-  String password,
-  String firstName,
-  String lastName,
-  String phone,
-  CustomerAddressInput address,
-);
-Future <Either<Failures, Session>> signIn(String email, String password);
-Future<Either<Failures, void>> sendOtp(String email);
-Future<Either<Failures, void>> verifyOtp(String email, String otp);
-Future<Either<Failures, CustomerEntity>> getCurrentCustomer();
-Future<Either<Failures, void>> signOut();
-Future<Either<Failures, CustomerEntity>> updateCustomerProfile(CustomerEntity client);
-Future<Either<Failures, void>> resetPassword(String email, String password);
-Future<Either<Failures, void>> forgotPassword(String email);
-Future<Either<Failures, CustomerAddressInput>> getCurrentLocationAddress();
-Future<Either<Failures, CustomerAddressEntity>> createCustomerAddress(
-  CustomerAddressInput input,
-);
+  Future<Either<Failures, void>> signUp(
+    String email,
+    String password,
+    String firstName,
+    String lastName,
+    String phone,
+    CustomerAddressInput address,
+  );
+  Future<Either<Failures, Session>> signIn(String email, String password);
+  Future<Either<Failures, void>> sendOtp(String email);
+  Future<Either<Failures, void>> verifyOtp(String email, String otp);
+  Future<Either<Failures, void>> verifyPasswordResetOtp(
+    String email,
+    String otp,
+  );
+  Future<Either<Failures, CustomerEntity>> getCurrentCustomer();
+  Future<Either<Failures, void>> signOut();
+  Future<Either<Failures, CustomerEntity>> updateCustomerProfile(
+    CustomerEntity client,
+  );
+  Future<Either<Failures, void>> resetPassword(String email, String password);
+  Future<Either<Failures, void>> forgotPassword(String email);
+  Future<Either<Failures, CustomerAddressInput>> getCurrentLocationAddress();
+  Future<Either<Failures, CustomerAddressEntity>> createCustomerAddress(
+    CustomerAddressInput input,
+  );
   Future<Either<Failures, String>> checkStartupSession();
-
-
 }
